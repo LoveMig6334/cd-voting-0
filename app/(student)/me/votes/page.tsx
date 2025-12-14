@@ -57,10 +57,10 @@ export default function MyVotes() {
                   </div>
                 </div>
                 <h3 className="text-base font-bold leading-tight">
-                  Student Council 2024
+                  Student Council 2025
                 </h3>
                 <p className="text-slate-500 text-xs font-normal leading-normal">
-                  Oct 24, 2023 • 2:45 PM
+                  Dec 24, 2025 • 2:45 PM
                 </p>
               </div>
               <div
