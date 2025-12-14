@@ -1,41 +1,74 @@
 "use client";
 
+import { useAuth } from "@/hooks/useAuth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
 function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { loginWithData } = useAuth();
 
   const id = searchParams.get("studentId");
   const scannedName = searchParams.get("name");
-  const scannedClass = searchParams.get("classRoom");
+  // const scannedClass = searchParams.get("classRoom"); // Removed as we use Surname now
 
   const [studentId, setStudentId] = useState(id || "");
   const [name, setName] = useState(scannedName || "");
-  const [classRoom, setClassRoom] = useState(scannedClass || "");
+  const [surname, setSurname] = useState("");
   const [isManual, setIsManual] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    // Sync if search params change after initial load (rare but possible in some nav flows)
+    // Sync if search params change after initial load
     if (id && id !== studentId) setStudentId(id);
     if (scannedName && scannedName !== name) setName(scannedName);
-    if (scannedClass && scannedClass !== classRoom) setClassRoom(scannedClass);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, scannedName, scannedClass]);
+  }, [id, scannedName]);
+
+  interface Student {
+    classroom: string;
+    no: number;
+    id: number;
+    name: string;
+    surname: string;
+  }
 
   const handleRegister = async () => {
     setLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    setError("");
 
-    // Success -> Login
-    setLoading(false);
-    router.push("/login");
+    try {
+      const res = await fetch("/data.json");
+      if (!res.ok) throw new Error("Failed to load student data");
+      const students: Student[] = await res.json();
+
+      const found = students.find(
+        (s) =>
+          String(s.id) === studentId.trim() &&
+          s.name.trim() === name.trim() &&
+          s.surname.trim() === surname.trim()
+      );
+
+      if (found) {
+        // Success -> Auto Login
+        loginWithData(found);
+      } else {
+        setError(
+          "Student not found or details mismatch. Please check your inputs."
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      setError("An error occurred during validation.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const isFormValid = studentId.length > 0 && name.length > 0;
+  const isFormValid =
+    studentId.length > 0 && name.length > 0 && surname.length > 0;
 
   return (
     <div className="min-h-screen bg-background-light text-slate-900 flex flex-col items-center pt-2 pb-6 px-4">
@@ -90,6 +123,12 @@ function RegisterContent() {
                 : "opacity-100"
             }`}
           >
+            {error && (
+              <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-500">
                 Student ID
@@ -110,9 +149,7 @@ function RegisterContent() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-500">
-                Full Name
-              </label>
+              <label className="text-sm font-medium text-slate-500">Name</label>
               <div className="relative">
                 <input
                   className={`block w-full rounded-lg border-slate-200 bg-slate-50 p-3.5 text-base focus:bg-white focus:border-primary focus:ring-primary ${
@@ -127,17 +164,17 @@ function RegisterContent() {
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-500">
-                Classroom (Optional)
+                Surname
               </label>
               <div className="relative">
                 <input
                   className={`block w-full rounded-lg border-slate-200 bg-slate-50 p-3.5 text-base focus:bg-white focus:border-primary focus:ring-primary ${
                     isManual ? "" : "read-only:bg-slate-100"
                   }`}
-                  placeholder="e.g. 5/3"
-                  value={classRoom}
+                  placeholder="Surname"
+                  value={surname}
                   readOnly={!isManual}
-                  onChange={(e) => setClassRoom(e.target.value)}
+                  onChange={(e) => setSurname(e.target.value)}
                 />
               </div>
             </div>
@@ -150,7 +187,7 @@ function RegisterContent() {
               className="relative w-full overflow-hidden rounded-xl bg-primary px-4 py-3.5 text-white shadow-lg shadow-primary/25 hover:bg-primary-dark active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="relative z-10 flex items-center justify-center gap-2 text-sm font-bold tracking-wide">
-                {loading ? "Creating Account..." : "Confirm & Create Account"}
+                {loading ? "Verifying..." : "Confirm & Create Account"}
                 {!loading && (
                   <span className="material-symbols-outlined text-[18px]">
                     arrow_forward

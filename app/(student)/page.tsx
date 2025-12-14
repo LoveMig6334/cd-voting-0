@@ -1,10 +1,12 @@
 "use client";
 
 import { BottomNav } from "@/components/BottomNav";
+import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
   const router = useRouter();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-background-light text-slate-900 pb-24">
@@ -29,7 +31,9 @@ export default function Dashboard() {
               <p className="text-xs font-medium text-slate-500">
                 Welcome back,
               </p>
-              <p className="text-sm font-bold leading-tight">Alex Johnson</p>
+              <p className="text-sm font-bold leading-tight">
+                {user ? `${user.name} ${user.surname}` : "Guest"}
+              </p>
             </div>
           </div>
           <button className="flex items-center justify-center size-10 rounded-full hover:bg-slate-200 transition-colors text-slate-600">

@@ -1,9 +1,11 @@
 "use client";
 
+import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 
 export default function Profile() {
   const router = useRouter();
+  const { user, logout } = useAuth();
 
   return (
     <div className="bg-background-light text-slate-900 min-h-screen font-display">
@@ -34,10 +36,10 @@ export default function Profile() {
               </div>
               <div className="flex flex-col items-center justify-center">
                 <p className="text-slate-900 text-xl font-bold leading-tight tracking-[-0.015em] text-center">
-                  Alex Johnson
+                  {user ? `${user.name} ${user.surname}` : "Guest user"}
                 </p>
                 <p className="text-slate-500 text-sm font-medium leading-normal text-center mt-1">
-                  Student ID: 20248812
+                  Student ID: {user?.id}
                 </p>
               </div>
             </div>
@@ -80,7 +82,7 @@ export default function Profile() {
             </div>
 
             <button
-              onClick={() => router.push("/")}
+              onClick={() => logout()}
               className="bg-white w-full py-4 rounded-xl shadow-sm border border-gray-100 text-red-600 font-bold text-base hover:bg-red-50 transition-colors flex items-center justify-center gap-2 mt-4"
             >
               <span className="material-symbols-outlined">logout</span>
