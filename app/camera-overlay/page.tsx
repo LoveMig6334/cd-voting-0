@@ -6,16 +6,18 @@ import { useRouter } from "next/navigation";
 export default function CameraOverlayPage() {
   const router = useRouter();
 
-  const handleScanComplete = () => {
-    // Simulate OCR result
-    const mockOCRData = {
-      studentId: "6312",
-      name: "นายสมชาย ใจดี",
-      classRoom: "ม.5/3",
-    };
-
+  const handleScanComplete = (data: {
+    id: number;
+    name: string;
+    surname: string;
+    classroom: string;
+  }) => {
     // Redirect back to register with params
-    const params = new URLSearchParams(mockOCRData).toString();
+    const params = new URLSearchParams({
+      studentId: data.id.toString(),
+      name: `${data.name} ${data.surname}`,
+      classRoom: data.classroom,
+    }).toString();
     router.push(`/register?${params}`);
   };
 
