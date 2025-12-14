@@ -22,10 +22,10 @@ export default function Login() {
             <h1 className="text-yellow-400 text-6xl font-black tracking-tight text-slate-900 drop-shadow-sm leading-tight">
               CD
             </h1>
-            <h1 className="text-6xl font-black tracking-tight text-slate-900 drop-shadow-sm leading-tight">
+            <h1 className="text-blue-600 text-6xl font-black tracking-tight text-slate-900 drop-shadow-sm leading-tight">
               VOTING
             </h1>
-            <h1 className="text-6xl font-black tracking-tight text-slate-900 drop-shadow-sm leading-tight">
+            <h1 className="text-gray-600 text-6xl font-black tracking-tight text-slate-900 drop-shadow-sm leading-tight">
               0
             </h1>
           </div>
