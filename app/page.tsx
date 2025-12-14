@@ -7,32 +7,32 @@ export default function Dashboard() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark text-slate-900 dark:text-white pb-24">
+    <div className="min-h-screen bg-background-light text-slate-900 pb-24">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+      <header className="sticky top-0 z-20 bg-background-light/90 backdrop-blur-md border-b border-slate-200">
         <div className="px-4 py-3 flex items-center justify-between max-w-md mx-auto w-full">
           <div className="flex items-center gap-3">
             <div
               className="relative group cursor-pointer"
               onClick={() => router.push("/profile")}
             >
-              <div className="size-10 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden ring-2 ring-transparent group-hover:ring-primary transition-all">
+              <div className="size-10 rounded-full bg-slate-200 overflow-hidden ring-2 ring-transparent group-hover:ring-primary transition-all">
                 <img
                   alt="Profile"
                   className="w-full h-full object-cover"
                   src="https://picsum.photos/seed/alex/200/200"
                 />
               </div>
-              <div className="absolute bottom-0 right-0 size-2.5 bg-green-500 border-2 border-white dark:border-background-dark rounded-full"></div>
+              <div className="absolute bottom-0 right-0 size-2.5 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
             <div className="flex flex-col">
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              <p className="text-xs font-medium text-slate-500">
                 Welcome back,
               </p>
               <p className="text-sm font-bold leading-tight">Alex Johnson</p>
             </div>
           </div>
-          <button className="flex items-center justify-center size-10 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400">
+          <button className="flex items-center justify-center size-10 rounded-full hover:bg-slate-200 transition-colors text-slate-600">
             <span className="material-symbols-outlined">notifications</span>
           </button>
         </div>
@@ -52,51 +52,51 @@ export default function Dashboard() {
           <button className="px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium whitespace-nowrap shadow-sm shadow-primary/20">
             All
           </button>
-          <button className="px-4 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-medium whitespace-nowrap">
+          <button className="px-4 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 text-sm font-medium whitespace-nowrap hover:bg-slate-50">
             Student Council
           </button>
-          <button className="px-4 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-medium whitespace-nowrap">
+          <button className="px-4 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 text-sm font-medium whitespace-nowrap hover:bg-slate-50">
             Clubs
           </button>
         </div>
 
         <div className="grid grid-cols-1 gap-5">
           {/* Card 1 */}
-          <article className="group relative flex flex-col bg-white dark:bg-card-dark rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-800/60 hover:shadow-md transition-all duration-300">
+          <article className="group relative flex flex-col bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-all duration-300">
             <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center justify-center size-12 rounded-xl bg-blue-50 dark:bg-primary/20 text-primary shrink-0">
+              <div className="flex items-center justify-center size-12 rounded-xl bg-blue-50 text-primary shrink-0">
                 <span className="material-symbols-outlined filled">gavel</span>
               </div>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[11px] font-bold uppercase tracking-wider border border-emerald-200 dark:border-emerald-500/20">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold uppercase tracking-wider border border-emerald-200">
                 <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 Open
               </span>
             </div>
-            <h2 className="text-lg font-bold text-primary mb-1 group-hover:text-blue-400 transition-colors">
+            <h2 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-primary transition-colors">
               Student Council 2024
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-4">
+            <p className="text-sm text-slate-600 line-clamp-2 mb-4">
               Cast your vote for the next student body representatives.
             </p>
             <div className="space-y-2 mb-5">
-              <div className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-2.5 text-xs text-slate-500">
                 <span className="material-symbols-outlined text-[16px] opacity-70">
                   calendar_today
                 </span>
                 <span>
                   Starts:{" "}
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
+                  <span className="font-medium text-slate-700">
                     Oct 20, 8:00 AM
                   </span>
                 </span>
               </div>
-              <div className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-2.5 text-xs text-slate-500">
                 <span className="material-symbols-outlined text-[16px] opacity-70">
                   event_busy
                 </span>
                 <span>
                   Ends:{" "}
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
+                  <span className="font-medium text-slate-700">
                     Oct 24, 5:00 PM
                   </span>
                 </span>
@@ -105,7 +105,7 @@ export default function Dashboard() {
             <div className="mt-auto">
               <button
                 onClick={() => router.push("/election/student-council")}
-                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98]"
+                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98] shadow-sm shadow-primary/20"
               >
                 <span>Vote Now</span>
                 <span className="material-symbols-outlined text-[18px]">
@@ -116,41 +116,41 @@ export default function Dashboard() {
           </article>
 
           {/* Card 2 */}
-          <article className="group relative flex flex-col bg-white dark:bg-card-dark rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-800/60 hover:shadow-md transition-all duration-300">
+          <article className="group relative flex flex-col bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-all duration-300">
             <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center justify-center size-12 rounded-xl bg-purple-50 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 shrink-0">
+              <div className="flex items-center justify-center size-12 rounded-xl bg-purple-50 text-purple-600 shrink-0">
                 <span className="material-symbols-outlined filled">person</span>
               </div>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[11px] font-bold uppercase tracking-wider border border-emerald-200 dark:border-emerald-500/20">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold uppercase tracking-wider border border-emerald-200">
                 <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 Open
               </span>
             </div>
-            <h2 className="text-lg font-bold text-primary mb-1 group-hover:text-blue-400 transition-colors">
+            <h2 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-primary transition-colors">
               Music President
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-4">
+            <p className="text-sm text-slate-600 line-clamp-2 mb-4">
               Choose your leader for the music department activities.
             </p>
             <div className="space-y-2 mb-5">
-              <div className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-2.5 text-xs text-slate-500">
                 <span className="material-symbols-outlined text-[16px] opacity-70">
                   calendar_today
                 </span>
                 <span>
                   Starts:{" "}
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
+                  <span className="font-medium text-slate-700">
                     Oct 21, 9:00 AM
                   </span>
                 </span>
               </div>
-              <div className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-2.5 text-xs text-slate-500">
                 <span className="material-symbols-outlined text-[16px] opacity-70">
                   event_busy
                 </span>
                 <span>
                   Ends:{" "}
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
+                  <span className="font-medium text-slate-700">
                     Oct 25, 3:00 PM
                   </span>
                 </span>
@@ -159,7 +159,7 @@ export default function Dashboard() {
             <div className="mt-auto">
               <button
                 onClick={() => router.push("/election/music-president")}
-                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98]"
+                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98] shadow-sm shadow-primary/20"
               >
                 <span>Vote Now</span>
                 <span className="material-symbols-outlined text-[18px]">
@@ -170,29 +170,29 @@ export default function Dashboard() {
           </article>
 
           {/* Card 3 (Closed) */}
-          <article className="group relative flex flex-col bg-white dark:bg-card-dark rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-800/60 opacity-80 hover:opacity-100 transition-all duration-300">
+          <article className="group relative flex flex-col bg-white rounded-2xl p-5 shadow-sm border border-slate-200 opacity-80 hover:opacity-100 transition-all duration-300">
             <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center justify-center size-12 rounded-xl bg-orange-50 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 shrink-0">
+              <div className="flex items-center justify-center size-12 rounded-xl bg-orange-50 text-orange-600 shrink-0">
                 <span className="material-symbols-outlined filled">flag</span>
               </div>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 text-[11px] font-bold uppercase tracking-wider border border-rose-200 dark:border-rose-500/20">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 text-[11px] font-bold uppercase tracking-wider border border-rose-200">
                 Closed
               </span>
             </div>
-            <h2 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-1">
+            <h2 className="text-lg font-bold text-slate-700 mb-1">
               Sports Captain Selection
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-4">
+            <p className="text-sm text-slate-600 line-clamp-2 mb-4">
               Selection for the upcoming inter-school sports meet.
             </p>
             <div className="space-y-2 mb-5">
-              <div className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-2.5 text-xs text-slate-500">
                 <span className="material-symbols-outlined text-[16px] opacity-70">
                   history
                 </span>
                 <span>
                   Ended:{" "}
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
+                  <span className="font-medium text-slate-700">
                     Oct 20, 11:59 PM
                   </span>
                 </span>
@@ -201,7 +201,7 @@ export default function Dashboard() {
             <div className="mt-auto">
               <button
                 onClick={() => router.push("/admin/analytics")}
-                className="w-full flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-medium py-3 px-4 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-400 font-medium py-3 px-4 rounded-xl hover:bg-slate-200 transition-colors"
               >
                 <span>View Results</span>
                 <span className="material-symbols-outlined text-[18px]">

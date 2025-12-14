@@ -34,7 +34,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${spaceMono.variable} antialiased bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display selection:bg-primary/30`}
+        className={`${inter.variable} ${spaceMono.variable} antialiased bg-background-light text-slate-900 font-display selection:bg-primary/30`}
       >
         {children}
       </body>

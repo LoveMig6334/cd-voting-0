@@ -7,13 +7,13 @@ export default function Analytics() {
   const router = useRouter();
 
   return (
-    <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden min-h-screen">
-      <div className="relative flex h-auto min-h-screen w-full flex-col max-w-md mx-auto bg-background-light dark:bg-background-dark shadow-sm pb-24">
+    <div className="bg-background-light font-display text-slate-900 antialiased overflow-x-hidden min-h-screen">
+      <div className="relative flex h-auto min-h-screen w-full flex-col max-w-md mx-auto bg-background-light shadow-sm pb-24">
         {/* Header */}
-        <header className="sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800">
+        <header className="sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-background-light/95 backdrop-blur-sm border-b border-slate-200">
           <button
             onClick={() => router.back()}
-            className="flex items-center justify-center p-2 -ml-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors group"
+            className="flex items-center justify-center p-2 -ml-2 rounded-full hover:bg-slate-200 transition-colors group"
           >
             <span className="material-symbols-outlined text-primary text-[24px]">
               arrow_back_ios_new
@@ -32,14 +32,14 @@ export default function Analytics() {
           {/* Participation Chart */}
           <section className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              <h3 className="text-lg font-bold text-slate-900">
                 Participation
               </h3>
-              <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full">
+              <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded-full">
                 Final Count
               </span>
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-700">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
               <div className="flex flex-col items-center justify-center gap-6">
                 <div className="relative flex items-center justify-center size-48">
                   <div
@@ -49,27 +49,27 @@ export default function Analytics() {
                         "conic-gradient(#137fec 0% 85%, #e2e8f0 85% 100%)",
                     }}
                   ></div>
-                  <div className="absolute inset-4 bg-white dark:bg-slate-800 rounded-full flex flex-col items-center justify-center shadow-sm">
-                    <span className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
+                  <div className="absolute inset-4 bg-white rounded-full flex flex-col items-center justify-center shadow-sm">
+                    <span className="text-4xl font-bold text-slate-900 tracking-tight">
                       85%
                     </span>
-                    <span className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+                    <span className="text-sm font-medium text-slate-500 mt-1">
                       Turnout
                     </span>
                   </div>
                 </div>
                 <div className="w-full grid grid-cols-2 gap-4 pt-2">
-                  <div className="flex flex-col items-center p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                  <div className="flex flex-col items-center p-3 bg-slate-50 rounded-lg">
                     <span className="text-2xl font-bold text-primary">425</span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide mt-1">
+                    <span className="text-xs text-slate-500 font-medium uppercase tracking-wide mt-1">
                       Votes Cast
                     </span>
                   </div>
-                  <div className="flex flex-col items-center p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                    <span className="text-2xl font-bold text-slate-400 dark:text-slate-500">
+                  <div className="flex flex-col items-center p-3 bg-slate-50 rounded-lg">
+                    <span className="text-2xl font-bold text-slate-400">
                       500
                     </span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide mt-1">
+                    <span className="text-xs text-slate-500 font-medium uppercase tracking-wide mt-1">
                       Total Voters
                     </span>
                   </div>
@@ -82,10 +82,10 @@ export default function Analytics() {
           <section className="flex flex-col gap-4">
             <div className="flex items-end justify-between px-1">
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                <h3 className="text-lg font-bold text-slate-900">
                   Student Council
                 </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-slate-500">
                   Presidential Election Results
                 </p>
               </div>
@@ -96,7 +96,7 @@ export default function Analytics() {
                 how_to_vote
               </span>
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col gap-6">
+            <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100 flex flex-col gap-6">
               {/* Winner */}
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between mb-1">
@@ -109,16 +109,16 @@ export default function Analytics() {
                             'url("https://picsum.photos/seed/sarah/200/200")',
                         }}
                       ></div>
-                      <div className="absolute -top-1 -right-1 bg-yellow-400 text-white rounded-full p-0.5 border-2 border-white dark:border-slate-800 flex items-center justify-center">
+                      <div className="absolute -top-1 -right-1 bg-yellow-400 text-white rounded-full p-0.5 border-2 border-white flex items-center justify-center">
                         <span className="material-symbols-outlined text-[10px] font-bold">
                           emoji_events
                         </span>
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                      <p className="text-sm font-bold text-slate-900 flex items-center gap-1">
                         Sarah Jenkins
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-yellow-100 text-yellow-700">
                           WINNER
                         </span>
                       </p>
@@ -127,11 +127,9 @@ export default function Analytics() {
                       </p>
                     </div>
                   </div>
-                  <span className="text-lg font-bold text-slate-900 dark:text-white">
-                    65%
-                  </span>
+                  <span className="text-lg font-bold text-slate-900">65%</span>
                 </div>
-                <div className="h-3 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary rounded-full animate-slide-up"
                     style={{ width: "65%" }}
@@ -144,26 +142,22 @@ export default function Analytics() {
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-10 h-10 rounded-full bg-cover bg-center border border-slate-200 dark:border-slate-600 grayscale opacity-80"
+                      className="w-10 h-10 rounded-full bg-cover bg-center border border-slate-200 grayscale opacity-80"
                       style={{
                         backgroundImage:
                           'url("https://picsum.photos/seed/michael/200/200")',
                       }}
                     ></div>
                     <div>
-                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <p className="text-sm font-semibold text-slate-700">
                         Mike Ross
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        180 Votes
-                      </p>
+                      <p className="text-xs text-slate-500">180 Votes</p>
                     </div>
                   </div>
-                  <span className="text-lg font-bold text-slate-500 dark:text-slate-400">
-                    26%
-                  </span>
+                  <span className="text-lg font-bold text-slate-500">26%</span>
                 </div>
-                <div className="h-3 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary/60 rounded-full animate-slide-up"
                     style={{ width: "26%" }}
@@ -176,26 +170,22 @@ export default function Analytics() {
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-10 h-10 rounded-full bg-cover bg-center border border-slate-200 dark:border-slate-600 grayscale opacity-80"
+                      className="w-10 h-10 rounded-full bg-cover bg-center border border-slate-200 grayscale opacity-80"
                       style={{
                         backgroundImage:
                           'url("https://picsum.photos/seed/jessica/200/200")',
                       }}
                     ></div>
                     <div>
-                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <p className="text-sm font-semibold text-slate-700">
                         Jessica Pearson
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        62 Votes
-                      </p>
+                      <p className="text-xs text-slate-500">62 Votes</p>
                     </div>
                   </div>
-                  <span className="text-lg font-bold text-slate-500 dark:text-slate-400">
-                    9%
-                  </span>
+                  <span className="text-lg font-bold text-slate-500">9%</span>
                 </div>
-                <div className="h-3 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary/30 rounded-full animate-slide-up"
                     style={{ width: "9%" }}
@@ -206,7 +196,7 @@ export default function Analytics() {
           </section>
 
           <div className="pt-4 flex justify-center">
-            <p className="text-xs text-slate-400 dark:text-slate-500 text-center flex items-center gap-1">
+            <p className="text-xs text-slate-400 text-center flex items-center gap-1">
               <span className="material-symbols-outlined text-[14px]">
                 info
               </span>
