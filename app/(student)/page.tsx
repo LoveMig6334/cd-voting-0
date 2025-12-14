@@ -44,7 +44,7 @@ export default function Dashboard() {
             Active Elections
           </h1>
           <div className="text-xs font-medium px-2 py-1 rounded bg-primary/10 text-primary border border-primary/20">
-            3 Active
+            1 Active
           </div>
         </div>
 
@@ -73,7 +73,7 @@ export default function Dashboard() {
               </span>
             </div>
             <h2 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-primary transition-colors">
-              Student Council 2024
+              Student Council 2025
             </h2>
             <p className="text-sm text-slate-600 line-clamp-2 mb-4">
               Cast your vote for the next student body representatives.
@@ -105,107 +105,11 @@ export default function Dashboard() {
             <div className="mt-auto">
               <button
                 onClick={() => router.push("/elections/student-council")}
-                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98] shadow-sm shadow-primary/20"
+                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-[#ffb800] hover:text-slate-900 active:bg-[#ffb800] text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98] shadow-sm shadow-primary/20 hover:shadow-[#ffb800]/20"
               >
                 <span>Vote Now</span>
                 <span className="material-symbols-outlined text-[18px]">
                   arrow_forward
-                </span>
-              </button>
-            </div>
-          </article>
-
-          {/* Card 2 */}
-          <article className="group relative flex flex-col bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-all duration-300">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center justify-center size-12 rounded-xl bg-purple-50 text-purple-600 shrink-0">
-                <span className="material-symbols-outlined filled">person</span>
-              </div>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold uppercase tracking-wider border border-emerald-200">
-                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Open
-              </span>
-            </div>
-            <h2 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-primary transition-colors">
-              Music President
-            </h2>
-            <p className="text-sm text-slate-600 line-clamp-2 mb-4">
-              Choose your leader for the music department activities.
-            </p>
-            <div className="space-y-2 mb-5">
-              <div className="flex items-center gap-2.5 text-xs text-slate-500">
-                <span className="material-symbols-outlined text-[16px] opacity-70">
-                  calendar_today
-                </span>
-                <span>
-                  Starts:{" "}
-                  <span className="font-medium text-slate-700">
-                    Oct 21, 9:00 AM
-                  </span>
-                </span>
-              </div>
-              <div className="flex items-center gap-2.5 text-xs text-slate-500">
-                <span className="material-symbols-outlined text-[16px] opacity-70">
-                  event_busy
-                </span>
-                <span>
-                  Ends:{" "}
-                  <span className="font-medium text-slate-700">
-                    Oct 25, 3:00 PM
-                  </span>
-                </span>
-              </div>
-            </div>
-            <div className="mt-auto">
-              <button
-                onClick={() => router.push("/elections/music-president")}
-                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98] shadow-sm shadow-primary/20"
-              >
-                <span>Vote Now</span>
-                <span className="material-symbols-outlined text-[18px]">
-                  arrow_forward
-                </span>
-              </button>
-            </div>
-          </article>
-
-          {/* Card 3 (Closed) */}
-          <article className="group relative flex flex-col bg-white rounded-2xl p-5 shadow-sm border border-slate-200 opacity-80 hover:opacity-100 transition-all duration-300">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center justify-center size-12 rounded-xl bg-orange-50 text-orange-600 shrink-0">
-                <span className="material-symbols-outlined filled">flag</span>
-              </div>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 text-[11px] font-bold uppercase tracking-wider border border-rose-200">
-                Closed
-              </span>
-            </div>
-            <h2 className="text-lg font-bold text-slate-700 mb-1">
-              Sports Captain Selection
-            </h2>
-            <p className="text-sm text-slate-600 line-clamp-2 mb-4">
-              Selection for the upcoming inter-school sports meet.
-            </p>
-            <div className="space-y-2 mb-5">
-              <div className="flex items-center gap-2.5 text-xs text-slate-500">
-                <span className="material-symbols-outlined text-[16px] opacity-70">
-                  history
-                </span>
-                <span>
-                  Ended:{" "}
-                  <span className="font-medium text-slate-700">
-                    Oct 20, 11:59 PM
-                  </span>
-                </span>
-              </div>
-            </div>
-            <div className="mt-auto">
-              <button
-                onClick={() => router.push("/analytics")}
-                className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-400 font-medium py-3 px-4 rounded-xl hover:bg-slate-200 transition-colors"
-              >
-                <span>View Results</span>
-                <span className="material-symbols-outlined text-[18px]">
-                  poll
                 </span>
               </button>
             </div>
