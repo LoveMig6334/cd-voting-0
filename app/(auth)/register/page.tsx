@@ -1,9 +1,41 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 
-export default function Register() {
+function RegisterContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const id = searchParams.get("studentId");
+  const scannedName = searchParams.get("name");
+  const scannedClass = searchParams.get("classRoom");
+
+  const [studentId, setStudentId] = useState(id || "");
+  const [name, setName] = useState(scannedName || "");
+  const [classRoom, setClassRoom] = useState(scannedClass || "");
+  const [isManual, setIsManual] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Sync if search params change after initial load (rare but possible in some nav flows)
+    if (id && id !== studentId) setStudentId(id);
+    if (scannedName && scannedName !== name) setName(scannedName);
+    if (scannedClass && scannedClass !== classRoom) setClassRoom(scannedClass);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, scannedName, scannedClass]);
+
+  const handleRegister = async () => {
+    setLoading(true);
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    // Success -> Login
+    setLoading(false);
+    router.push("/login");
+  };
+
+  const isFormValid = studentId.length > 0 && name.length > 0;
 
   return (
     <div className="min-h-screen bg-background-light text-slate-900 flex flex-col items-center pt-2 pb-6 px-4">
@@ -20,7 +52,7 @@ export default function Register() {
       </div>
 
       <div className="w-full max-w-md relative z-10 animate-slide-up">
-        <div className="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-6 flex flex-col gap-8">
+        <div className="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-6 flex flex-col gap-6">
           <div className="text-center space-y-2">
             <h1 className="text-2xl font-bold tracking-tight">
               Scan Student ID
@@ -51,16 +83,26 @@ export default function Register() {
             </div>
           </div>
 
-          <div className="space-y-5 opacity-50 pointer-events-none select-none">
+          <div
+            className={`space-y-5 transition-opacity duration-300 ${
+              !isManual && !studentId
+                ? "opacity-50 pointer-events-none"
+                : "opacity-100"
+            }`}
+          >
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-500">
                 Student ID
               </label>
               <div className="relative">
                 <input
-                  className="block w-full rounded-lg border-slate-200 bg-slate-50 p-3.5 pr-10 text-base"
+                  className={`block w-full rounded-lg border-slate-200 bg-slate-50 p-3.5 pr-10 text-base focus:bg-white focus:border-primary focus:ring-primary ${
+                    isManual ? "" : "read-only:bg-slate-100"
+                  }`}
                   placeholder="Waiting for scan..."
-                  readOnly
+                  value={studentId}
+                  readOnly={!isManual}
+                  onChange={(e) => setStudentId(e.target.value)}
                 />
                 <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">
                   badge
@@ -73,29 +115,69 @@ export default function Register() {
               </label>
               <div className="relative">
                 <input
-                  className="block w-full rounded-lg border-slate-200 bg-slate-50 p-3.5 text-base"
+                  className={`block w-full rounded-lg border-slate-200 bg-slate-50 p-3.5 text-base focus:bg-white focus:border-primary focus:ring-primary ${
+                    isManual ? "" : "read-only:bg-slate-100"
+                  }`}
                   placeholder="Waiting for scan..."
-                  readOnly
+                  value={name}
+                  readOnly={!isManual}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-slate-500">
+                Classroom (Optional)
+              </label>
+              <div className="relative">
+                <input
+                  className={`block w-full rounded-lg border-slate-200 bg-slate-50 p-3.5 text-base focus:bg-white focus:border-primary focus:ring-primary ${
+                    isManual ? "" : "read-only:bg-slate-100"
+                  }`}
+                  placeholder="e.g. 5/3"
+                  value={classRoom}
+                  readOnly={!isManual}
+                  onChange={(e) => setClassRoom(e.target.value)}
                 />
               </div>
             </div>
           </div>
 
           <div className="pt-2 flex flex-col gap-4">
-            <button className="relative w-full overflow-hidden rounded-xl bg-primary px-4 py-3.5 text-white shadow-lg shadow-primary/25 hover:bg-primary-dark active:scale-[0.98] transition-all duration-200 opacity-50 cursor-not-allowed">
+            <button
+              onClick={handleRegister}
+              disabled={!isFormValid || loading}
+              className="relative w-full overflow-hidden rounded-xl bg-primary px-4 py-3.5 text-white shadow-lg shadow-primary/25 hover:bg-primary-dark active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <span className="relative z-10 flex items-center justify-center gap-2 text-sm font-bold tracking-wide">
-                Confirm & Create Account
-                <span className="material-symbols-outlined text-[18px]">
-                  arrow_forward
+                {loading ? "Creating Account..." : "Confirm & Create Account"}
+                {!loading && (
+                  <span className="material-symbols-outlined text-[18px]">
+                    arrow_forward
+                  </span>
+                )}
+              </span>
+            </button>
+
+            {!isManual && (
+              <button
+                onClick={() => setIsManual(true)}
+                className="text-xs font-medium text-slate-400 hover:text-primary transition-colors text-center"
+              >
+                Having trouble?{" "}
+                <span className="underline decoration-slate-400/50">
+                  Enter details manually
                 </span>
-              </span>
-            </button>
-            <button className="text-xs font-medium text-slate-400 hover:text-primary transition-colors text-center">
-              Having trouble?{" "}
-              <span className="underline decoration-slate-400/50">
-                Enter details manually
-              </span>
-            </button>
+              </button>
+            )}
+            {isManual && (
+              <button
+                onClick={() => setIsManual(false)}
+                className="text-xs font-medium text-slate-400 hover:text-primary transition-colors text-center"
+              >
+                Return to Scan Mode
+              </button>
+            )}
           </div>
         </div>
 
@@ -112,5 +194,13 @@ export default function Register() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function Register() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <RegisterContent />
+    </Suspense>
   );
 }

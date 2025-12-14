@@ -25,3 +25,18 @@ export interface VoteRecord {
   verified: boolean;
   imageUrl: string;
 }
+
+export interface Student {
+  id: string;
+  name: string;
+  classRoom: string;
+  email?: string;
+  role: "STUDENT" | "ADMIN";
+}
+
+export interface OCRResponse {
+  studentId: string;
+  name: string;
+  classRoom: string;
+  rawText: string;
+}

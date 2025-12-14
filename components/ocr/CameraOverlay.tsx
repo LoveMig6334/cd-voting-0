@@ -29,11 +29,15 @@ export default function CameraOverlay({
         onScanComplete();
       } else {
         // Default behavior if used standalone or no callback provided
-        router.push("/");
+        if (onClose) {
+          onClose();
+        } else {
+          router.back();
+        }
       }
     }, 3500);
     return () => clearTimeout(timer);
-  }, [router, onScanComplete]);
+  }, [router, onScanComplete, onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black text-white overflow-hidden">
