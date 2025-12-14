@@ -1,4 +1,4 @@
-# 🗳️ School Election System — Next.js Web Application
+# 🗳️ CD Voting 0 | School Election System — Next.js Web Application
 
 # 📌 สารบัญ
 
