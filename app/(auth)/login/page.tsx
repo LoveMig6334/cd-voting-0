@@ -1,6 +1,5 @@
 "use client";
 
-import { Logo } from "@/components/Logo";
 import { useRouter } from "next/navigation";
 
 export default function Login() {
@@ -14,7 +13,22 @@ export default function Login() {
 
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-8 w-full max-w-md mx-auto">
         <div className="flex flex-col items-center text-center gap-4 mb-16 animate-fade-in">
-          <Logo className="w-64 h-auto mb-4 drop-shadow-sm" />
+          <div className="w-20 h-20 rounded-2xl bg-white shadow-xl flex items-center justify-center border border-slate-100 mb-4 transform rotate-3">
+            <span className="material-symbols-outlined text-5xl text-primary drop-shadow-sm">
+              how_to_vote
+            </span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-yellow-400 text-6xl font-black tracking-tight text-slate-900 drop-shadow-sm leading-tight">
+              CD
+            </h1>
+            <h1 className="text-6xl font-black tracking-tight text-slate-900 drop-shadow-sm leading-tight">
+              VOTING
+            </h1>
+            <h1 className="text-6xl font-black tracking-tight text-slate-900 drop-shadow-sm leading-tight">
+              0
+            </h1>
+          </div>
           <p className="text-xl font-medium text-slate-500 tracking-wide">
             Next Gen School Election
           </p>
@@ -59,9 +73,7 @@ export default function Login() {
             Admin Login
           </button>
         </div>
-        <p className="text-slate-400 text-xs font-normal">
-          วิชาเสรีคอมพิวเตอร์ CD58 | CD Voting 0 © 2025
-        </p>
+        <p className="text-slate-400 text-xs font-normal">CD Voting 0 © 2024</p>
       </footer>
     </div>
   );
