@@ -18,6 +18,11 @@
   --animate-scan: scan 3s ease-in-out infinite;
   --animate-fade-in: fadeIn 0.3s ease-out;
   --animate-slide-up: slideUp 0.3s ease-out;
+  --animate-gradient-shift: gradientShift 8s ease infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-float-slow: float 10s ease-in-out infinite;
+  --animate-float-slower: float 14s ease-in-out infinite;
+  --animate-pulse-glow: pulseGlow 3s ease-in-out infinite;
 
   @keyframes scan {
     0%,
@@ -52,6 +57,49 @@
     100% {
       transform: translateY(0);
       opacity: 1;
+    }
+  }
+  @keyframes gradientShift {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+    25% {
+      transform: translate(10px, -15px);
+    }
+    50% {
+      transform: translate(-5px, 10px);
+    }
+    75% {
+      transform: translate(-10px, -5px);
+    }
+  }
+  @keyframes pulseGlow {
+    0%,
+    100% {
+      box-shadow: 0 0 20px rgba(19, 127, 236, 0.2),
+        0 0 40px rgba(19, 127, 236, 0.1);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(19, 127, 236, 0.4),
+        0 0 60px rgba(19, 127, 236, 0.2);
+    }
+  }
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
     }
   }
 }
