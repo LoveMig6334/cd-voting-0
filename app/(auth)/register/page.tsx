@@ -202,7 +202,7 @@ function RegisterContent() {
                 className="text-xs font-medium text-slate-400 hover:text-primary transition-colors text-center"
               >
                 Having trouble?{" "}
-                <span className="underline decoration-slate-400/50">
+                <span className="underline decoration-yellow-600 text-yellow-500">
                   Enter details manually
                 </span>
               </button>
