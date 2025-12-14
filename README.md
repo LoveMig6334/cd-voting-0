@@ -261,13 +261,47 @@ GET    /api/admin/results/:id
 ```
 project/
 │── app/
-│   ├── login/
-│   ├── register/
-│   ├── elections/
-│   ├── me/votes/
-│   ├── admin/
+│   ├── (auth)/
+│   │   ├── login/
+│   │   ├── register/
+│   ├── (student)/
+│   │   ├── elections/
+│   │   │   ├── [id]/
+│   │   ├── me/
+│   │   │   ├── votes/
+│   │   ├── vote-success/
+│   ├── (admin)/
+│   │   ├── elections/
+│   │   │   ├── [id]/
+│   │   ├── candidates/
+│   │   │   ├── [id]/
+│   │   ├── results/
+│   │   │   ├── [id]/
+│   │   ├── users/
+│   ├── api/
+│   │   ├── auth/
+│   │   │   ├── login/
+│   │   │   ├── register/
+│   │   ├── ocr/
+│   │   │   ├── student-card/
+│   │   ├── elections/
+│   │   │   ├── [id]/
+│   │   ├── vote/
+│   │   ├── me/
+│   │   │   ├── votes/
+│   │   ├── admin/
+│   │   │   ├── elections/
+│   │   │   │   ├── [id]/
+│   │   │   ├── candidates/
+│   │   │   │   ├── [id]/
+│   │   │   ├── results/
+│   │   │   │   ├── [id]/
+│   ├── layout.tsx
+│   ├── page.tsx
 │
 │── components/
+│   ├── auth/
+│   ├── common/
 │   ├── elections/
 │   ├── ocr/
 │   ├── admin/
@@ -276,9 +310,20 @@ project/
 │   ├── auth/
 │   ├── api/
 │   ├── utils/
+│   ├── hooks/
+│   ├── types/
+│
+│── public/
+│   ├── images/
+│   ├── icons/
 │
 │── styles/
+│   ├── globals.css
+│
 │── README.md
+│── next.config.js
+│── tsconfig.json
+│── tailwind.config.ts
 ```
 
 ---

@@ -1,6 +1,5 @@
 "use client";
 
-import { BottomNav } from "@/components/BottomNav";
 import { useRouter } from "next/navigation";
 
 export default function MyVotes() {
@@ -193,7 +192,6 @@ export default function MyVotes() {
           </div>
         </div>
       </div>
-      <BottomNav />
     </div>
   );
 }

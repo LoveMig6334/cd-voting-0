@@ -1,6 +1,5 @@
 "use client";
 
-import { BottomNav } from "@/components/BottomNav";
 import { useRouter } from "next/navigation";
 
 export default function Analytics() {
@@ -205,7 +204,6 @@ export default function Analytics() {
           </div>
         </main>
       </div>
-      <BottomNav />
     </div>
   );
 }

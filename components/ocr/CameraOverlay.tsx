@@ -3,20 +3,40 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-export default function CameraOverlay() {
+interface CameraOverlayProps {
+  onScanComplete?: () => void;
+  onClose?: () => void;
+}
+
+export default function CameraOverlay({
+  onScanComplete,
+  onClose,
+}: CameraOverlayProps) {
   const router = useRouter();
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      router.back();
+    }
+  };
 
   // Simulate scanning process
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Navigate to dashboard after "scanning"
-      router.push("/");
+      if (onScanComplete) {
+        onScanComplete();
+      } else {
+        // Default behavior if used standalone or no callback provided
+        router.push("/");
+      }
     }, 3500);
     return () => clearTimeout(timer);
-  }, [router]);
+  }, [router, onScanComplete]);
 
   return (
-    <div className="relative h-screen w-full flex flex-col bg-black text-white overflow-hidden">
+    <div className="fixed inset-0 z-50 flex flex-col bg-black text-white overflow-hidden">
       {/* Background Camera Feed Simulation */}
       <div className="absolute inset-0 z-0">
         <img
@@ -33,7 +53,7 @@ export default function CameraOverlay() {
         <div className="flex-1 w-full bg-black/60 flex flex-col relative transition-all duration-300">
           <div className="w-full p-4 pt-12 lg:pt-8 flex justify-between items-start">
             <button
-              onClick={() => router.back()}
+              onClick={handleClose}
               className="flex items-center justify-center w-10 h-10 rounded-full bg-black/20 backdrop-blur-md border border-white/10"
             >
               <span className="material-symbols-outlined">close</span>

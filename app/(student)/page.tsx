@@ -14,7 +14,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <div
               className="relative group cursor-pointer"
-              onClick={() => router.push("/profile")}
+              onClick={() => router.push("/me")}
             >
               <div className="size-10 rounded-full bg-slate-200 overflow-hidden ring-2 ring-transparent group-hover:ring-primary transition-all">
                 <img
@@ -104,7 +104,7 @@ export default function Dashboard() {
             </div>
             <div className="mt-auto">
               <button
-                onClick={() => router.push("/election/student-council")}
+                onClick={() => router.push("/elections/student-council")}
                 className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98] shadow-sm shadow-primary/20"
               >
                 <span>Vote Now</span>
@@ -158,7 +158,7 @@ export default function Dashboard() {
             </div>
             <div className="mt-auto">
               <button
-                onClick={() => router.push("/election/music-president")}
+                onClick={() => router.push("/elections/music-president")}
                 className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98] shadow-sm shadow-primary/20"
               >
                 <span>Vote Now</span>
@@ -200,7 +200,7 @@ export default function Dashboard() {
             </div>
             <div className="mt-auto">
               <button
-                onClick={() => router.push("/admin/analytics")}
+                onClick={() => router.push("/analytics")}
                 className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-400 font-medium py-3 px-4 rounded-xl hover:bg-slate-200 transition-colors"
               >
                 <span>View Results</span>

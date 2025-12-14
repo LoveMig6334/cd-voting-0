@@ -16,8 +16,8 @@ export const BottomNav: React.FC = () => {
   const navItems = [
     { name: "Dashboard", icon: "dashboard", path: "/" },
     { name: "My Votes", icon: "how_to_vote", path: "/me/votes" },
-    { name: "Results", icon: "bar_chart", path: "/admin/analytics" }, // Pointing to analytics for now
-    { name: "Profile", icon: "person", path: "/profile" },
+    { name: "Results", icon: "bar_chart", path: "/analytics" }, // Pointing to analytics for now
+    { name: "Profile", icon: "person", path: "/me" },
   ];
 
   return (
