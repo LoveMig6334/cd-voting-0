@@ -5,8 +5,38 @@ import { Candidate } from "@/types";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
+// Define all positions in the student council
+const positions = [
+  {
+    id: "student-council-president",
+    title: "Student Council President",
+    icon: "person",
+  },
+  {
+    id: "vice-student-president",
+    title: "Vice Student President",
+    icon: "supervisor_account",
+  },
+  { id: "secretary", title: "Secretary", icon: "edit_note" },
+  { id: "treasurer", title: "Treasurer", icon: "payments" },
+  {
+    id: "public-relations-officer",
+    title: "Public Relations Officer",
+    icon: "campaign",
+  },
+  { id: "music-president", title: "Music President", icon: "music_note" },
+  { id: "sports-president", title: "Sports President", icon: "sports_soccer" },
+  {
+    id: "cheerleading-president",
+    title: "Cheerleading President",
+    icon: "celebration",
+  },
+  { id: "discipline-president", title: "Discipline President", icon: "gavel" },
+];
+
+// Sample candidates for each position
 const candidatesData: Record<string, Candidate[]> = {
-  "student-council": [
+  "student-council-president": [
     {
       id: "1",
       name: "Sarah Jenkins",
@@ -32,21 +62,146 @@ const candidatesData: Record<string, Candidate[]> = {
       rank: 3,
     },
   ],
-  "music-president": [
+  "vice-student-president": [
     {
       id: "4",
-      name: "Sarah Jenkins",
+      name: "David Kim",
       slogan:
-        "More practice rooms, new instrument rentals, and quarterly student showcases.",
-      imageUrl: "https://picsum.photos/seed/sarah/200/200",
+        "Supporting student initiatives and ensuring effective communication between departments.",
+      imageUrl: "https://picsum.photos/seed/david/200/200",
       rank: 1,
     },
     {
       id: "5",
-      name: "Michael Chen",
+      name: "Emily Rodriguez",
+      slogan:
+        "Creating a bridge between students and leadership for better representation.",
+      imageUrl: "https://picsum.photos/seed/emily/200/200",
+      rank: 2,
+    },
+  ],
+  secretary: [
+    {
+      id: "6",
+      name: "Anna Thompson",
+      slogan:
+        "Organized records and transparent communication for all student activities.",
+      imageUrl: "https://picsum.photos/seed/anna/200/200",
+      rank: 1,
+    },
+    {
+      id: "7",
+      name: "James Wilson",
+      slogan:
+        "Efficient documentation and timely updates for the student body.",
+      imageUrl: "https://picsum.photos/seed/james/200/200",
+      rank: 2,
+    },
+  ],
+  treasurer: [
+    {
+      id: "8",
+      name: "Robert Martinez",
+      slogan:
+        "Responsible budget management and transparent financial reporting.",
+      imageUrl: "https://picsum.photos/seed/robert/200/200",
+      rank: 1,
+    },
+    {
+      id: "9",
+      name: "Lisa Park",
+      slogan:
+        "Maximizing student funds for impactful campus events and programs.",
+      imageUrl: "https://picsum.photos/seed/lisa/200/200",
+      rank: 2,
+    },
+  ],
+  "public-relations-officer": [
+    {
+      id: "10",
+      name: "Kevin Brown",
+      slogan:
+        "Amplifying student voices through effective media and outreach strategies.",
+      imageUrl: "https://picsum.photos/seed/kevin/200/200",
+      rank: 1,
+    },
+    {
+      id: "11",
+      name: "Michelle Lee",
+      slogan:
+        "Building our school's reputation through positive community engagement.",
+      imageUrl: "https://picsum.photos/seed/michelle/200/200",
+      rank: 2,
+    },
+  ],
+  "music-president": [
+    {
+      id: "12",
+      name: "Daniel Harris",
+      slogan:
+        "More practice rooms, new instrument rentals, and quarterly student showcases.",
+      imageUrl: "https://picsum.photos/seed/daniel/200/200",
+      rank: 1,
+    },
+    {
+      id: "13",
+      name: "Sophia Clark",
       slogan:
         "Digital music production workshops and upgrading the auditorium sound system.",
-      imageUrl: "https://picsum.photos/seed/michael2/200/200",
+      imageUrl: "https://picsum.photos/seed/sophia/200/200",
+      rank: 2,
+    },
+  ],
+  "sports-president": [
+    {
+      id: "14",
+      name: "Tyler Johnson",
+      slogan:
+        "Expanding intramural programs and improving sports facilities for all students.",
+      imageUrl: "https://picsum.photos/seed/tyler/200/200",
+      rank: 1,
+    },
+    {
+      id: "15",
+      name: "Amanda White",
+      slogan:
+        "Promoting fitness and teamwork through inclusive athletic programs.",
+      imageUrl: "https://picsum.photos/seed/amanda/200/200",
+      rank: 2,
+    },
+  ],
+  "cheerleading-president": [
+    {
+      id: "16",
+      name: "Brittany Adams",
+      slogan:
+        "Boosting school spirit and creating memorable pep rallies and events.",
+      imageUrl: "https://picsum.photos/seed/brittany/200/200",
+      rank: 1,
+    },
+    {
+      id: "17",
+      name: "Nicole Garcia",
+      slogan:
+        "Uniting the student body through enthusiasm and positive energy.",
+      imageUrl: "https://picsum.photos/seed/nicole/200/200",
+      rank: 2,
+    },
+  ],
+  "discipline-president": [
+    {
+      id: "18",
+      name: "Marcus Taylor",
+      slogan: "Fair enforcement of rules while advocating for student rights.",
+      imageUrl: "https://picsum.photos/seed/marcus/200/200",
+      rank: 1,
+    },
+    {
+      id: "19",
+      name: "Rachel Scott",
+      slogan:
+        "Creating a safe and respectful environment for everyone on campus.",
+      imageUrl: "https://picsum.photos/seed/rachel/200/200",
       rank: 2,
     },
   ],
@@ -56,52 +211,100 @@ export default function CandidateSelection() {
   const params = useParams();
   const electionId = params.id as string;
   const router = useRouter();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showConfirm, setShowConfirm] = useState(false);
 
-  const candidates = electionId ? candidatesData[electionId] : [];
-  // Fallback if no data found
-  if (!candidates && electionId) {
-    // In a real app we might fetch or show 404
-    // For prototype, let's just show empty or default
-  }
+  // Track current position index
+  const [currentPositionIndex, setCurrentPositionIndex] = useState(0);
 
-  const title =
-    electionId === "student-council" ? "Student President" : "Music President";
-  const subtitle =
-    electionId === "student-council"
-      ? "Select one candidate"
-      : "Select one candidate to continue";
+  // Track votes for each position: { positionId: candidateId }
+  const [votes, setVotes] = useState<Record<string, string>>({});
 
-  const handleVoteClick = (id: string) => {
-    setSelectedId(id);
-    setShowConfirm(true);
+  const currentPosition = positions[currentPositionIndex];
+  const candidates = candidatesData[currentPosition.id] || [];
+  const selectedCandidateId = votes[currentPosition.id] || null;
+  const hasVoted = !!selectedCandidateId;
+
+  const handleVoteToggle = (candidateId: string) => {
+    setVotes((prev) => {
+      const currentVote = prev[currentPosition.id];
+      if (currentVote === candidateId) {
+        // Unvote - remove the vote
+        const { [currentPosition.id]: _, ...rest } = prev;
+        return rest;
+      } else {
+        // Vote for this candidate
+        return { ...prev, [currentPosition.id]: candidateId };
+      }
+    });
   };
 
-  const handleConfirmVote = () => {
-    router.push("/vote-success");
+  const handleNext = () => {
+    if (currentPositionIndex < positions.length - 1) {
+      setCurrentPositionIndex(currentPositionIndex + 1);
+    } else {
+      // Last position, go to success page
+      router.push("/vote-success");
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentPositionIndex > 0) {
+      setCurrentPositionIndex(currentPositionIndex - 1);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark text-slate-900 dark:text-white flex flex-col">
-      <header className="sticky top-0 z-10 flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-between border-b border-gray-200 dark:border-gray-800">
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col">
+      {/* Light mode header */}
+      <header className="sticky top-0 z-10 flex items-center bg-white p-4 pb-2 justify-between border-b border-gray-200">
         <button
           onClick={() => router.push("/")}
           className="flex size-12 shrink-0 items-center justify-start hover:opacity-70"
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <span className="material-symbols-outlined text-slate-700">
+            arrow_back
+          </span>
         </button>
-        <h2 className="text-lg font-bold leading-tight flex-1 text-center">
+        <h2 className="text-lg font-bold leading-tight flex-1 text-center text-slate-900">
           Student Council
         </h2>
         <div className="flex size-12 shrink-0 items-center justify-end">
-          <span className="material-symbols-outlined">more_vert</span>
+          <span className="material-symbols-outlined text-slate-700">
+            more_vert
+          </span>
         </div>
       </header>
 
+      {/* Progress indicator */}
+      <div className="px-4 pt-4">
+        <div className="flex items-center justify-between text-sm text-slate-500 mb-2">
+          <span>
+            Position {currentPositionIndex + 1} of {positions.length}
+          </span>
+          <span>
+            {Math.round(
+              ((currentPositionIndex + (hasVoted ? 1 : 0)) / positions.length) *
+                100
+            )}
+            % Complete
+          </span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="bg-primary h-2 rounded-full transition-all duration-300"
+            style={{
+              width: `${
+                ((currentPositionIndex + (hasVoted ? 1 : 0)) /
+                  positions.length) *
+                100
+              }%`,
+            }}
+          />
+        </div>
+      </div>
+
       {/* Countdown Timer (Visual Only) */}
       <div className="flex flex-col items-center justify-center pt-6 pb-2 px-4">
-        <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">
+        <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-4">
           Voting closes in
         </p>
         <div className="flex gap-3 w-full max-w-sm justify-center">
@@ -114,16 +317,14 @@ export default function CandidateSelection() {
                 className={`flex h-12 w-full items-center justify-center rounded-lg ${
                   i === 2
                     ? "bg-primary/20 border border-primary/30 text-primary"
-                    : "bg-slate-200 dark:bg-[#1e293b] text-slate-900 dark:text-white"
+                    : "bg-slate-100 text-slate-900"
                 }`}
               >
                 <p className="text-xl font-bold">{val}</p>
               </div>
               <p
                 className={`${
-                  i === 2
-                    ? "text-primary"
-                    : "text-slate-500 dark:text-slate-400"
+                  i === 2 ? "text-primary" : "text-slate-500"
                 } text-xs`}
               >
                 {["Days", "Hours", "Mins", "Secs"][i]}
@@ -133,158 +334,126 @@ export default function CandidateSelection() {
         </div>
       </div>
 
-      <main className="flex-1 p-4 pb-32 space-y-8 max-w-md mx-auto w-full">
-        <div>
-          <div className="mb-4 pl-1">
-            <h3 className="text-xl font-bold">{title}</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {subtitle}
-            </p>
+      <main className="flex-1 p-4 pb-40 space-y-8 max-w-md mx-auto w-full">
+        {/* Position Title - Centered with Icon */}
+        <div className="flex flex-col items-center justify-center text-center py-4">
+          <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary mb-4">
+            <span className="material-symbols-outlined text-[32px]">
+              {currentPosition.icon}
+            </span>
           </div>
-          <div
-            className={`grid grid-cols-1 ${
-              candidates && candidates.length > 2
-                ? "sm:grid-cols-2"
-                : "sm:grid-cols-2"
-            } gap-4`}
-          >
-            {candidates &&
-              candidates.map((candidate) => (
-                <article
-                  key={candidate.id}
-                  className="relative flex flex-col rounded-xl bg-white dark:bg-[#16202a] p-5 gap-4 shadow-sm border border-slate-200 dark:border-slate-800 transition-all"
-                >
-                  {selectedId === candidate.id && (
-                    <div className="absolute top-4 right-4 z-20">
-                      <div className="bg-primary text-white rounded-full p-1 shadow-sm animate-fade-in">
-                        <span className="material-symbols-outlined text-sm font-bold block">
-                          check
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                  <div
-                    className={`absolute inset-0 rounded-xl border-2 border-primary transition-opacity pointer-events-none ${
-                      selectedId === candidate.id ? "opacity-100" : "opacity-0"
-                    }`}
-                  ></div>
+          <h3 className="text-2xl font-bold text-slate-900">
+            {currentPosition.title}
+          </h3>
+          <p className="text-sm text-slate-500 mt-1">
+            Select one candidate to vote
+          </p>
+        </div>
 
-                  <div className="flex flex-col items-center gap-3 pt-2">
-                    <div className="relative">
-                      <div
-                        className="h-28 w-28 rounded-full bg-cover bg-center shadow-md border-4 border-slate-50 dark:border-slate-700"
-                        style={{
-                          backgroundImage: `url(${candidate.imageUrl})`,
-                        }}
-                      ></div>
-                      <div className="absolute -bottom-2 inset-x-0 flex justify-center">
-                        <span className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-100 rounded-lg px-2 py-0.5 text-lg font-bold border border-amber-200 dark:border-amber-800 shadow-sm">
-                          #{candidate.rank}
-                        </span>
-                      </div>
+        {/* Candidates Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {candidates.map((candidate) => {
+            const isSelected = selectedCandidateId === candidate.id;
+            return (
+              <article
+                key={candidate.id}
+                className={`relative flex flex-col rounded-xl bg-white p-5 gap-4 shadow-sm transition-all ${
+                  isSelected
+                    ? "border-2 border-primary ring-2 ring-primary/20"
+                    : "border border-slate-200"
+                }`}
+              >
+                {isSelected && (
+                  <div className="absolute top-4 right-4 z-20">
+                    <div className="bg-primary text-white rounded-full p-1 shadow-sm animate-fade-in">
+                      <span className="material-symbols-outlined text-sm font-bold block">
+                        check
+                      </span>
                     </div>
-                    <div className="text-center mt-2 w-full">
-                      <h3 className="text-xl font-bold leading-tight">
-                        {candidate.name}
-                      </h3>
+                  </div>
+                )}
+
+                <div className="flex flex-col items-center gap-3 pt-2">
+                  <div className="relative">
+                    <div
+                      className="h-28 w-28 rounded-full bg-cover bg-center shadow-md border-4 border-slate-50"
+                      style={{
+                        backgroundImage: `url(${candidate.imageUrl})`,
+                      }}
+                    ></div>
+                    <div className="absolute -bottom-2 inset-x-0 flex justify-center">
+                      <span className="bg-amber-100 text-amber-700 rounded-lg px-2 py-0.5 text-lg font-bold border border-amber-200 shadow-sm">
+                        #{candidate.rank}
+                      </span>
                     </div>
-                    <p className="text-slate-600 dark:text-slate-300 text-sm font-normal leading-relaxed text-center line-clamp-3 px-2">
-                      &quot;{candidate.slogan}&quot;
-                    </p>
                   </div>
-                  <div className="flex flex-col gap-3 mt-auto pt-2 z-20">
-                    <button className="flex w-full items-center justify-center rounded-full h-11 px-4 bg-transparent border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                      View Policy
-                    </button>
-                    <button
-                      onClick={() => handleVoteClick(candidate.id)}
-                      className={`flex w-full items-center justify-center rounded-full h-11 px-4 text-white text-sm font-bold shadow-md shadow-blue-500/20 transition-all active:scale-[0.98] ${
-                        selectedId === candidate.id
-                          ? "bg-blue-700"
-                          : "bg-primary hover:bg-blue-600"
-                      }`}
-                    >
-                      Vote
-                    </button>
+                  <div className="text-center mt-2 w-full">
+                    <h3 className="text-xl font-bold leading-tight text-slate-900">
+                      {candidate.name}
+                    </h3>
                   </div>
-                </article>
-              ))}
-          </div>
+                  <p className="text-slate-600 text-sm font-normal leading-relaxed text-center line-clamp-3 px-2">
+                    &quot;{candidate.slogan}&quot;
+                  </p>
+                </div>
+                <div className="flex flex-col gap-3 mt-auto pt-2 z-20">
+                  <button className="flex w-full items-center justify-center rounded-full h-11 px-4 bg-transparent border border-slate-300 text-slate-700 text-sm font-bold hover:bg-slate-50 transition-colors">
+                    View Policy
+                  </button>
+                  <button
+                    onClick={() => handleVoteToggle(candidate.id)}
+                    className={`flex w-full items-center justify-center rounded-full h-11 px-4 text-sm font-bold shadow-md transition-all active:scale-[0.98] ${
+                      isSelected
+                        ? "bg-accent-yellow text-slate-900 shadow-yellow-500/20"
+                        : "bg-primary hover:bg-blue-600 text-white shadow-blue-500/20"
+                    }`}
+                  >
+                    {isSelected ? "Voted." : "Vote"}
+                  </button>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </main>
 
-      {/* Floating Action for Next if Student Council, else just padding */}
-      {electionId === "student-council" && (
-        <div className="fixed bottom-16 left-0 w-full px-4 pb-4 z-20 bg-linear-to-t from-background-light via-background-light to-transparent dark:from-background-dark dark:via-background-dark pt-8 pointer-events-none">
-          <div className="max-w-md mx-auto pointer-events-auto">
-            <button
-              onClick={() => router.push("/election/music-president")}
-              className="flex w-full items-center justify-center rounded-xl h-14 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-lg font-bold shadow-lg shadow-slate-900/10 hover:shadow-xl transition-all active:scale-[0.98] gap-2"
-            >
-              Next Position
-              <span className="material-symbols-outlined">arrow_forward</span>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Navigation Buttons */}
+      <div className="fixed bottom-16 left-0 w-full px-4 pb-4 z-20 bg-gradient-to-t from-white via-white to-transparent pt-8 pointer-events-none">
+        <div className="max-w-md mx-auto pointer-events-auto flex gap-3">
+          {/* Previous Button */}
+          <button
+            onClick={handlePrevious}
+            disabled={currentPositionIndex === 0}
+            className={`flex items-center justify-center rounded-xl h-14 px-6 text-lg font-bold shadow-lg transition-all active:scale-[0.98] gap-2 ${
+              currentPositionIndex === 0
+                ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                : "bg-slate-100 hover:bg-slate-200 text-slate-900"
+            }`}
+          >
+            <span className="material-symbols-outlined">arrow_back</span>
+          </button>
 
-      {/* Confirmation Modal */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background-dark/60 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-[360px] bg-white dark:bg-[#1a2632] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-slide-up">
-            <div className="flex justify-center pt-8 pb-2">
-              <div className="flex items-center justify-center h-16 w-16 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-500">
-                <span className="material-symbols-outlined text-[32px]">
-                  lock
-                </span>
-              </div>
-            </div>
-            <div className="px-6 pb-2">
-              <h2 className="text-[#111418] dark:text-white tracking-tight text-2xl font-bold leading-tight text-center pb-3 pt-2">
-                Confirm Your Vote
-              </h2>
-              <p className="text-[#617589] dark:text-gray-400 text-sm font-normal leading-normal text-center">
-                You are about to vote for{" "}
-                <strong className="text-[#111418] dark:text-white font-semibold">
-                  {candidates
-                    ? candidates.find((c) => c.id === selectedId)?.name
-                    : ""}
-                </strong>
-                . This action cannot be undone once submitted.
-              </p>
-            </div>
-            <div className="px-6 py-4">
-              <label className="flex flex-col w-full">
-                <p className="text-[#111418] dark:text-white text-sm font-medium leading-normal pb-2">
-                  Student ID Verification
-                </p>
-                <div className="flex w-full items-stretch rounded-xl shadow-sm">
-                  <input
-                    autoFocus
-                    className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl border border-[#dbe0e6] dark:border-gray-600 bg-white dark:bg-gray-800 text-[#111418] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/20 focus:border-primary h-12 placeholder:text-[#9aabb8] p-[15px] text-base font-normal leading-normal transition-all"
-                    placeholder="Enter your Student ID"
-                    type="text"
-                  />
-                </div>
-              </label>
-            </div>
-            <div className="px-6 pb-6 pt-2 flex flex-col gap-3">
-              <button
-                onClick={handleConfirmVote}
-                className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-5 bg-primary hover:bg-primary-dark transition-colors text-white text-base font-bold leading-normal shadow-md shadow-primary/20"
-              >
-                <span className="truncate">Confirm & Submit Vote</span>
-              </button>
-              <button
-                onClick={() => setShowConfirm(false)}
-                className="flex w-full cursor-pointer items-center justify-center rounded-xl h-10 px-5 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700/50 text-[#617589] dark:text-gray-400 text-sm font-semibold leading-normal transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
+          {/* Next Button */}
+          <button
+            onClick={handleNext}
+            disabled={!hasVoted}
+            className={`flex flex-1 items-center justify-center rounded-xl h-14 px-6 text-lg font-bold shadow-lg transition-all active:scale-[0.98] gap-2 ${
+              hasVoted
+                ? "bg-slate-900 text-white hover:shadow-xl"
+                : "bg-slate-200 text-slate-400 cursor-not-allowed"
+            }`}
+          >
+            {currentPositionIndex === positions.length - 1
+              ? "Submit All Votes"
+              : "Next Position"}
+            <span className="material-symbols-outlined">
+              {currentPositionIndex === positions.length - 1
+                ? "check_circle"
+                : "arrow_forward"}
+            </span>
+          </button>
         </div>
-      )}
+      </div>
 
       <BottomNav />
       <div className="h-20"></div>
