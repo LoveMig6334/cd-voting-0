@@ -20,6 +20,36 @@ export default function CameraOverlay({
   const [scanning, setScanning] = useState(false);
   const [status, setStatus] = useState("Initializing Camera...");
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const workerRef = useRef<Tesseract.Worker | null>(null);
+
+  // Initialize Worker
+  useEffect(() => {
+    let isMounted = true;
+    const initWorker = async () => {
+      try {
+        const worker = await Tesseract.createWorker("eng", 1, {
+          logger: (m) => {
+            if (m.status === "recognizing text") {
+              setStatus(`Scanning... ${(m.progress * 100).toFixed(0)}%`);
+            }
+          },
+        });
+        if (isMounted) {
+          workerRef.current = worker;
+        } else {
+          await worker.terminate();
+        }
+      } catch (err) {
+        console.error("Failed to init Tesseract worker", err);
+      }
+    };
+    initWorker();
+
+    return () => {
+      isMounted = false;
+      workerRef.current?.terminate();
+    };
+  }, []);
 
   const handleClose = useCallback(() => {
     if (stream) {
@@ -81,15 +111,20 @@ export default function CameraOverlay({
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       // Perform OCR
-      const result = await Tesseract.recognize(canvas, "eng", {
-        logger: (m) => {
-          if (m.status === "recognizing text") {
-            setStatus(`Scanning... ${(m.progress * 100).toFixed(0)}%`);
-          }
-        },
-      });
-
-      const text = result.data.text;
+      let text = "";
+      if (workerRef.current) {
+        const result = await workerRef.current.recognize(canvas);
+        text = result.data.text;
+      } else {
+        const result = await Tesseract.recognize(canvas, "eng", {
+          logger: (m) => {
+            if (m.status === "recognizing text") {
+              setStatus(`Scanning... ${(m.progress * 100).toFixed(0)}%`);
+            }
+          },
+        });
+        text = result.data.text;
+      }
       console.log("OCR Result:", text);
 
       // Simple regex to find 4-digit ID
