@@ -360,7 +360,7 @@ export default function AdminDashboard() {
                 Recent Activity
               </h3>
             </div>
-            <div className="p-6 flex-grow overflow-y-auto max-h-[400px]">
+            <div className="p-6 grow overflow-y-auto max-h-[400px]">
               <ActivityTimeline activities={mockActivities} />
             </div>
             <div className="p-4 border-t border-slate-200 text-center">

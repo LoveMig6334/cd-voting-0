@@ -42,7 +42,7 @@ export const AdminNavbar: React.FC = () => {
           {/* Logo */}
           <Link
             href="/admin"
-            className="flex-shrink-0 flex items-center gap-2 group"
+            className="shrink-0 flex items-center gap-2 group"
           >
             <div className="relative flex items-center justify-center w-10 h-10 bg-primary-dark rounded-lg transform group-hover:scale-105 transition-transform duration-200 shadow-inner">
               <span className="material-symbols-outlined text-accent-yellow text-2xl">

@@ -10,7 +10,7 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <AdminNavbar />
-      <main className="flex-grow p-6 lg:p-8 max-w-7xl mx-auto w-full">
+      <main className="grow p-6 lg:p-8 max-w-7xl mx-auto w-full">
         {children}
       </main>
       <footer className="mt-auto pt-8 pb-8 border-t border-slate-200">
