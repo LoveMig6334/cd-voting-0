@@ -52,7 +52,7 @@ export const AdminNavbar: React.FC = () => {
             <div className="flex flex-col justify-center -space-y-1">
               <h1 className="text-xl font-extrabold tracking-tight leading-none">
                 <span className="text-accent-yellow drop-shadow-sm">CD</span>{" "}
-                VOTING
+                VOTING 0
               </h1>
             </div>
           </Link>
