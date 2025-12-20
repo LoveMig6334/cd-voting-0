@@ -128,7 +128,10 @@ export default function Login() {
             Help Center
           </button>
           <span className="text-slate-300">•</span>
-          <button className="text-slate-500 hover:text-primary text-sm font-medium transition-colors">
+          <button
+            onClick={() => router.push("/admin/login")}
+            className="text-slate-500 hover:text-primary text-sm font-medium transition-colors"
+          >
             Admin Login
           </button>
         </div>
