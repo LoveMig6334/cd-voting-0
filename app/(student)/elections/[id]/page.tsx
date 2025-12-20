@@ -418,7 +418,7 @@ export default function CandidateSelection() {
       </main>
 
       {/* Navigation Buttons */}
-      <div className="fixed bottom-16 left-0 w-full px-4 pb-4 z-20 bg-gradient-to-t from-white via-white to-transparent pt-8 pointer-events-none">
+      <div className="fixed bottom-16 left-0 w-full px-4 pb-4 z-20 bg-linear-to-t from-white via-white to-transparent pt-8 pointer-events-none">
         <div className="max-w-md mx-auto pointer-events-auto flex gap-3">
           {/* Previous Button */}
           <button

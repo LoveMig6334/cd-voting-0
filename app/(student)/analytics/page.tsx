@@ -120,7 +120,7 @@ export default function Analytics() {
         </div>
         <button
           type="submit"
-          className="w-full bg-primary hover:bg-[#ffb800] hover:text-slate-900 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-primary/20 hover:shadow-[#ffb800]/20 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-primary hover:bg-accent-yellow hover:text-slate-900 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-primary/20 hover:shadow-accent-yellow/20 disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={!token.trim()}
         >
           Verify Token
@@ -204,7 +204,7 @@ export default function Analytics() {
                     className="w-20 h-20 rounded-full bg-cover bg-center border-4 border-yellow-100 shadow-sm"
                     style={{ backgroundImage: `url("${winner.img}")` }}
                   ></div>
-                  <div className="absolute -bottom-2 -right-0 bg-yellow-400 text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded-full border border-white shadow-sm">
+                  <div className="absolute -bottom-2 right-0 bg-yellow-400 text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded-full border border-white shadow-sm">
                     WINNER
                   </div>
                 </div>
