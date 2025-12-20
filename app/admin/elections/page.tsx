@@ -112,7 +112,7 @@ export default function ElectionManagement() {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search */}
-          <div className="relative flex-grow">
+          <div className="relative grow">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
               search
             </span>
