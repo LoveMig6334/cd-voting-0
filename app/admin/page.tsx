@@ -26,14 +26,11 @@ function StatsCard({
   indicator,
   href,
 }: StatsCardProps) {
-  const CardWrapper = href ? Link : "div";
-  const cardProps = href ? { href } : {};
+  const cardClassName =
+    "glass-card rounded-2xl p-6 relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(15,95,194,0.15)] hover:border-royal-blue/30 block";
 
-  return (
-    <CardWrapper
-      {...cardProps}
-      className="glass-card rounded-2xl p-6 relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(15,95,194,0.15)] hover:border-royal-blue/30 block"
-    >
+  const cardContent = (
+    <>
       {/* Watermark Icon */}
       <span className={`watermark-icon material-symbols-outlined ${iconColor}`}>
         {icon}
@@ -106,8 +103,18 @@ function StatsCard({
           </div>
         )}
       </div>
-    </CardWrapper>
+    </>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className={cardClassName}>
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return <div className={cardClassName}>{cardContent}</div>;
 }
 
 // Activity Timeline Item
