@@ -4,22 +4,39 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+// Mock admin credentials
+const MOCK_ADMIN_CREDENTIALS = {
+  username: "admin",
+  password: "admin123",
+};
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
 
     // Simulate login delay
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    // For now, redirect to admin dashboard
-    router.push("/admin");
-    setIsSubmitting(false);
+    // Validate credentials
+    if (
+      username === MOCK_ADMIN_CREDENTIALS.username &&
+      password === MOCK_ADMIN_CREDENTIALS.password
+    ) {
+      // Successful login - redirect to admin dashboard
+      router.push("/admin");
+    } else {
+      // Invalid credentials
+      setError("Invalid username or password. Please try again.");
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -69,6 +86,21 @@ export default function AdminLoginPage() {
             </p>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 rounded-2xl bg-red-50/80 border border-red-200/50 backdrop-blur-sm flex items-start gap-3 animate-fade-in">
+              <span className="material-symbols-outlined text-red-500 text-xl shrink-0 mt-0.5">
+                error
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-red-600">
+                  Authentication Failed
+                </p>
+                <p className="text-xs text-red-500 mt-0.5">{error}</p>
+              </div>
+            </div>
+          )}
+
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
@@ -85,7 +117,10 @@ export default function AdminLoginPage() {
                   type="text"
                   required
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    if (error) setError(null);
+                  }}
                   placeholder="Enter admin username"
                   className="w-full h-14 pl-12 pr-4 bg-white/50 border border-white/60 rounded-2xl outline-none focus:ring-2 focus:ring-royal-blue/20 focus:border-royal-blue/50 focus:bg-white/70 transition-all text-dark-slate placeholder:text-cool-gray font-medium backdrop-blur-sm"
                 />
@@ -114,7 +149,10 @@ export default function AdminLoginPage() {
                   type="password"
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError(null);
+                  }}
                   placeholder="••••••••"
                   className="w-full h-14 pl-12 pr-4 bg-white/50 border border-white/60 rounded-2xl outline-none focus:ring-2 focus:ring-royal-blue/20 focus:border-royal-blue/50 focus:bg-white/70 transition-all text-dark-slate placeholder:text-cool-gray backdrop-blur-sm"
                 />
