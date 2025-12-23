@@ -11,6 +11,7 @@ interface StatsCardProps {
   trend?: { value: string; isPositive: boolean };
   progress?: number;
   indicator?: { text: string; pulse?: boolean };
+  href?: string;
 }
 
 function StatsCard({
@@ -23,9 +24,16 @@ function StatsCard({
   trend,
   progress,
   indicator,
+  href,
 }: StatsCardProps) {
+  const CardWrapper = href ? Link : "div";
+  const cardProps = href ? { href } : {};
+
   return (
-    <div className="glass-card rounded-2xl p-6 relative overflow-hidden group">
+    <CardWrapper
+      {...cardProps}
+      className="glass-card rounded-2xl p-6 relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(15,95,194,0.15)] hover:border-royal-blue/30 block"
+    >
       {/* Watermark Icon */}
       <span className={`watermark-icon material-symbols-outlined ${iconColor}`}>
         {icon}
@@ -98,7 +106,7 @@ function StatsCard({
           </div>
         )}
       </div>
-    </div>
+    </CardWrapper>
   );
 }
 
@@ -258,33 +266,34 @@ export default function AdminDashboard() {
         <StatsCard
           title="Total Students"
           value="1,452"
-          subtitle="Registered for voting"
           icon="school"
           iconColor="text-royal-blue"
           trend={{ value: "2.5%", isPositive: true }}
+          href="/admin/students"
         />
         <StatsCard
           title="Active Elections"
           value="2"
-          subtitle="Student Council & Clubs"
           icon="how_to_vote"
           iconColor="text-emerald-600"
           badge={{ text: "Active", color: "bg-emerald-100 text-emerald-700" }}
+          href="/admin/elections"
         />
         <StatsCard
           title="Total Votes Cast"
           value="843"
           icon="ballot"
           iconColor="text-violet-600"
-          progress={58}
+          badge={{ text: "58%", color: "bg-royal-blue/10 text-[#0F5FC2]" }}
+          href="/admin/results"
         />
         <StatsCard
           title="System Status"
-          value="Operational"
-          subtitle="Server load: 12%"
+          value="12%"
           icon="dns"
           iconColor="text-orange-600"
           indicator={{ text: "Online", pulse: true }}
+          href="/admin/settings"
         />
       </div>
 
