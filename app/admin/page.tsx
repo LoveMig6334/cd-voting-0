@@ -80,7 +80,7 @@ function StatsCard({
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent mb-4"></div>
+        <div className="h-px bg-linear-to-r from-transparent via-slate-200 to-transparent mb-4"></div>
 
         {/* Label */}
         <h3 className="text-cool-gray text-sm font-medium uppercase tracking-wide">
@@ -309,7 +309,7 @@ export default function AdminDashboard() {
         {/* Active Election Card - Premium Ticket Design */}
         <div className="lg:col-span-2">
           <div className="ticket-card rounded-2xl overflow-hidden">
-            <div className="p-6 border-b border-slate-100/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-royal-blue/5 to-transparent">
+            <div className="p-6 border-b border-slate-100/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-linear-to-r from-royal-blue/5 to-transparent">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
@@ -327,7 +327,7 @@ export default function AdminDashboard() {
               <div className="flex gap-3">
                 <Link
                   href="/admin/elections/1/results"
-                  className="bg-gradient-to-r from-royal-blue to-cyan-500 hover:from-royal-blue/90 hover:to-cyan-500/90 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-royal-blue/25 flex items-center gap-2"
+                  className="bg-linear-to-r from-royal-blue to-cyan-500 hover:from-royal-blue/90 hover:to-cyan-500/90 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-royal-blue/25 flex items-center gap-2"
                 >
                   <span className="material-symbols-outlined text-sm">
                     analytics
@@ -402,7 +402,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-royal-blue/5 via-transparent to-cyan-500/5 px-6 py-4 border-t border-slate-100/50 flex justify-center">
+            <div className="bg-linear-to-r from-royal-blue/5 via-transparent to-cyan-500/5 px-6 py-4 border-t border-slate-100/50 flex justify-center">
               <Link
                 href="/admin/elections/1/results"
                 className="text-royal-blue hover:text-cyan-600 text-sm font-semibold flex items-center gap-1 transition-colors"
