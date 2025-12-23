@@ -23,44 +23,48 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-slate-50 font-display">
+    <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden mesh-gradient-bg font-display">
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div
-          className="absolute w-[500px] h-[500px] rounded-full bg-blue-100/40 blur-[100px] animate-float"
-          style={{ top: "-10%", right: "-5%" }}
+          className="absolute w-[600px] h-[600px] rounded-full bg-royal-blue/10 blur-[120px] animate-float"
+          style={{ top: "-15%", right: "-10%" }}
         ></div>
         <div
-          className="absolute w-[400px] h-[400px] rounded-full bg-yellow-50/50 blur-[80px] animate-float-slow"
-          style={{ bottom: "5%", left: "-5%" }}
+          className="absolute w-[500px] h-[500px] rounded-full bg-cyan-500/8 blur-[100px] animate-float-slow"
+          style={{ bottom: "0%", left: "-10%" }}
+        ></div>
+        <div
+          className="absolute w-[300px] h-[300px] rounded-full bg-vivid-yellow/10 blur-[80px] animate-float-slower"
+          style={{ top: "40%", right: "10%" }}
         ></div>
       </div>
 
       {/* Main Login Card */}
       <div className="relative z-10 w-full max-w-md px-6 animate-fade-in">
-        <div
-          className="rounded-3xl p-8 md:p-10 shadow-2xl shadow-slate-200/50"
-          style={{
-            background: "rgba(255, 255, 255, 0.8)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            border: "1px solid rgba(255, 255, 255, 1)",
-          }}
-        >
+        <div className="glass-card rounded-3xl p-8 md:p-10 relative overflow-hidden">
+          {/* Top gradient bar like ticket-card */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-royal-blue via-cyan-500 to-vivid-yellow"></div>
+
           {/* Logo Section */}
           <div className="flex flex-col items-center mb-8">
+            <div className="relative flex items-center justify-center w-16 h-16 bg-gradient-to-br from-royal-blue to-cyan-500 rounded-2xl mb-4 shadow-lg shadow-royal-blue/25">
+              <span className="material-symbols-outlined text-white text-3xl">
+                admin_panel_settings
+              </span>
+            </div>
             <div className="flex items-baseline gap-2 mb-2">
-              <h1 className="text-yellow-500 text-4xl font-black tracking-tight leading-none">
+              <h1 className="text-vivid-yellow text-3xl font-black tracking-tight leading-none drop-shadow-sm">
                 CD
               </h1>
-              <h1 className="text-blue-600 text-4xl font-black tracking-tight leading-none">
+              <h1 className="text-royal-blue text-3xl font-black tracking-tight leading-none">
                 VOTING
               </h1>
-              <h1 className="text-slate-400 text-4xl font-black tracking-tight leading-none">
+              <h1 className="text-cool-gray text-3xl font-black tracking-tight leading-none">
                 0
               </h1>
             </div>
-            <p className="text-sm font-semibold text-slate-500 uppercase tracking-[0.2em]">
+            <p className="text-sm font-semibold text-cool-gray uppercase tracking-[0.2em]">
               Management Portal
             </p>
           </div>
@@ -68,11 +72,11 @@ export default function AdminLoginPage() {
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 uppercase ml-1 tracking-wider">
+              <label className="text-xs font-bold text-cool-gray uppercase ml-1 tracking-wider">
                 Username
               </label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-cool-gray group-focus-within:text-royal-blue transition-colors">
                   <span className="material-symbols-outlined text-xl">
                     person
                   </span>
@@ -83,25 +87,25 @@ export default function AdminLoginPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter admin username"
-                  className="w-full h-14 pl-12 pr-4 bg-slate-100/50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-700 placeholder:text-slate-400 font-medium"
+                  className="w-full h-14 pl-12 pr-4 bg-white/50 border border-white/60 rounded-2xl outline-none focus:ring-2 focus:ring-royal-blue/20 focus:border-royal-blue/50 focus:bg-white/70 transition-all text-dark-slate placeholder:text-cool-gray font-medium backdrop-blur-sm"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
               <div className="flex justify-between items-center px-1">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <label className="text-xs font-bold text-cool-gray uppercase tracking-wider">
                   Password
                 </label>
                 <button
                   type="button"
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  className="text-xs font-semibold text-royal-blue hover:text-cyan-600 transition-colors"
                 >
                   Forgot?
                 </button>
               </div>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-cool-gray group-focus-within:text-royal-blue transition-colors">
                   <span className="material-symbols-outlined text-xl">
                     lock
                   </span>
@@ -112,7 +116,7 @@ export default function AdminLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full h-14 pl-12 pr-4 bg-slate-100/50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-700 placeholder:text-slate-400"
+                  className="w-full h-14 pl-12 pr-4 bg-white/50 border border-white/60 rounded-2xl outline-none focus:ring-2 focus:ring-royal-blue/20 focus:border-royal-blue/50 focus:bg-white/70 transition-all text-dark-slate placeholder:text-cool-gray backdrop-blur-sm"
                 />
               </div>
             </div>
@@ -120,7 +124,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-14 mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30 transition-all active:transform active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 group"
+              className="w-full h-14 mt-4 bg-gradient-to-r from-royal-blue to-cyan-500 hover:from-royal-blue/90 hover:to-cyan-500/90 text-white font-bold rounded-2xl shadow-lg shadow-royal-blue/25 transition-all active:transform active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 group"
             >
               {isSubmitting ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -136,10 +140,10 @@ export default function AdminLoginPage() {
           </form>
 
           {/* Footer inside card */}
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+          <div className="mt-8 pt-6 border-t border-slate-100/50 text-center">
             <Link
               href="/login"
-              className="text-sm font-medium text-slate-500 hover:text-blue-600 flex items-center justify-center gap-1.5 transition-colors"
+              className="text-sm font-medium text-cool-gray hover:text-royal-blue flex items-center justify-center gap-1.5 transition-colors"
             >
               <span className="material-symbols-outlined text-base">
                 arrow_back
@@ -150,11 +154,14 @@ export default function AdminLoginPage() {
         </div>
 
         {/* System copyright */}
-        <p className="mt-8 text-center text-xs font-medium text-slate-400">
-          SECURE ADMINISTRATIVE ACCESS ONLY
-          <br />
-          CD Voting 0 &copy; 2024
-        </p>
+        <div className="mt-8 text-center">
+          <p className="glass-panel inline-block px-4 py-2 rounded-xl text-xs font-medium text-cool-gray">
+            SECURE ADMINISTRATIVE ACCESS ONLY
+          </p>
+          <p className="mt-3 text-xs text-dark-slate/50">
+            CD Voting 0 &copy; 2024
+          </p>
+        </div>
       </div>
     </div>
   );
