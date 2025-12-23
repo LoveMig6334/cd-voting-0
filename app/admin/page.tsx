@@ -1,12 +1,11 @@
 import Link from "next/link";
 
-// Stats Card Component
+// Stats Card Component with Glassmorphism
 interface StatsCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
   icon: string;
-  iconBgColor: string;
   iconColor: string;
   badge?: { text: string; color: string };
   trend?: { value: string; isPositive: boolean };
@@ -19,7 +18,6 @@ function StatsCard({
   value,
   subtitle,
   icon,
-  iconBgColor,
   iconColor,
   badge,
   trend,
@@ -27,54 +25,79 @@ function StatsCard({
   indicator,
 }: StatsCardProps) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 ${iconBgColor} rounded-lg ${iconColor}`}>
-          <span className="material-symbols-outlined text-2xl">{icon}</span>
-        </div>
-        {badge && (
-          <span
-            className={`${badge.color} text-xs px-2 py-1 rounded-full font-bold uppercase tracking-wide`}
+    <div className="glass-card rounded-2xl p-6 relative overflow-hidden group">
+      {/* Watermark Icon */}
+      <span className={`watermark-icon material-symbols-outlined ${iconColor}`}>
+        {icon}
+      </span>
+
+      <div className="relative z-10">
+        {/* Top Row: Icon + Badge/Trend/Indicator */}
+        <div className="flex items-center justify-between mb-4">
+          <div
+            className={`p-3 rounded-xl bg-gradient-to-br from-royal-blue/10 to-cyan-500/10 ${iconColor}`}
           >
-            {badge.text}
-          </span>
-        )}
-        {trend && (
-          <span
-            className={`${
-              trend.isPositive ? "text-green-500" : "text-red-500"
-            } text-sm font-medium flex items-center`}
-          >
-            <span className="material-symbols-outlined text-base mr-1">
-              {trend.isPositive ? "arrow_upward" : "arrow_downward"}
-            </span>
-            {trend.value}
-          </span>
-        )}
-        {indicator && (
-          <div className="flex items-center gap-1">
+            <span className="material-symbols-outlined text-2xl">{icon}</span>
+          </div>
+          {badge && (
             <span
-              className={`w-2.5 h-2.5 bg-green-500 rounded-full ${
-                indicator.pulse ? "animate-pulse" : ""
-              }`}
-            ></span>
-            <span className="text-green-600 text-xs font-semibold uppercase">
-              {indicator.text}
+              className={`${badge.color} text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wide backdrop-blur-sm`}
+            >
+              {badge.text}
             </span>
+          )}
+          {trend && (
+            <span
+              className={`${
+                trend.isPositive
+                  ? "text-emerald-600 bg-emerald-50"
+                  : "text-red-500 bg-red-50"
+              } text-xs px-2 py-1 rounded-lg font-semibold flex items-center gap-0.5`}
+            >
+              <span className="material-symbols-outlined text-sm">
+                {trend.isPositive ? "trending_up" : "trending_down"}
+              </span>
+              {trend.value}
+            </span>
+          )}
+          {indicator && (
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`w-2 h-2 bg-emerald-500 rounded-full ${
+                  indicator.pulse ? "animate-pulse" : ""
+                }`}
+              ></span>
+              <span className="text-emerald-600 text-xs font-semibold uppercase">
+                {indicator.text}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent mb-4"></div>
+
+        {/* Label */}
+        <h3 className="text-cool-gray text-sm font-medium uppercase tracking-wide">
+          {title}
+        </h3>
+
+        {/* Value */}
+        <p className="text-4xl font-bold text-dark-slate mt-2 tracking-tight">
+          {value}
+        </p>
+
+        {subtitle && <p className="text-xs text-cool-gray mt-2">{subtitle}</p>}
+
+        {progress !== undefined && (
+          <div className="neon-progress-track h-2 mt-4">
+            <div
+              className="neon-progress-bar h-2"
+              style={{ width: `${progress}%` }}
+            ></div>
           </div>
         )}
       </div>
-      <h3 className="text-slate-500 text-sm font-medium">{title}</h3>
-      <p className="text-3xl font-bold text-slate-900 mt-1">{value}</p>
-      {subtitle && <p className="text-xs text-slate-400 mt-2">{subtitle}</p>}
-      {progress !== undefined && (
-        <div className="w-full bg-slate-200 rounded-full h-1.5 mt-3">
-          <div
-            className="bg-purple-500 h-1.5 rounded-full transition-all"
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
-      )}
     </div>
   );
 }
@@ -92,34 +115,43 @@ interface ActivityItem {
 
 function ActivityTimeline({ activities }: { activities: ActivityItem[] }) {
   return (
-    <ul className="relative border-l border-slate-200 ml-3 space-y-6">
-      {activities.map((activity) => (
-        <li key={activity.id} className="mb-4 ml-6">
-          <span
-            className={`absolute flex items-center justify-center w-6 h-6 ${activity.iconBg} rounded-full -left-3 ring-4 ring-white`}
-          >
-            <span
-              className={`material-symbols-outlined ${activity.iconColor} text-xs`}
+    <div className="relative pl-10">
+      {/* Timeline Line */}
+      <div className="timeline-line"></div>
+
+      <ul className="space-y-6">
+        {activities.map((activity) => (
+          <li key={activity.id} className="relative">
+            {/* Timeline Badge */}
+            <div
+              className={`timeline-badge absolute -left-10 ${activity.iconBg}`}
             >
-              {activity.icon}
-            </span>
-          </span>
-          <h4 className="text-sm font-semibold text-slate-900">
-            {activity.title}
-          </h4>
-          <p className="mb-1 text-xs font-normal text-slate-500">
-            {activity.description}
-          </p>
-          <time className="block text-xs font-normal text-slate-400">
-            {activity.time}
-          </time>
-        </li>
-      ))}
-    </ul>
+              <span
+                className={`material-symbols-outlined ${activity.iconColor} text-sm`}
+              >
+                {activity.icon}
+              </span>
+            </div>
+
+            <div className="glass-card rounded-xl p-4 hover:bg-white/90 transition-all">
+              <h4 className="text-sm font-semibold text-dark-slate">
+                {activity.title}
+              </h4>
+              <p className="text-xs font-normal text-cool-gray mt-1">
+                {activity.description}
+              </p>
+              <time className="block text-xs font-medium text-royal-blue/70 mt-2">
+                {activity.time}
+              </time>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
-// Candidate Progress Bar
+// Candidate Progress Bar with Neon Effect
 interface Candidate {
   name: string;
   percentage: number;
@@ -128,16 +160,20 @@ interface Candidate {
 
 function CandidateProgress({ candidates }: { candidates: Candidate[] }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {candidates.map((candidate, index) => (
         <div key={index}>
-          <div className="flex justify-between text-xs mb-1">
-            <span className="text-slate-700 font-medium">{candidate.name}</span>
-            <span className="text-slate-500">{candidate.percentage}%</span>
+          <div className="flex justify-between text-sm mb-2">
+            <span className="text-dark-slate font-medium">
+              {candidate.name}
+            </span>
+            <span className="text-royal-blue font-bold">
+              {candidate.percentage}%
+            </span>
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-2">
+          <div className="neon-progress-track h-2.5">
             <div
-              className={`${candidate.color} h-2 rounded-full transition-all`}
+              className="neon-progress-bar h-2.5"
               style={{ width: `${candidate.percentage}%` }}
             ></div>
           </div>
@@ -152,8 +188,8 @@ const mockActivities: ActivityItem[] = [
   {
     id: 1,
     icon: "how_to_reg",
-    iconBg: "bg-blue-100",
-    iconColor: "text-blue-600",
+    iconBg: "bg-royal-blue",
+    iconColor: "text-white",
     title: "New Vote Cast",
     description: "Student ID #4829 voted in Student Council.",
     time: "Just now",
@@ -161,8 +197,8 @@ const mockActivities: ActivityItem[] = [
   {
     id: 2,
     icon: "check_circle",
-    iconBg: "bg-green-100",
-    iconColor: "text-green-600",
+    iconBg: "bg-emerald-500",
+    iconColor: "text-white",
     title: "System Check",
     description: "Automated integrity check passed.",
     time: "14 mins ago",
@@ -170,8 +206,8 @@ const mockActivities: ActivityItem[] = [
   {
     id: 3,
     icon: "edit",
-    iconBg: "bg-yellow-100",
-    iconColor: "text-yellow-600",
+    iconBg: "bg-vivid-yellow",
+    iconColor: "text-dark-slate",
     title: "Election Edited",
     description: 'Admin updated "Clubs" description.',
     time: "1 hour ago",
@@ -179,8 +215,8 @@ const mockActivities: ActivityItem[] = [
   {
     id: 4,
     icon: "person_add",
-    iconBg: "bg-slate-100",
-    iconColor: "text-slate-600",
+    iconBg: "bg-slate-500",
+    iconColor: "text-white",
     title: "New Registration",
     description: "Student batch import completed.",
     time: "3 hours ago",
@@ -199,18 +235,19 @@ export default function AdminDashboard() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900">
+          <h2 className="text-3xl font-bold text-dark-slate">
             Welcome back, Admin
           </h2>
-          <p className="text-slate-500 mt-1">
+          <p className="text-cool-gray mt-1">
             Here is the latest overview of the school elections.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-cool-gray bg-white/50 px-3 py-1.5 rounded-lg backdrop-blur-sm">
             Last login: Today, 8:30 AM
           </span>
-          <button className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm">
+          <button className="glass-card px-4 py-2 rounded-xl text-sm font-medium text-dark-slate hover:bg-white/90 transition-colors flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">analytics</span>
             View Reports
           </button>
         </div>
@@ -223,8 +260,7 @@ export default function AdminDashboard() {
           value="1,452"
           subtitle="Registered for voting"
           icon="school"
-          iconBgColor="bg-blue-50"
-          iconColor="text-primary"
+          iconColor="text-royal-blue"
           trend={{ value: "2.5%", isPositive: true }}
         />
         <StatsCard
@@ -232,16 +268,14 @@ export default function AdminDashboard() {
           value="2"
           subtitle="Student Council & Clubs"
           icon="how_to_vote"
-          iconBgColor="bg-green-50"
-          iconColor="text-green-600"
-          badge={{ text: "Active", color: "bg-green-100 text-green-700" }}
+          iconColor="text-emerald-600"
+          badge={{ text: "Active", color: "bg-emerald-100 text-emerald-700" }}
         />
         <StatsCard
           title="Total Votes Cast"
           value="843"
           icon="ballot"
-          iconBgColor="bg-purple-50"
-          iconColor="text-purple-600"
+          iconColor="text-violet-600"
           progress={58}
         />
         <StatsCard
@@ -249,7 +283,6 @@ export default function AdminDashboard() {
           value="Operational"
           subtitle="Server load: 12%"
           icon="dns"
-          iconBgColor="bg-orange-50"
           iconColor="text-orange-600"
           indicator={{ text: "Online", pulse: true }}
         />
@@ -257,30 +290,36 @@ export default function AdminDashboard() {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Active Election Card */}
+        {/* Active Election Card - Premium Ticket Design */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="ticket-card rounded-2xl overflow-hidden">
+            <div className="p-6 border-b border-slate-100/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-royal-blue/5 to-transparent">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                  <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
+                    Live Election
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold text-dark-slate">
                   Student Council 2025
                 </h3>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-cool-gray mt-1">
                   Cast your vote for the next student body representatives.
                 </p>
               </div>
               <div className="flex gap-3">
                 <Link
                   href="/admin/elections/1/results"
-                  className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
+                  className="bg-gradient-to-r from-royal-blue to-cyan-500 hover:from-royal-blue/90 hover:to-cyan-500/90 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-royal-blue/25 flex items-center gap-2"
                 >
                   <span className="material-symbols-outlined text-sm">
                     analytics
                   </span>
                   Live Results
                 </Link>
-                <button className="border border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                  Close Election
+                <button className="glass-card border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 rounded-xl text-sm font-medium transition-colors">
+                  Close
                 </button>
               </div>
             </div>
@@ -288,41 +327,47 @@ export default function AdminDashboard() {
             <div className="p-6">
               {/* Election Meta */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-                <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-slate-400 mt-0.5">
-                    calendar_today
-                  </span>
+                <div className="glass-card rounded-xl p-4 flex items-center gap-4">
+                  <div className="p-2 bg-royal-blue/10 rounded-lg">
+                    <span className="material-symbols-outlined text-royal-blue">
+                      calendar_today
+                    </span>
+                  </div>
                   <div>
-                    <p className="text-xs text-slate-500 uppercase font-semibold">
+                    <p className="text-xs text-cool-gray uppercase font-semibold">
                       Start Date
                     </p>
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-bold text-dark-slate">
                       Oct 20, 8:00 AM
                     </p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-slate-400 mt-0.5">
-                    event
-                  </span>
+                <div className="glass-card rounded-xl p-4 flex items-center gap-4">
+                  <div className="p-2 bg-orange-500/10 rounded-lg">
+                    <span className="material-symbols-outlined text-orange-500">
+                      event
+                    </span>
+                  </div>
                   <div>
-                    <p className="text-xs text-slate-500 uppercase font-semibold">
+                    <p className="text-xs text-cool-gray uppercase font-semibold">
                       End Date
                     </p>
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-bold text-dark-slate">
                       Oct 24, 5:00 PM
                     </p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-slate-400 mt-0.5">
-                    group
-                  </span>
+                <div className="glass-card rounded-xl p-4 flex items-center gap-4">
+                  <div className="p-2 bg-emerald-500/10 rounded-lg">
+                    <span className="material-symbols-outlined text-emerald-500">
+                      group
+                    </span>
+                  </div>
                   <div>
-                    <p className="text-xs text-slate-500 uppercase font-semibold">
+                    <p className="text-xs text-cool-gray uppercase font-semibold">
                       Participation
                     </p>
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-bold text-dark-slate">
                       58% Voted
                     </p>
                   </div>
@@ -331,17 +376,20 @@ export default function AdminDashboard() {
 
               {/* Candidate Progress */}
               <div className="space-y-4">
-                <h4 className="text-sm font-medium text-slate-700">
+                <h4 className="text-sm font-semibold text-dark-slate flex items-center gap-2">
+                  <span className="material-symbols-outlined text-lg text-royal-blue">
+                    trending_up
+                  </span>
                   Leading Candidates Trend
                 </h4>
                 <CandidateProgress candidates={mockCandidates} />
               </div>
             </div>
 
-            <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-center">
+            <div className="bg-gradient-to-r from-royal-blue/5 via-transparent to-cyan-500/5 px-6 py-4 border-t border-slate-100/50 flex justify-center">
               <Link
                 href="/admin/elections/1/results"
-                className="text-primary hover:text-primary-dark text-sm font-medium flex items-center gap-1"
+                className="text-royal-blue hover:text-cyan-600 text-sm font-semibold flex items-center gap-1 transition-colors"
               >
                 View Detailed Analytics
                 <span className="material-symbols-outlined text-sm">
@@ -352,20 +400,28 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Activity Timeline */}
+        {/* Activity Timeline - Vertical Glass Pane */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 h-full flex flex-col">
-            <div className="p-6 border-b border-slate-200">
-              <h3 className="text-lg font-bold text-slate-900">
-                Recent Activity
-              </h3>
+          <div className="glass-card rounded-2xl h-full flex flex-col">
+            <div className="p-6 border-b border-slate-100/50">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-royal-blue">
+                  history
+                </span>
+                <h3 className="text-lg font-bold text-dark-slate">
+                  Recent Activity
+                </h3>
+              </div>
             </div>
-            <div className="p-6 grow overflow-y-auto max-h-[400px]">
+            <div className="p-6 grow overflow-y-auto max-h-[400px] no-scrollbar">
               <ActivityTimeline activities={mockActivities} />
             </div>
-            <div className="p-4 border-t border-slate-200 text-center">
-              <button className="text-xs font-medium text-slate-500 hover:text-primary transition-colors">
+            <div className="p-4 border-t border-slate-100/50 text-center">
+              <button className="text-sm font-semibold text-royal-blue hover:text-cyan-600 transition-colors flex items-center gap-1 mx-auto">
                 View All Activity
+                <span className="material-symbols-outlined text-sm">
+                  chevron_right
+                </span>
               </button>
             </div>
           </div>

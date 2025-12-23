@@ -8,24 +8,28 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen mesh-gradient-bg flex flex-col">
       <AdminNavbar />
       <main className="grow p-6 lg:p-8 max-w-7xl mx-auto w-full">
         {children}
       </main>
-      <footer className="mt-auto pt-8 pb-8 border-t border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
-          <p>© 2024 CD Voting 0. All rights reserved.</p>
-          <div className="flex gap-6">
-            <a href="#" className="hover:text-primary transition-colors">
-              Help Center
-            </a>
-            <a href="#" className="hover:text-primary transition-colors">
-              Privacy Policy
-            </a>
-            <a href="#" className="hover:text-primary transition-colors">
-              Terms of Service
-            </a>
+      <footer className="mt-auto pt-8 pb-8">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="glass-panel rounded-2xl px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-cool-gray">
+            <p className="text-dark-slate/70">
+              © 2024 CD Voting 0. All rights reserved.
+            </p>
+            <div className="flex gap-6">
+              <a href="#" className="hover:text-royal-blue transition-colors">
+                Help Center
+              </a>
+              <a href="#" className="hover:text-royal-blue transition-colors">
+                Privacy Policy
+              </a>
+              <a href="#" className="hover:text-royal-blue transition-colors">
+                Terms of Service
+              </a>
+            </div>
           </div>
         </div>
       </footer>
