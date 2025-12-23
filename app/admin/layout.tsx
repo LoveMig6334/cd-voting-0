@@ -1,12 +1,21 @@
 "use client";
 
 import { AdminNavbar } from "@/components/admin/AdminNavbar";
+import { usePathname } from "next/navigation";
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isLoginPage = pathname === "/admin/login";
+
+  // Login page has its own full-screen layout, so render children directly
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen mesh-gradient-bg flex flex-col">
       <AdminNavbar />
