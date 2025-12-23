@@ -40,7 +40,7 @@ function StatsCard({
         {/* Top Row: Icon + Badge/Trend/Indicator */}
         <div className="flex items-center justify-between mb-4">
           <div
-            className={`p-3 rounded-xl bg-gradient-to-br from-royal-blue/10 to-cyan-500/10 ${iconColor}`}
+            className={`p-3 rounded-xl bg-linear-to-br from-royal-blue/10 to-cyan-500/10 ${iconColor}`}
           >
             <span className="material-symbols-outlined text-2xl">{icon}</span>
           </div>
