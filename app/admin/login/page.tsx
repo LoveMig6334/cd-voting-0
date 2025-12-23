@@ -61,11 +61,11 @@ export default function AdminLoginPage() {
       <div className="relative z-10 w-full max-w-md px-6 animate-fade-in">
         <div className="glass-card rounded-3xl p-8 md:p-10 relative overflow-hidden">
           {/* Top gradient bar like ticket-card */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-royal-blue via-cyan-500 to-vivid-yellow"></div>
+          <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-royal-blue via-cyan-500 to-vivid-yellow"></div>
 
           {/* Logo Section */}
           <div className="flex flex-col items-center mb-8">
-            <div className="relative flex items-center justify-center w-16 h-16 bg-gradient-to-br from-royal-blue to-cyan-500 rounded-2xl mb-4 shadow-lg shadow-royal-blue/25">
+            <div className="relative flex items-center justify-center w-16 h-16 bg-linear-to-br from-royal-blue to-cyan-500 rounded-2xl mb-4 shadow-lg shadow-royal-blue/25">
               <span className="material-symbols-outlined text-white text-3xl">
                 admin_panel_settings
               </span>
@@ -162,7 +162,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-14 mt-4 bg-gradient-to-r from-royal-blue to-cyan-500 hover:from-royal-blue/90 hover:to-cyan-500/90 text-white font-bold rounded-2xl shadow-lg shadow-royal-blue/25 transition-all active:transform active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 group"
+              className="w-full h-14 mt-4 bg-linear-to-r from-royal-blue to-cyan-500 hover:from-royal-blue/90 hover:to-cyan-500/90 text-white font-bold rounded-2xl shadow-lg shadow-royal-blue/25 transition-all active:transform active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 group"
             >
               {isSubmitting ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
