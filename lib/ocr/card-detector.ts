@@ -3,31 +3,30 @@
  * Handles color-based segmentation, contour detection, and card boundary detection
  */
 
+import { applySobelEdgeDetection } from "./canvas-utils";
 import {
   CARD_DIMENSIONS,
   COLOR_THRESHOLDS,
-  CONTOUR_DETECTION,
-  QUADRILATERAL,
   CONFIDENCE,
+  CONTOUR_DETECTION,
   FALLBACK,
+  QUADRILATERAL,
 } from "./constants";
-import { applySobelEdgeDetection } from "./canvas-utils";
 import {
   convexHull,
-  simplifyContour,
-  orderCorners,
-  isConvexQuadrilateral,
-  quadrilateralArea,
   getBoundingRect,
+  isConvexQuadrilateral,
+  orderCorners,
+  quadrilateralArea,
   rectToCorners,
+  simplifyContour,
 } from "./geometry-utils";
 import type {
-  Point,
   BoundingRect,
   DetectionMethod,
   ExtendedDetectionResult,
-  ImageDimensions,
   ImageOrientation,
+  Point,
 } from "./types";
 import { getImageOrientation } from "./types";
 
@@ -417,7 +416,9 @@ function createSmartFallback(state: DetectionState): ExtendedDetectionResult {
   if (state.orientation === "portrait") {
     // CRITICAL FIX: For portrait images, crop a horizontal rectangle
     // Take 90% of width, calculate height from ID card aspect ratio
-    const cropWidth = Math.floor(state.width * FALLBACK.PORTRAIT_WIDTH_FRACTION);
+    const cropWidth = Math.floor(
+      state.width * FALLBACK.PORTRAIT_WIDTH_FRACTION
+    );
     const cropHeight = Math.floor(cropWidth / CARD_DIMENSIONS.ASPECT_RATIO);
 
     // Center the crop rectangle vertically
