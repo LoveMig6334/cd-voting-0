@@ -59,22 +59,35 @@ function normalizeOCRText(text: string): string {
 }
 
 function extractStudentId(lines: string[], result: ParseResult): void {
-  // Student IDs are 4-5 digit numbers, typically starting with 6 or 7 for current students
+  // Student IDs are 4-digit numbers on Thai student ID cards
+  // Located near "เลขประจำตัว" or "Student ID" labels
   const idPatterns = [
-    /(?:เลขประจำตัว|รหัส(?:นักเรียน)?|ID|Student\s*ID)[:\s]*(\d{4,5})/i,
-    /(?:^|\s)([67]\d{3,4})(?:\s|$)/, // IDs starting with 6 or 7
-    /(\d{4,5})/, // Fallback: any 4-5 digit number
+    // Exact label match with Thai "เลขประจำตัว" (highest confidence)
+    /เลขประจำตัว(?:นักเรียน)?[:\s]*(\d{4,5})/i,
+    // English "Student ID" label
+    /Student\s*ID[:\s]*(\d{4,5})/i,
+    // Thai "รหัส" or "รหัสนักเรียน"
+    /รหัส(?:นักเรียน)?[:\s]*(\d{4,5})/i,
+    // Standalone 4-digit number starting with 6 or 7 (typical range)
+    /(?:^|\s)([67]\d{3})(?:\s|$)/,
+    // Any isolated 4-digit number as fallback
+    /(?:^|\s)(\d{4})(?:\s|$)/,
   ];
 
+  const confidenceScores = [100, 95, 90, 70, 50];
+
   for (const line of lines) {
+    // Skip lines that look like national ID (13 digits with spaces)
+    if (/\d[\s-]?\d{4}[\s-]?\d{5}[\s-]?\d{2}[\s-]?\d/.test(line)) continue;
+
     for (let i = 0; i < idPatterns.length; i++) {
       const match = line.match(idPatterns[i]);
       if (match) {
         const id = parseInt(match[1], 10);
-        // Validate ID range (typical school IDs are 4-5 digits)
-        if (id >= 1000 && id <= 99999) {
+        // Validate: 4-digit student IDs typically in range 1000-9999
+        if (id >= 1000 && id <= 9999) {
           result.id = id;
-          result.confidence.id = 100 - i * 20; // Higher confidence for earlier patterns
+          result.confidence.id = confidenceScores[i];
           return;
         }
       }
