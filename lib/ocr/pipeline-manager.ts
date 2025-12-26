@@ -3,34 +3,33 @@
  * Main orchestrator that coordinates detection, warping, and enhancement stages
  */
 
-import { CARD_DIMENSIONS } from "./constants";
 import {
-  type Result,
-  type DetectionError,
-  ImageLoadError,
-  WarpFailedError,
-  ok,
-  err,
-  isErr,
-  errorToDiagnostic,
-} from "./errors";
-import {
-  loadImage,
-  createCanvas,
-  getImageData,
-  warpPerspective,
-  simpleCrop,
-  scaleImage,
-  enhanceImage,
-  drawDetectionOverlay,
   canvasToDataUrl,
+  createCanvas,
+  drawDetectionOverlay,
+  enhanceImage,
+  getImageData,
+  loadImage,
+  scaleImage,
+  simpleCrop,
+  warpPerspective,
 } from "./canvas-utils";
 import { detectCard, getMethodDescription } from "./card-detector";
+import { CARD_DIMENSIONS } from "./constants";
+import {
+  type DetectionError,
+  err,
+  errorToDiagnostic,
+  ImageLoadError,
+  isErr,
+  ok,
+  type Result,
+} from "./errors";
 import type {
-  ProcessedImage,
-  ProcessingOptions,
   ExtendedDetectionResult,
   ImageDimensions,
+  ProcessedImage,
+  ProcessingOptions,
 } from "./types";
 import { createDefaultProcessingOptions } from "./types";
 
@@ -305,7 +304,9 @@ export class PipelineManager {
 
     for (const stage of result.stages) {
       const status = stage.success ? "✓" : "✗";
-      lines.push(`  ${status} ${stage.stage}: ${stage.durationMs.toFixed(1)}ms`);
+      lines.push(
+        `  ${status} ${stage.stage}: ${stage.durationMs.toFixed(1)}ms`
+      );
     }
 
     if (result.result.ok) {
