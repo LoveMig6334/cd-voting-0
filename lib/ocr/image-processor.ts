@@ -68,35 +68,31 @@ function detectCardEdges(
   height: number
 ): DetectionResult {
   const data = imageData.data;
-
-  // Find yellow/gold colored regions (typical Thai student ID cards)
   const yellowMask = new Uint8Array(width * height);
   const edgeMask = new Uint8Array(width * height);
 
-  // Color thresholds for yellow/gold card detection
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
     const pixelIndex = i / 4;
 
-    // Detect yellow/gold colors (HSL-like detection via RGB)
-    const isYellow =
-      r > 150 && g > 120 && b < 150 && r > b + 30 && g > b + 20;
-    // Also detect light/cream colors common on ID cards
-    const isLight = r > 180 && g > 170 && b > 140 && r - b < 80;
-    // Detect blue (some cards have blue elements)
-    const isBlue = b > 100 && b > r && b > g - 30;
+    // FIX 1: Enhanced Color Detection for Dark Backgrounds
+    // Since your background is black, we can include any "Bright" pixel
+    const isBright = r > 100 && g > 100 && b > 100;
 
-    if (isYellow || isLight || isBlue) {
+    // Existing Yellow/Gold logic (relaxed)
+    const isYellow = r > 90 && g > 70 && b < 180 && r > b;
+    const isBlue = b > 70 && b > r && b > g;
+
+    if (isYellow || isBlue || isBright) {
       yellowMask[pixelIndex] = 255;
     }
   }
 
-  // Apply Sobel edge detection
   applySobelEdgeDetection(data, edgeMask, width, height);
 
-  // Find contours and largest rectangular region
+  // Find contours
   const contours = findContours(edgeMask, width, height);
   const cardContour = findLargestQuadrilateral(contours, width, height);
 
@@ -104,39 +100,73 @@ function detectCardEdges(
     const rect = getBoundingRect(cardContour);
     const confidence = calculateConfidence(rect, width, height);
 
-    return {
-      success: true,
-      corners: orderCorners(cardContour),
-      boundingRect: rect,
-      confidence,
-    };
+    // FIX 2: Allow slightly wider range of aspect ratios (1.0 - 2.8)
+    // and lower the confidence threshold check to 30
+    const aspectRatio = rect.width / rect.height;
+    if (aspectRatio > 1.0 && aspectRatio < 2.8 && confidence > 30) {
+      return {
+        success: true,
+        corners: cardContour,
+        boundingRect: rect,
+        confidence,
+      };
+    }
   }
 
-  // Fallback: use edge-based detection
-  const fallbackRect = findEdgeBasedBoundary(edgeMask, yellowMask, width, height);
+  // Fallback: Edge-based boundary
+  const fallbackRect = findEdgeBasedBoundary(
+    edgeMask,
+    yellowMask,
+    width,
+    height
+  );
   if (fallbackRect.width > 0) {
-    const corners = rectToCorners(fallbackRect);
-    return {
-      success: true,
-      corners,
-      boundingRect: fallbackRect,
-      confidence: 60,
-    };
+    const fbRatio = fallbackRect.width / fallbackRect.height;
+    // If found blob is roughly landscape, accept it
+    if (fbRatio > 1.1 && fbRatio < 2.5) {
+      return {
+        success: true,
+        corners: rectToCorners(fallbackRect),
+        boundingRect: fallbackRect,
+        confidence: 50,
+      };
+    }
   }
 
-  // Ultimate fallback: use center 80% of image
+  // FIX 3: SMART ULTIMATE FALLBACK
+  // If detection fails on a Portrait photo, do NOT crop a Portrait rectangle.
+  // We must crop a Landscape rectangle from the center to prevent squashing.
+
+  const isPortrait = height > width;
+  let defaultWidth, defaultHeight, defaultX, defaultY;
+
+  if (isPortrait) {
+    // Logic: Take 90% of width, then calculate height based on ID Card Ratio (1.586)
+    defaultWidth = Math.floor(width * 0.9);
+    defaultHeight = Math.floor(defaultWidth / 1.586);
+    defaultX = Math.floor((width - defaultWidth) / 2);
+    // Center it vertically
+    defaultY = Math.floor((height - defaultHeight) / 2);
+  } else {
+    // Standard landscape fallback
+    defaultWidth = Math.floor(width * 0.8);
+    defaultHeight = Math.floor(height * 0.8);
+    defaultX = Math.floor(width * 0.1);
+    defaultY = Math.floor(height * 0.1);
+  }
+
   const defaultRect = {
-    x: Math.floor(width * 0.1),
-    y: Math.floor(height * 0.1),
-    width: Math.floor(width * 0.8),
-    height: Math.floor(height * 0.8),
+    x: defaultX,
+    y: defaultY,
+    width: defaultWidth,
+    height: defaultHeight,
   };
 
   return {
-    success: false,
+    success: false, // Still mark as false so UI shows red border
     corners: rectToCorners(defaultRect),
     boundingRect: defaultRect,
-    confidence: 30,
+    confidence: 20,
   };
 }
 
@@ -206,9 +236,14 @@ function traceContour(
   const contour: Point[] = [];
   const stack: Point[] = [{ x: startX, y: startY }];
   const directions = [
-    [-1, -1], [-1, 0], [-1, 1],
-    [0, -1], [0, 1],
-    [1, -1], [1, 0], [1, 1],
+    [-1, -1],
+    [-1, 0],
+    [-1, 1],
+    [0, -1],
+    [0, 1],
+    [1, -1],
+    [1, 0],
+    [1, 1],
   ];
 
   while (stack.length > 0 && contour.length < 5000) {
@@ -243,17 +278,24 @@ function findLargestQuadrilateral(
   let bestArea = 0;
 
   for (const contour of contours) {
-    const simplified = simplifyContour(contour, 10);
+    // Less aggressive simplification to preserve corners
+    const simplified = simplifyContour(contour, 2);
     const hull = convexHull(simplified);
 
     if (hull.length >= 4) {
-      const quad = approximateQuadrilateral(hull);
+      const quad = getOrderedCorners(hull);
       if (quad.length === 4) {
         const area = quadArea(quad);
         const minArea = width * height * 0.1;
         const maxArea = width * height * 0.95;
 
-        if (area > bestArea && area > minArea && area < maxArea) {
+        // Ensure convex and reasonable shape
+        if (
+          area > bestArea &&
+          area > minArea &&
+          area < maxArea &&
+          isConvex(quad)
+        ) {
           bestArea = area;
           bestQuad = quad;
         }
@@ -283,7 +325,10 @@ function convexHull(points: Point[]): Point[] {
 
   const lower: Point[] = [];
   for (const p of sorted) {
-    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) {
+    while (
+      lower.length >= 2 &&
+      cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0
+    ) {
       lower.pop();
     }
     lower.push(p);
@@ -292,7 +337,10 @@ function convexHull(points: Point[]): Point[] {
   const upper: Point[] = [];
   for (let i = sorted.length - 1; i >= 0; i--) {
     const p = sorted[i];
-    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) {
+    while (
+      upper.length >= 2 &&
+      cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0
+    ) {
       upper.pop();
     }
     upper.push(p);
@@ -307,21 +355,59 @@ function cross(o: Point, a: Point, b: Point): number {
   return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
 }
 
-function approximateQuadrilateral(hull: Point[]): Point[] {
-  if (hull.length <= 4) return hull;
+function isConvex(quad: Point[]): boolean {
+  if (quad.length !== 4) return false;
+  // Check cross products of adjacent edges have same sign
+  const cp1 = cross(quad[0], quad[1], quad[2]);
+  const cp2 = cross(quad[1], quad[2], quad[3]);
+  const cp3 = cross(quad[2], quad[3], quad[0]);
+  const cp4 = cross(quad[3], quad[0], quad[1]);
+  return (
+    (cp1 > 0 && cp2 > 0 && cp3 > 0 && cp4 > 0) ||
+    (cp1 < 0 && cp2 < 0 && cp3 < 0 && cp4 < 0)
+  );
+}
 
-  // Find 4 most extreme points
-  let minX = hull[0], maxX = hull[0], minY = hull[0], maxY = hull[0];
+// FIX 4: Ensure getOrderedCorners is strictly geometric (Sum/Diff)
+// This logic is robust for standard ID card orientations
+function getOrderedCorners(hull: Point[]): Point[] {
+  if (hull.length < 4) return [];
+
+  let topLeft = hull[0];
+  let bottomRight = hull[0];
+  let topRight = hull[0];
+  let bottomLeft = hull[0];
+
+  let minSum = Infinity,
+    maxSum = -Infinity;
+  let minDiff = Infinity,
+    maxDiff = -Infinity;
+
   for (const p of hull) {
-    if (p.x < minX.x) minX = p;
-    if (p.x > maxX.x) maxX = p;
-    if (p.y < minY.y) minY = p;
-    if (p.y > maxY.y) maxY = p;
+    const sum = p.x + p.y;
+    const diff = p.y - p.x;
+
+    if (sum < minSum) {
+      minSum = sum;
+      topLeft = p;
+    }
+    if (sum > maxSum) {
+      maxSum = sum;
+      bottomRight = p;
+    }
+    if (diff < minDiff) {
+      minDiff = diff;
+      topRight = p;
+    }
+    if (diff > maxDiff) {
+      maxDiff = diff;
+      bottomLeft = p;
+    }
   }
 
-  return [minX, minY, maxX, maxY].filter(
-    (p, i, arr) => arr.findIndex((q) => q.x === p.x && q.y === p.y) === i
-  );
+  // Force strict order: TL, TR, BR, BL
+  // This matches the dstCorners order in cropAndWarpCard
+  return [topLeft, topRight, bottomRight, bottomLeft];
 }
 
 function quadArea(quad: Point[]): number {
@@ -331,9 +417,9 @@ function quadArea(quad: Point[]): number {
     0.5 *
     Math.abs(
       a.x * (b.y - d.y) +
-      b.x * (c.y - a.y) +
-      c.x * (d.y - b.y) +
-      d.x * (a.y - c.y)
+        b.x * (c.y - a.y) +
+        c.x * (d.y - b.y) +
+        d.x * (a.y - c.y)
     )
   );
 }
@@ -358,20 +444,6 @@ function getBoundingRect(corners: Point[]): {
   };
 }
 
-function orderCorners(corners: Point[]): Point[] {
-  // Order: top-left, top-right, bottom-right, bottom-left
-  const center = {
-    x: corners.reduce((s, c) => s + c.x, 0) / corners.length,
-    y: corners.reduce((s, c) => s + c.y, 0) / corners.length,
-  };
-
-  return corners.sort((a, b) => {
-    const angleA = Math.atan2(a.y - center.y, a.x - center.x);
-    const angleB = Math.atan2(b.y - center.y, b.x - center.x);
-    return angleA - angleB;
-  });
-}
-
 function rectToCorners(rect: {
   x: number;
   y: number;
@@ -392,13 +464,15 @@ function calculateConfidence(
   imageHeight: number
 ): number {
   const aspectRatio = rect.width / rect.height;
-  // ID cards typically have aspect ratio around 1.5-1.7
-  const expectedRatio = 1.586; // Standard ID card ratio
+  const expectedRatio = 1.586;
   const ratioScore = 100 - Math.abs(aspectRatio - expectedRatio) * 30;
 
   const coverageRatio = (rect.width * rect.height) / (imageWidth * imageHeight);
-  // Card should cover 20-80% of image
-  const coverageScore = coverageRatio > 0.2 && coverageRatio < 0.8 ? 90 : 50;
+
+  // FIX 4: Lower Coverage Threshold
+  // In a vertical phone photo, a card might only cover 5-10% of the pixels.
+  // Changed threshold from 0.2 (20%) to 0.05 (5%)
+  const coverageScore = coverageRatio > 0.05 && coverageRatio < 0.9 ? 90 : 40;
 
   return Math.max(0, Math.min(100, (ratioScore + coverageScore) / 2));
 }
@@ -409,7 +483,10 @@ function findEdgeBasedBoundary(
   width: number,
   height: number
 ): { x: number; y: number; width: number; height: number } {
-  let minX = width, maxX = 0, minY = height, maxY = 0;
+  let minX = width,
+    maxX = 0,
+    minY = height,
+    maxY = 0;
   let found = false;
 
   for (let y = 0; y < height; y++) {
@@ -511,76 +588,282 @@ export async function cropAndWarpCard(
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d")!;
+      (async () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d")!;
 
-      // If cropping is disabled, return the original image scaled
-      if (!options.enableCrop) {
+        // If cropping is disabled, return the original image scaled
+        if (!options.enableCrop) {
+          const outputWidth = 600;
+          const outputHeight = Math.round(
+            outputWidth / (img.width / img.height)
+          );
+          canvas.width = outputWidth;
+          canvas.height = outputHeight;
+          ctx.drawImage(img, 0, 0, outputWidth, outputHeight);
+
+          if (options.enableEnhancement) {
+            enhanceImage(ctx, outputWidth, outputHeight);
+          }
+
+          resolve(canvas.toDataURL("image/png"));
+          return;
+        }
+
+        // Set output dimensions (standard ID card aspect ratio)
         const outputWidth = 600;
-        const outputHeight = Math.round(outputWidth / (img.width / img.height));
+        const outputHeight = Math.round(outputWidth / 1.586);
+
         canvas.width = outputWidth;
         canvas.height = outputHeight;
-        ctx.drawImage(img, 0, 0, outputWidth, outputHeight);
 
-        if (options.enableEnhancement) {
-          enhanceImage(ctx, outputWidth, outputHeight);
+        if (detection.success && detection.corners.length === 4) {
+          // Perform Perspective Warp
+          try {
+            // Source corners from detection
+            const srcCorners = detection.corners;
+
+            // Destination corners (the full output canvas)
+            // Order: TL, TR, BR, BL matching getOrderedCorners/orderCorners
+            const dstCorners = [
+              { x: 0, y: 0 },
+              { x: outputWidth, y: 0 },
+              { x: outputWidth, y: outputHeight },
+              { x: 0, y: outputHeight },
+            ];
+
+            await warpPerspective(img, canvas, srcCorners, dstCorners);
+          } catch (e) {
+            console.error("Warp failed, falling back to crop", e);
+            // Fallback: simple crop
+            const { x, y, width, height } = detection.boundingRect;
+            ctx.drawImage(
+              img,
+              x,
+              y,
+              width,
+              height,
+              0,
+              0,
+              outputWidth,
+              outputHeight
+            );
+          }
+
+          // Apply image enhancement only if enabled
+          if (options.enableEnhancement) {
+            enhanceImage(ctx, outputWidth, outputHeight);
+          }
+        } else {
+          // Fallback: simple crop
+          const { x, y, width, height } = detection.boundingRect;
+          ctx.drawImage(
+            img,
+            x,
+            y,
+            width,
+            height,
+            0,
+            0,
+            outputWidth,
+            outputHeight
+          );
+
+          if (options.enableEnhancement) {
+            enhanceImage(ctx, outputWidth, outputHeight);
+          }
         }
 
         resolve(canvas.toDataURL("image/png"));
-        return;
-      }
-
-      const { x, y, width, height } = detection.boundingRect;
-
-      // Set output dimensions (standard ID card aspect ratio)
-      const outputWidth = 600;
-      const outputHeight = Math.round(outputWidth / 1.586);
-
-      canvas.width = outputWidth;
-      canvas.height = outputHeight;
-
-      if (detection.success && detection.corners.length === 4) {
-        // Use canvas drawImage with source rect approximation
-        ctx.drawImage(
-          img,
-          x,
-          y,
-          width,
-          height,
-          0,
-          0,
-          outputWidth,
-          outputHeight
-        );
-
-        // Apply image enhancement only if enabled
-        if (options.enableEnhancement) {
-          enhanceImage(ctx, outputWidth, outputHeight);
-        }
-      } else {
-        // Fallback: simple crop
-        ctx.drawImage(
-          img,
-          x,
-          y,
-          width,
-          height,
-          0,
-          0,
-          outputWidth,
-          outputHeight
-        );
-
-        if (options.enableEnhancement) {
-          enhanceImage(ctx, outputWidth, outputHeight);
-        }
-      }
-
-      resolve(canvas.toDataURL("image/png"));
+      })();
     };
     img.onerror = () => resolve(imageDataUrl);
     img.src = imageDataUrl;
   });
+}
+
+/**
+ * Perform manual perspective warp
+ */
+async function warpPerspective(
+  srcImg: HTMLImageElement,
+  dstCanvas: HTMLCanvasElement,
+  srcCorners: Point[],
+  dstCorners: Point[]
+): Promise<void> {
+  const ctx = dstCanvas.getContext("2d")!;
+  const width = dstCanvas.width;
+  const height = dstCanvas.height;
+
+  // Calculate Homography Matrix
+  const h = getPerspectiveTransform(srcCorners, dstCorners);
+  const invH = invertMatrix(h);
+
+  // Per-pixel inverse mapping (This is slow in JS, but okay for 600x400)
+  // Use a temporay canvas to read source data
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = srcImg.width;
+  tempCanvas.height = srcImg.height;
+  const tempCtx = tempCanvas.getContext("2d")!;
+  tempCtx.drawImage(srcImg, 0, 0);
+  const srcData = tempCtx.getImageData(0, 0, srcImg.width, srcImg.height);
+
+  const dstData = ctx.createImageData(width, height);
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      // Apply inverse homography to find source coordinate
+      // x' = (h00*x + h01*y + h02) / (h20*x + h21*y + h22)
+      // y' = (h10*x + h11*y + h12) / (h20*x + h21*y + h22)
+
+      const denominator = invH[6] * x + invH[7] * y + invH[8];
+      const srcX = (invH[0] * x + invH[1] * y + invH[2]) / denominator;
+      const srcY = (invH[3] * x + invH[4] * y + invH[5]) / denominator;
+
+      if (
+        srcX >= 0 &&
+        srcX < srcImg.width - 1 &&
+        srcY >= 0 &&
+        srcY < srcImg.height - 1
+      ) {
+        // Bilinear interpolation
+        const x0 = Math.floor(srcX);
+        const y0 = Math.floor(srcY);
+        const dx = srcX - x0;
+        const dy = srcY - y0;
+
+        const idx = (y * width + x) * 4;
+
+        // Get 4 neighbors
+        const i00 = (y0 * srcImg.width + x0) * 4;
+        const i10 = (y0 * srcImg.width + (x0 + 1)) * 4;
+        const i01 = ((y0 + 1) * srcImg.width + x0) * 4;
+        const i11 = ((y0 + 1) * srcImg.width + (x0 + 1)) * 4;
+
+        for (let c = 0; c < 4; c++) {
+          const val =
+            srcData.data[i00 + c] * (1 - dx) * (1 - dy) +
+            srcData.data[i10 + c] * dx * (1 - dy) +
+            srcData.data[i01 + c] * (1 - dx) * dy +
+            srcData.data[i11 + c] * dx * dy;
+          dstData.data[idx + c] = val;
+        }
+      }
+    }
+  }
+
+  ctx.putImageData(dstData, 0, 0);
+}
+
+function getPerspectiveTransform(src: Point[], dst: Point[]): number[] {
+  // Solves Ah = 0 for homography matrix H
+  const a: number[][] = [];
+
+  for (let i = 0; i < 4; i++) {
+    a.push([
+      src[i].x,
+      src[i].y,
+      1,
+      0,
+      0,
+      0,
+      -src[i].x * dst[i].x,
+      -src[i].y * dst[i].x,
+    ]);
+    a.push([
+      0,
+      0,
+      0,
+      src[i].x,
+      src[i].y,
+      1,
+      -src[i].x * dst[i].y,
+      -src[i].y * dst[i].y,
+    ]);
+  }
+
+  // Solve linear system using Gaussian elimination
+  // We need to add the constrained vector b which is just the dst coordinates for the last column of H?
+  // Actually, standard DLT solves Ah=0. We'll set H_33 = 1 and solve for the first 8 params.
+  // The system becomes A * [h0...h7] = [dstX...dstY] basically.
+
+  // A simpler approach for the 8-DOF homography:
+  // Matrix A (8x8) * H (8x1) = B (8x1)
+
+  const A: number[][] = [];
+  const B: number[] = [];
+
+  for (let i = 0; i < 4; i++) {
+    const sx = src[i].x;
+    const sy = src[i].y;
+    const dx = dst[i].x;
+    const dy = dst[i].y;
+
+    A.push([sx, sy, 1, 0, 0, 0, -sx * dx, -sy * dx]);
+    B.push(dx);
+    A.push([0, 0, 0, sx, sy, 1, -sx * dy, -sy * dy]);
+    B.push(dy);
+  }
+
+  const h = solveLinearSystem(A, B);
+  h.push(1); // h33 = 1
+  return h;
+}
+
+function solveLinearSystem(A: number[][], B: number[]): number[] {
+  const n = B.length;
+  // Augment A with B
+  for (let i = 0; i < n; i++) A[i].push(B[i]);
+
+  // Gaussian elimination
+  for (let i = 0; i < n; i++) {
+    // Pivot
+    let maxRow = i;
+    for (let k = i + 1; k < n; k++) {
+      if (Math.abs(A[k][i]) > Math.abs(A[maxRow][i])) maxRow = k;
+    }
+    [A[i], A[maxRow]] = [A[maxRow], A[i]];
+
+    // Normalize
+    const diag = A[i][i];
+    if (Math.abs(diag) < 1e-8) continue; // Singular
+    for (let j = i; j <= n; j++) A[i][j] /= diag;
+
+    // Eliminate
+    for (let k = 0; k < n; k++) {
+      if (k !== i) {
+        const factor = A[k][i];
+        for (let j = i; j <= n; j++) A[k][j] -= factor * A[i][j];
+      }
+    }
+  }
+
+  return A.map((row) => row[n]);
+}
+
+function invertMatrix(m: number[]): number[] {
+  // m is 3x3 flattened
+  // Compute adjoint and determinant
+  const det =
+    m[0] * (m[4] * m[8] - m[5] * m[7]) -
+    m[1] * (m[3] * m[8] - m[5] * m[6]) +
+    m[2] * (m[3] * m[7] - m[4] * m[6]);
+
+  if (Math.abs(det) < 1e-8) return m; // Should not happen for valid perspective
+
+  const invDet = 1 / det;
+
+  return [
+    (m[4] * m[8] - m[5] * m[7]) * invDet,
+    -(m[1] * m[8] - m[2] * m[7]) * invDet,
+    (m[1] * m[5] - m[2] * m[4]) * invDet,
+    -(m[3] * m[8] - m[5] * m[6]) * invDet,
+    (m[0] * m[8] - m[2] * m[6]) * invDet,
+    -(m[0] * m[5] - m[2] * m[3]) * invDet,
+    (m[3] * m[7] - m[4] * m[6]) * invDet,
+    -(m[0] * m[7] - m[1] * m[6]) * invDet,
+    (m[0] * m[4] - m[1] * m[3]) * invDet,
+  ];
 }
 
 /**
@@ -629,7 +912,11 @@ export async function processImage(
   );
 
   // Step 3: Crop and warp card with options
-  const croppedCard = await cropAndWarpCard(imageDataUrl, detectionResult, options);
+  const croppedCard = await cropAndWarpCard(
+    imageDataUrl,
+    detectionResult,
+    options
+  );
 
   return {
     originalWithOverlay,
