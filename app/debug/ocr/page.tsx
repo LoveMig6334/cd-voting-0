@@ -231,7 +231,7 @@ export default function OCRDebugPage() {
                       : "text-red-400"
                   }
                 >
-                  {processedImages.detectionResult.confidence}%
+                  {processedImages.detectionResult.confidence.toFixed(1)}%
                 </span>
               </div>
               <div className="flex justify-between">
@@ -246,6 +246,26 @@ export default function OCRDebugPage() {
                   {processedImages.detectionResult.success ? "Yes" : "No"}
                 </span>
               </div>
+              <div className="flex justify-between">
+                <span>Detection Method:</span>
+                <span className="text-blue-400 truncate max-w-[150px]" title={getMethodDescription(processedImages.detectionResult.method)}>
+                  {processedImages.detectionResult.method}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Aspect Ratio:</span>
+                <span className="text-purple-400">
+                  {processedImages.detectionResult.detectedAspectRatio.toFixed(3)}
+                </span>
+              </div>
+              {pipelineResult && (
+                <div className="flex justify-between">
+                  <span>Processing Time:</span>
+                  <span className="text-cyan-400">
+                    {pipelineResult.totalDurationMs.toFixed(0)}ms
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
