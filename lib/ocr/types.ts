@@ -148,7 +148,7 @@ export type Matrix3x3 = readonly [
   number,
   number,
   number,
-  number,
+  number
 ];
 
 /**
@@ -163,7 +163,7 @@ export type MutableMatrix3x3 = [
   number,
   number,
   number,
-  number,
+  number
 ];
 
 /**
