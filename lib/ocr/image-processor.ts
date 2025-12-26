@@ -20,62 +20,62 @@
 // ============================================================================
 
 export type {
-  Point,
   BoundingRect,
-  ImageDimensions,
-  ImageOrientation,
-  DetectionResult,
-  DetectionMethod,
-  ExtendedDetectionResult,
-  ProcessedImage,
-  ProcessingOptions,
   ColorMaskResult,
-  EdgeDetectionResult,
   Contour,
-  Quadrilateral,
-  Matrix3x3,
-  MutableMatrix3x3,
+  DetectionMethod,
+  DetectionResult,
+  EdgeDetectionResult,
+  EnhancementConfig,
+  ExtendedDetectionResult,
   HomographyResult,
   ImageDataWithDimensions,
+  ImageDimensions,
+  ImageOrientation,
+  Matrix3x3,
+  MutableMatrix3x3,
+  Point,
+  ProcessedImage,
+  ProcessingOptions,
+  Quadrilateral,
   WarpConfig,
-  EnhancementConfig,
 } from "./types";
 
 export {
+  createBoundingRect,
   createDefaultProcessingOptions,
   createPoint,
-  createBoundingRect,
   getImageOrientation,
-  quadToPoints,
   pointsToQuad,
+  quadToPoints,
 } from "./types";
 
 // ============================================================================
 // Error Exports
 // ============================================================================
 
-export type { Result, DetectionError } from "./errors";
+export type { DetectionError, Result } from "./errors";
 
 export {
-  DetectionErrorCode,
-  ImageLoadError,
-  NoQuadrilateralFoundError,
-  LowConfidenceError,
-  InvalidAspectRatioError,
-  InvalidAreaError,
-  WarpFailedError,
-  SingularMatrixError,
+  andThen,
   CanvasContextError,
-  ok,
+  DetectionErrorCode,
   err,
-  isOk,
+  errorToDiagnostic,
+  ImageLoadError,
+  InvalidAreaError,
+  InvalidAspectRatioError,
   isErr,
-  unwrap,
-  unwrapOr,
+  isOk,
+  LowConfidenceError,
   map,
   mapErr,
-  andThen,
-  errorToDiagnostic,
+  NoQuadrilateralFoundError,
+  ok,
+  SingularMatrixError,
+  unwrap,
+  unwrapOr,
+  WarpFailedError,
 } from "./errors";
 
 // ============================================================================
@@ -85,14 +85,14 @@ export {
 export {
   CARD_DIMENSIONS,
   COLOR_THRESHOLDS,
-  EDGE_DETECTION,
-  CONTOUR_DETECTION,
-  QUADRILATERAL,
   CONFIDENCE,
-  FALLBACK,
+  CONTOUR_DETECTION,
+  EDGE_DETECTION,
   ENHANCEMENT,
-  OVERLAY,
+  FALLBACK,
   MATRIX,
+  OVERLAY,
+  QUADRILATERAL,
 } from "./constants";
 
 // ============================================================================
@@ -100,21 +100,21 @@ export {
 // ============================================================================
 
 export {
-  crossProduct,
-  distance,
-  isConvexQuadrilateral,
-  quadrilateralArea,
-  getBoundingRect,
-  rectToCorners,
-  orderCorners,
-  convexHull,
-  simplifyContour,
-  solveLinearSystem,
-  invertMatrix3x3,
-  getPerspectiveTransform,
-  transformPoint,
   clamp,
   clampPixel,
+  convexHull,
+  crossProduct,
+  distance,
+  getBoundingRect,
+  getPerspectiveTransform,
+  invertMatrix3x3,
+  isConvexQuadrilateral,
+  orderCorners,
+  quadrilateralArea,
+  rectToCorners,
+  simplifyContour,
+  solveLinearSystem,
+  transformPoint,
 } from "./geometry-utils";
 
 // ============================================================================
@@ -122,16 +122,16 @@ export {
 // ============================================================================
 
 export {
-  loadImage,
-  createCanvas,
-  getImageData,
   applySobelEdgeDetection,
-  warpPerspective,
-  enhanceImage,
-  drawDetectionOverlay,
-  simpleCrop,
-  scaleImage,
   canvasToDataUrl,
+  createCanvas,
+  drawDetectionOverlay,
+  enhanceImage,
+  getImageData,
+  loadImage,
+  scaleImage,
+  simpleCrop,
+  warpPerspective,
 } from "./canvas-utils";
 
 // ============================================================================
@@ -144,7 +144,7 @@ export { detectCard, getMethodDescription } from "./card-detector";
 // Pipeline Manager Exports
 // ============================================================================
 
-export type { PipelineStageResult, PipelineResult } from "./pipeline-manager";
+export type { PipelineResult, PipelineStageResult } from "./pipeline-manager";
 
 export {
   PipelineManager,

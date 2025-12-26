@@ -4,13 +4,13 @@
  */
 
 import { MATRIX } from "./constants";
-import { SingularMatrixError, ok, err, type Result } from "./errors";
+import { SingularMatrixError, err, ok, type Result } from "./errors";
 import type {
-  Point,
   BoundingRect,
+  HomographyResult,
   Matrix3x3,
   MutableMatrix3x3,
-  HomographyResult,
+  Point,
 } from "./types";
 
 /**
