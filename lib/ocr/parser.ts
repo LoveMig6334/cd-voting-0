@@ -153,9 +153,6 @@ function extractStudentNo(lines: string[], result: ParseResult): void {
 }
 
 function extractName(lines: string[], result: ParseResult): void {
-  // Thai names: look for lines with Thai characters
-  const thaiPattern = /[\u0E00-\u0E7F]+/g;
-
   // Title prefixes with optional space after
   const titlePrefixes = /^(?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)\s*/;
 
