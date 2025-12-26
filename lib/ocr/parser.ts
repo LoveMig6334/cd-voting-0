@@ -25,7 +25,7 @@ export interface ParseResult extends Partial<StudentData> {
  */
 export function parseOCRText(text: string): ParseResult {
   const result: ParseResult = {
-    confidence: { id: 0, name: 0, surname: 0, classroom: 0, no: 0 },
+    confidence: { id: 0, name: 0, surname: 0, classroom: 0, no: 0, nationalId: 0 },
   };
 
   // Normalize text: handle common OCR misreads
@@ -40,6 +40,7 @@ export function parseOCRText(text: string): ParseResult {
   extractClassroom(lines, result);
   extractStudentNo(lines, result);
   extractName(lines, result);
+  extractNationalId(lines, result);
 
   return result;
 }
