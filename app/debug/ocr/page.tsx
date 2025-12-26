@@ -258,6 +258,27 @@ export default function OCRDebugPage() {
             Cleaned Card
           </h2>
 
+          {/* Processing Options */}
+          <div className="mb-4 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50 space-y-3">
+            <p className="text-xs text-slate-500 font-medium">Preprocessing Options</p>
+            <ToggleSwitch
+              label="Auto Crop"
+              description="Crop to detected card boundaries"
+              checked={processingOptions.enableCrop}
+              onChange={(checked) =>
+                setProcessingOptions((prev) => ({ ...prev, enableCrop: checked }))
+              }
+            />
+            <ToggleSwitch
+              label="Enhancement"
+              description="Apply contrast & brightness boost"
+              checked={processingOptions.enableEnhancement}
+              onChange={(checked) =>
+                setProcessingOptions((prev) => ({ ...prev, enableEnhancement: checked }))
+              }
+            />
+          </div>
+
           <div className="aspect-[4/3] bg-slate-900 rounded-xl border border-slate-700 overflow-hidden flex items-center justify-center">
             {processedImages?.croppedCard ? (
               <img
@@ -276,8 +297,13 @@ export default function OCRDebugPage() {
           </div>
 
           <p className="mt-3 text-xs text-slate-500">
-            Perspective-corrected and enhanced image that will be sent to the
-            OCR engine for text extraction.
+            {processingOptions.enableCrop && processingOptions.enableEnhancement
+              ? "Cropped & enhanced image for OCR"
+              : processingOptions.enableCrop
+              ? "Cropped image (no enhancement)"
+              : processingOptions.enableEnhancement
+              ? "Full image with enhancement"
+              : "Raw image (no preprocessing)"}
           </p>
         </section>
 
