@@ -505,13 +505,30 @@ export async function drawDetectionOverlay(
  */
 export async function cropAndWarpCard(
   imageDataUrl: string,
-  detection: DetectionResult
+  detection: DetectionResult,
+  options: ProcessingOptions = { enableCrop: true, enableEnhancement: true }
 ): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d")!;
+
+      // If cropping is disabled, return the original image scaled
+      if (!options.enableCrop) {
+        const outputWidth = 600;
+        const outputHeight = Math.round(outputWidth / (img.width / img.height));
+        canvas.width = outputWidth;
+        canvas.height = outputHeight;
+        ctx.drawImage(img, 0, 0, outputWidth, outputHeight);
+
+        if (options.enableEnhancement) {
+          enhanceImage(ctx, outputWidth, outputHeight);
+        }
+
+        resolve(canvas.toDataURL("image/png"));
+        return;
+      }
 
       const { x, y, width, height } = detection.boundingRect;
 
@@ -523,19 +540,6 @@ export async function cropAndWarpCard(
       canvas.height = outputHeight;
 
       if (detection.success && detection.corners.length === 4) {
-        // Apply perspective correction using bilinear interpolation
-        const corners = detection.corners;
-
-        // Simple crop with perspective approximation
-        // For more accurate warping, we'd need a proper perspective transform matrix
-        const srcQuad = corners;
-        const dstQuad = [
-          { x: 0, y: 0 },
-          { x: outputWidth, y: 0 },
-          { x: outputWidth, y: outputHeight },
-          { x: 0, y: outputHeight },
-        ];
-
         // Use canvas drawImage with source rect approximation
         ctx.drawImage(
           img,
@@ -549,8 +553,10 @@ export async function cropAndWarpCard(
           outputHeight
         );
 
-        // Apply image enhancement
-        enhanceImage(ctx, outputWidth, outputHeight);
+        // Apply image enhancement only if enabled
+        if (options.enableEnhancement) {
+          enhanceImage(ctx, outputWidth, outputHeight);
+        }
       } else {
         // Fallback: simple crop
         ctx.drawImage(
@@ -564,6 +570,10 @@ export async function cropAndWarpCard(
           outputWidth,
           outputHeight
         );
+
+        if (options.enableEnhancement) {
+          enhanceImage(ctx, outputWidth, outputHeight);
+        }
       }
 
       resolve(canvas.toDataURL("image/png"));
@@ -605,7 +615,10 @@ function clamp(value: number): number {
 /**
  * Full preprocessing pipeline
  */
-export async function processImage(imageDataUrl: string): Promise<ProcessedImage> {
+export async function processImage(
+  imageDataUrl: string,
+  options: ProcessingOptions = { enableCrop: true, enableEnhancement: true }
+): Promise<ProcessedImage> {
   // Step 1: Detect card boundaries
   const detectionResult = await detectCardBoundaries(imageDataUrl);
 
@@ -615,8 +628,8 @@ export async function processImage(imageDataUrl: string): Promise<ProcessedImage
     detectionResult
   );
 
-  // Step 3: Crop and warp card
-  const croppedCard = await cropAndWarpCard(imageDataUrl, detectionResult);
+  // Step 3: Crop and warp card with options
+  const croppedCard = await cropAndWarpCard(imageDataUrl, detectionResult, options);
 
   return {
     originalWithOverlay,
