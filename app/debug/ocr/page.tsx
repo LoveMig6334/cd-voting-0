@@ -63,8 +63,8 @@ export default function OCRDebugPage() {
     setOcrProgress(0);
 
     try {
-      // Process image (detect + crop)
-      const processed = await processImage(originalImage);
+      // Process image (detect + crop) with options
+      const processed = await processImage(originalImage, processingOptions);
       setProcessedImages(processed);
 
       // Stage 2: Cropping complete
