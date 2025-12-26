@@ -50,7 +50,7 @@ export default function OCRDebugPage() {
       reader.onload = (event) => {
         const imageData = event.target?.result as string;
         setOriginalImage(imageData);
-        setProcessedImages(null);
+        setPipelineResult(null);
         setRawText("");
         setParsedData({
           confidence: { id: 0, name: 0, surname: 0, classroom: 0, no: 0, nationalId: 0 },
