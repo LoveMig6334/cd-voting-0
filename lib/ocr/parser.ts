@@ -137,34 +137,93 @@ function extractStudentNo(lines: string[], result: ParseResult): void {
 }
 
 function extractName(lines: string[], result: ParseResult): void {
-  // Thai names: look for lines with Thai characters and no numbers
+  // Thai names: look for lines with Thai characters
+  // Format on Thai ID cards: "ชื่อ-สกุล นายธรรศ บุนนาค" or "Name นายธรรศ บุนนาค"
   const thaiPattern = /[\u0E00-\u0E7F]+/g;
-  const nameKeywords = /(?:ชื่อ|นาย|นางสาว|เด็กชาย|เด็กหญิง|name)/i;
+
+  // Title prefixes to strip from name
+  const titlePrefixes = /^(?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)/;
 
   for (const line of lines) {
-    // Skip lines with numbers (likely ID or classroom)
-    if (/\d/.test(line) && !nameKeywords.test(line)) continue;
+    // Skip lines with numbers (likely ID or classroom) unless it has name keywords
+    const hasNameKeyword = /(?:ชื่อ|สกุล|name)/i.test(line);
+    if (/\d/.test(line) && !hasNameKeyword) continue;
 
-    // Look for name keyword followed by Thai text
-    const keywordMatch = line.match(
-      /(?:ชื่อ|นาย|นางสาว|เด็กชาย|เด็กหญิง)[:\s]*([\u0E00-\u0E7F]+)\s+([\u0E00-\u0E7F\s]+)/
+    // Pattern 1: "ชื่อ-สกุล" followed by title + name + surname (highest confidence)
+    const fullNameMatch = line.match(
+      /ชื่อ[-\s]*สกุล[:\s]*((?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)?[\u0E00-\u0E7F]+)\s+([\u0E00-\u0E7F\s]+)/
     );
-    if (keywordMatch) {
-      result.name = keywordMatch[1].trim();
-      result.surname = keywordMatch[2].trim();
-      result.confidence.name = 90;
-      result.confidence.surname = 90;
+    if (fullNameMatch) {
+      let name = fullNameMatch[1].trim();
+      // Remove title prefix from name
+      name = name.replace(titlePrefixes, "").trim();
+      result.name = name;
+      result.surname = fullNameMatch[2].trim();
+      result.confidence.name = 100;
+      result.confidence.surname = 100;
       return;
     }
 
-    // Fallback: line with only Thai characters (likely name surname format)
-    const thaiMatches = line.match(thaiPattern);
-    if (thaiMatches && thaiMatches.length >= 2 && !result.name) {
-      // First Thai word as name, rest as surname
-      result.name = thaiMatches[0];
-      result.surname = thaiMatches.slice(1).join(" ");
-      result.confidence.name = 60;
-      result.confidence.surname = 60;
+    // Pattern 2: English "Name" label
+    const englishNameMatch = line.match(
+      /Name[:\s]*((?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง)?[\u0E00-\u0E7F]+)\s+([\u0E00-\u0E7F\s]+)/i
+    );
+    if (englishNameMatch) {
+      let name = englishNameMatch[1].trim();
+      name = name.replace(titlePrefixes, "").trim();
+      result.name = name;
+      result.surname = englishNameMatch[2].trim();
+      result.confidence.name = 95;
+      result.confidence.surname = 95;
+      return;
+    }
+
+    // Pattern 3: Just "ชื่อ" (name only) followed by Thai text
+    const nameOnlyMatch = line.match(
+      /ชื่อ[:\s]*((?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง)?[\u0E00-\u0E7F]+)/
+    );
+    if (nameOnlyMatch && !result.name) {
+      let name = nameOnlyMatch[1].trim();
+      name = name.replace(titlePrefixes, "").trim();
+      result.name = name;
+      result.confidence.name = 80;
+    }
+
+    // Pattern 4: "สกุล" (surname) separately
+    const surnameOnlyMatch = line.match(/สกุล[:\s]*([\u0E00-\u0E7F\s]+)/);
+    if (surnameOnlyMatch && !result.surname) {
+      result.surname = surnameOnlyMatch[1].trim();
+      result.confidence.surname = 80;
+    }
+
+    // Pattern 5: Title prefix followed by name and surname (e.g., "นายธรรศ บุนนาค")
+    const titleMatch = line.match(
+      /(?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)([\u0E00-\u0E7F]+)\s+([\u0E00-\u0E7F\s]+)/
+    );
+    if (titleMatch && !result.name) {
+      result.name = titleMatch[1].trim();
+      result.surname = titleMatch[2].trim();
+      result.confidence.name = 70;
+      result.confidence.surname = 70;
+      return;
+    }
+  }
+
+  // Fallback: find lines with only Thai characters (likely name surname format)
+  if (!result.name) {
+    for (const line of lines) {
+      // Skip lines with numbers
+      if (/\d/.test(line)) continue;
+
+      const thaiMatches = line.match(thaiPattern);
+      if (thaiMatches && thaiMatches.length >= 2) {
+        // First Thai word as name, second as surname
+        result.name = thaiMatches[0];
+        result.surname = thaiMatches[1];
+        result.confidence.name = 50;
+        result.confidence.surname = 50;
+        return;
+      }
     }
   }
 }
