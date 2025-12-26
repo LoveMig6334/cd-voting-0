@@ -59,18 +59,20 @@ function normalizeOCRText(text: string): string {
       .replace(/[oO]/g, "0")
       .replace(/[lI]/g, "1")
       // Thai character normalization
-      .replace(/\u0E33/g, "\u0E32\u0E4D") // Normalize Sara Am
-      // Remove extra whitespace
-      .replace(/\s+/g, " ")
+      .replace(/\u0E33/g, "\u0E32\u0E4D") // Normalize Sara Am (ำ -> า + ํ)
+      // Remove extra horizontal whitespace but PRESERVE newlines
+      .replace(/[ \t]+/g, " ")
   );
 }
 
 function extractStudentId(lines: string[], result: ParseResult): void {
   // Student IDs are 4-digit numbers on Thai student ID cards
   // Located near "เลขประจำตัว" or "Student ID" labels
+
+  // Normalization-aware patterns (using \u0E32\u0E4D instead of ำ)
   const idPatterns = [
     // Exact label match with Thai "เลขประจำตัว" (highest confidence)
-    /เลขประจำตัว(?:นักเรียน)?[:\s]*(\d{4,5})/i,
+    /เลขประจ\u0E32\u0E4Dตัว(?:นักเรียน)?[:\s]*(\d{4,5})/i,
     // English "Student ID" label
     /Student\s*ID[:\s]*(\d{4,5})/i,
     // Thai "รหัส" or "รหัสนักเรียน"
@@ -84,13 +86,20 @@ function extractStudentId(lines: string[], result: ParseResult): void {
   const confidenceScores = [100, 95, 90, 70, 50];
 
   for (const line of lines) {
-    // Skip lines that look like national ID (13 digits with spaces)
-    if (/\d[\s-]?\d{4}[\s-]?\d{5}[\s-]?\d{2}[\s-]?\d/.test(line)) continue;
-
+    // Check patterns
     for (let i = 0; i < idPatterns.length; i++) {
       const match = line.match(idPatterns[i]);
       if (match) {
         const id = parseInt(match[1], 10);
+
+        // Skip if this looks like part of a national ID (13 digits)
+        const fullNumbers = line.match(/\d+/g);
+        if (fullNumbers && fullNumbers.some((n) => n.length >= 10)) {
+          // If the match is a substring of a much longer number, it's likely part of National ID
+          if (line.match(new RegExp(`\\d${match[1]}\\d|${match[1]}\\d{6,}`)))
+            continue;
+        }
+
         // Validate: 4-digit student IDs typically in range 1000-9999
         if (id >= 1000 && id <= 9999) {
           result.id = id;
@@ -145,74 +154,69 @@ function extractStudentNo(lines: string[], result: ParseResult): void {
 
 function extractName(lines: string[], result: ParseResult): void {
   // Thai names: look for lines with Thai characters
-  // Format on Thai ID cards: "ชื่อ-สกุล นายธรรศ บุนนาค" or "Name นายธรรศ บุนนาค"
   const thaiPattern = /[\u0E00-\u0E7F]+/g;
 
-  // Title prefixes to strip from name
-  const titlePrefixes = /^(?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)/;
+  // Title prefixes with optional space after
+  const titlePrefixes = /^(?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)\s*/;
 
   for (const line of lines) {
-    // Skip lines with numbers (likely ID or classroom) unless it has name keywords
-    const hasNameKeyword = /(?:ชื่อ|สกุล|name)/i.test(line);
-    if (/\d/.test(line) && !hasNameKeyword) continue;
+    // Skip lines with long numbers (likely National ID)
+    if (/\d{10,}/.test(line.replace(/[\s-]/g, ""))) continue;
 
-    // Pattern 1: "ชื่อ-สกุล" followed by title + name + surname (highest confidence)
+    // Pattern 1: "ชื่อ-สกุล" or "ชื่อ/สกุล" followed by title + name + surname
+    // Note: Thai cards often use - or just space
     const fullNameMatch = line.match(
-      /ชื่อ[-\s]*สกุล[:\s]*((?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)?[\u0E00-\u0E7F]+)\s+([\u0E00-\u0E7F\s]+)/
+      /(?:ชื่อ[-\s\/]*สกุล|Name)[:\s]*((?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)?\s*[\u0E00-\u0E7F]+)\s+([\u0E00-\u0E7F\s]+)/i
     );
+
     if (fullNameMatch) {
-      let name = fullNameMatch[1].trim();
+      const namePart = fullNameMatch[1].trim();
+      let surnamePart = fullNameMatch[2].trim();
+
+      // Remove any trailing keywords that might be on the same line (like "เลขประจำตัว")
+      surnamePart = surnamePart
+        .split(/\s(?:เลขประจำตัว|No|Student|ID)/i)[0]
+        .trim();
+
       // Remove title prefix from name
-      name = name.replace(titlePrefixes, "").trim();
-      result.name = name;
-      result.surname = fullNameMatch[2].trim();
+      const nameOnly = namePart.replace(titlePrefixes, "").trim();
+
+      result.name = nameOnly;
+      result.surname = surnamePart;
       result.confidence.name = 100;
       result.confidence.surname = 100;
       return;
     }
 
-    // Pattern 2: English "Name" label
-    const englishNameMatch = line.match(
-      /Name[:\s]*((?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง)?[\u0E00-\u0E7F]+)\s+([\u0E00-\u0E7F\s]+)/i
+    // Pattern 2: Title prefix followed by name and surname (e.g., "นาย ธรรศ บุนนาค")
+    // Allow space after title
+    const titleMatch = line.match(
+      /(นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)\s*([\u0E00-\u0E7F]+)\s+([\u0E00-\u0E7F]+)/
     );
-    if (englishNameMatch) {
-      let name = englishNameMatch[1].trim();
-      name = name.replace(titlePrefixes, "").trim();
-      result.name = name;
-      result.surname = englishNameMatch[2].trim();
-      result.confidence.name = 95;
-      result.confidence.surname = 95;
+    if (titleMatch && !result.name) {
+      result.name = titleMatch[2].trim();
+      result.surname = titleMatch[3].trim();
+      result.confidence.name = 85;
+      result.confidence.surname = 85;
       return;
     }
 
-    // Pattern 3: Just "ชื่อ" (name only) followed by Thai text
+    // Pattern 3: Just "ชื่อ" (name only)
     const nameOnlyMatch = line.match(
-      /ชื่อ[:\s]*((?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง)?[\u0E00-\u0E7F]+)/
+      /ชื่อ[:\s]*((?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง)?\s*[\u0E00-\u0E7F]+)/
     );
     if (nameOnlyMatch && !result.name) {
-      let name = nameOnlyMatch[1].trim();
-      name = name.replace(titlePrefixes, "").trim();
-      result.name = name;
+      result.name = nameOnlyMatch[1].replace(titlePrefixes, "").trim();
       result.confidence.name = 80;
     }
 
     // Pattern 4: "สกุล" (surname) separately
     const surnameOnlyMatch = line.match(/สกุล[:\s]*([\u0E00-\u0E7F\s]+)/);
     if (surnameOnlyMatch && !result.surname) {
-      result.surname = surnameOnlyMatch[1].trim();
+      let surname = surnameOnlyMatch[1].trim();
+      surname = surname.split(/\s(?:เลขประจำตัว|No|Student|ID)/i)[0].trim();
+      result.surname = surname;
       result.confidence.surname = 80;
-    }
-
-    // Pattern 5: Title prefix followed by name and surname (e.g., "นายธรรศ บุนนาค")
-    const titleMatch = line.match(
-      /(?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)([\u0E00-\u0E7F]+)\s+([\u0E00-\u0E7F\s]+)/
-    );
-    if (titleMatch && !result.name) {
-      result.name = titleMatch[1].trim();
-      result.surname = titleMatch[2].trim();
-      result.confidence.name = 70;
-      result.confidence.surname = 70;
-      return;
     }
   }
 
@@ -222,14 +226,17 @@ function extractName(lines: string[], result: ParseResult): void {
       // Skip lines with numbers
       if (/\d/.test(line)) continue;
 
-      const thaiMatches = line.match(thaiPattern);
+      const thaiMatches = line.match(/[\u0E00-\u0E7F]+/g);
       if (thaiMatches && thaiMatches.length >= 2) {
-        // First Thai word as name, second as surname
-        result.name = thaiMatches[0];
-        result.surname = thaiMatches[1];
-        result.confidence.name = 50;
-        result.confidence.surname = 50;
-        return;
+        // Filter out very short strings (like titles if they were split)
+        const names = thaiMatches.filter((s) => s.length > 1);
+        if (names.length >= 2) {
+          result.name = names[0];
+          result.surname = names[1];
+          result.confidence.name = 50;
+          result.confidence.surname = 50;
+          return;
+        }
       }
     }
   }
