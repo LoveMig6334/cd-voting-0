@@ -1,15 +1,25 @@
 "use client";
 
-import { parseOCRText } from "@/lib/ocr/parser";
+import { ParseResult, parseOCRText, validateParsedData } from "@/lib/ocr/parser";
 import { StudentData } from "@/lib/student-data";
 import React, { useEffect, useState } from "react";
 import Tesseract from "tesseract.js";
 
+interface ValidationResult {
+  isValid: boolean;
+  matchedStudent: StudentData | null;
+  matchType: "exact" | "partial" | "none";
+}
+
 export default function OCRDebugPage() {
   const [image, setImage] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>("");
-  const [parsedData, setParsedData] = useState<Partial<StudentData>>({});
+  const [parsedData, setParsedData] = useState<ParseResult>({
+    confidence: { id: 0, name: 0, surname: 0, classroom: 0, no: 0 },
+  });
+  const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [validating, setValidating] = useState(false);
   const [progress, setProgress] = useState(0);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,12 +60,25 @@ export default function OCRDebugPage() {
     if (rawText) {
       const parsed = parseOCRText(rawText);
       setParsedData(parsed);
+      setValidation(null); // Reset validation when re-parsing
     }
   }, [rawText]);
 
   const handleReparse = () => {
     const parsed = parseOCRText(rawText);
     setParsedData(parsed);
+    setValidation(null);
+  };
+
+  const handleValidate = async () => {
+    if (!parsedData.id) return;
+    setValidating(true);
+    try {
+      const result = await validateParsedData(parsedData);
+      setValidation(result);
+    } finally {
+      setValidating(false);
+    }
   };
 
   return (
@@ -116,21 +139,109 @@ export default function OCRDebugPage() {
                 <span className="w-2 h-6 bg-purple-500 rounded-full"></span>
                 Parsed Data
               </h2>
-              <button
-                onClick={handleReparse}
-                className="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded-md transition-colors"
-                title="Manually trigger parser logic with current raw text"
-              >
-                Manual Re-parse
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleReparse}
+                  className="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded-md transition-colors"
+                  title="Manually trigger parser logic with current raw text"
+                >
+                  Re-parse
+                </button>
+                <button
+                  onClick={handleValidate}
+                  disabled={!parsedData.id || validating}
+                  className={`text-xs px-3 py-1 rounded-md transition-colors ${
+                    !parsedData.id || validating
+                      ? "bg-slate-700 text-slate-500 cursor-not-allowed"
+                      : "bg-emerald-600 hover:bg-emerald-500"
+                  }`}
+                  title="Validate against student database"
+                >
+                  {validating ? "Validating..." : "Validate"}
+                </button>
+              </div>
             </div>
             <div className="space-y-3">
-              <DataField label="Student ID" value={parsedData.id} />
-              <DataField label="Name" value={parsedData.name} />
-              <DataField label="Surname" value={parsedData.surname} />
-              <DataField label="Classroom" value={parsedData.classroom} />
-              <DataField label="No" value={parsedData.no} />
+              <DataField
+                label="Student ID"
+                value={parsedData.id}
+                confidence={parsedData.confidence.id}
+              />
+              <DataField
+                label="Name"
+                value={parsedData.name}
+                confidence={parsedData.confidence.name}
+              />
+              <DataField
+                label="Surname"
+                value={parsedData.surname}
+                confidence={parsedData.confidence.surname}
+              />
+              <DataField
+                label="Classroom"
+                value={parsedData.classroom}
+                confidence={parsedData.confidence.classroom}
+              />
+              <DataField
+                label="No"
+                value={parsedData.no}
+                confidence={parsedData.confidence.no}
+              />
             </div>
+
+            {/* Validation Result */}
+            {validation && (
+              <div
+                className={`mt-4 p-4 rounded-xl border ${
+                  validation.matchType === "exact"
+                    ? "bg-emerald-900/30 border-emerald-500/50"
+                    : validation.matchType === "partial"
+                    ? "bg-yellow-900/30 border-yellow-500/50"
+                    : "bg-red-900/30 border-red-500/50"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span
+                    className={`material-symbols-outlined text-lg ${
+                      validation.matchType === "exact"
+                        ? "text-emerald-400"
+                        : validation.matchType === "partial"
+                        ? "text-yellow-400"
+                        : "text-red-400"
+                    }`}
+                  >
+                    {validation.matchType === "none"
+                      ? "error"
+                      : validation.matchType === "exact"
+                      ? "check_circle"
+                      : "warning"}
+                  </span>
+                  <span className="font-semibold">
+                    {validation.matchType === "exact"
+                      ? "Exact Match Found"
+                      : validation.matchType === "partial"
+                      ? "Partial Match (ID Only)"
+                      : "No Match Found"}
+                  </span>
+                </div>
+                {validation.matchedStudent && (
+                  <div className="text-sm text-slate-300 space-y-1 mt-3 pl-2 border-l-2 border-slate-600">
+                    <p>
+                      <span className="text-slate-500">Database Record:</span>
+                    </p>
+                    <p>
+                      ID: {validation.matchedStudent.id} | Name:{" "}
+                      {validation.matchedStudent.name}{" "}
+                      {validation.matchedStudent.surname}
+                    </p>
+                    <p>
+                      Classroom: {validation.matchedStudent.classroom} | No:{" "}
+                      {validation.matchedStudent.no}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
 
@@ -149,17 +260,42 @@ export default function OCRDebugPage() {
   );
 }
 
-function DataField({ label, value }: { label: string; value: any }) {
+function DataField({
+  label,
+  value,
+  confidence,
+}: {
+  label: string;
+  value: any;
+  confidence?: number;
+}) {
+  const getConfidenceColor = (conf: number) => {
+    if (conf >= 80) return "text-emerald-400";
+    if (conf >= 50) return "text-yellow-400";
+    if (conf > 0) return "text-orange-400";
+    return "text-slate-600";
+  };
+
   return (
     <div className="flex justify-between items-center p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
       <span className="text-slate-400 text-sm">{label}</span>
-      <span
-        className={`font-mono ${
-          value ? "text-blue-300" : "text-slate-600 italic"
-        }`}
-      >
-        {value?.toString() || "not found"}
-      </span>
+      <div className="flex items-center gap-3">
+        {confidence !== undefined && confidence > 0 && (
+          <span
+            className={`text-xs font-mono ${getConfidenceColor(confidence)}`}
+            title="Confidence score"
+          >
+            {confidence}%
+          </span>
+        )}
+        <span
+          className={`font-mono ${
+            value ? "text-blue-300" : "text-slate-600 italic"
+          }`}
+        >
+          {value?.toString() || "not found"}
+        </span>
+      </div>
     </div>
   );
 }
