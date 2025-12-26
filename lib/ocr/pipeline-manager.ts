@@ -80,10 +80,6 @@ export class PipelineManager {
     }
 
     const img = loadResult.value;
-    const imageDimensions: ImageDimensions = {
-      width: img.width,
-      height: img.height,
-    };
 
     // Stage 2: Get image data
     const imageDataResult = await this.runStage("get_image_data", async () => {
