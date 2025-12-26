@@ -443,16 +443,71 @@ export default function OCRDebugPage() {
         </section>
       </div>
 
-      {/* Raw OCR Log */}
-      <section className="mt-6 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <span className="w-2 h-6 bg-emerald-500 rounded-full"></span>
-          Raw OCR Output
-        </h2>
-        <div className="bg-slate-950 p-4 rounded-xl border border-slate-700 font-mono text-xs overflow-auto text-emerald-400/80 whitespace-pre-wrap leading-relaxed max-h-[200px]">
-          {rawText || "Waiting for OCR..."}
-        </div>
-      </section>
+      {/* Bottom Section: Raw OCR & Pipeline Diagnostics */}
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Raw OCR Log */}
+        <section className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <span className="w-2 h-6 bg-emerald-500 rounded-full"></span>
+            Raw OCR Output
+          </h2>
+          <div className="bg-slate-950 p-4 rounded-xl border border-slate-700 font-mono text-xs overflow-auto text-emerald-400/80 whitespace-pre-wrap leading-relaxed max-h-[200px]">
+            {rawText || "Waiting for OCR..."}
+          </div>
+        </section>
+
+        {/* Pipeline Diagnostics */}
+        <section className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <span className="w-2 h-6 bg-cyan-500 rounded-full"></span>
+            Pipeline Diagnostics
+          </h2>
+          {pipelineResult ? (
+            <div className="space-y-2">
+              {pipelineResult.stages.map((stage, idx) => (
+                <div
+                  key={idx}
+                  className="flex justify-between items-center p-2 bg-slate-900/50 rounded-lg border border-slate-700/50"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
+                        stage.success ? "bg-emerald-600" : "bg-red-600"
+                      }`}
+                    >
+                      {stage.success ? "✓" : "✗"}
+                    </span>
+                    <span className="text-slate-300 text-sm font-mono">
+                      {stage.stage}
+                    </span>
+                  </div>
+                  <span className="text-cyan-400 text-xs font-mono">
+                    {stage.durationMs.toFixed(1)}ms
+                  </span>
+                </div>
+              ))}
+              <div className="mt-3 pt-3 border-t border-slate-700 flex justify-between items-center">
+                <span className="text-slate-400 text-sm font-semibold">
+                  Total Pipeline Time
+                </span>
+                <span className="text-cyan-300 font-mono font-bold">
+                  {pipelineResult.totalDurationMs.toFixed(1)}ms
+                </span>
+              </div>
+              {processedImages && (
+                <div className="mt-2 p-2 bg-slate-900/30 rounded-lg text-xs text-slate-500">
+                  <span className="text-slate-400">Method:</span>{" "}
+                  {getMethodDescription(processedImages.detectionResult.method)}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center text-slate-600 text-sm py-8">
+              Run the pipeline to see diagnostics
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
