@@ -31,6 +31,10 @@ export default function OCRDebugPage() {
   const [pipelineStage, setPipelineStage] = useState<PipelineStage>("idle");
   const [ocrProgress, setOcrProgress] = useState(0);
   const [validating, setValidating] = useState(false);
+  const [processingOptions, setProcessingOptions] = useState<ProcessingOptions>({
+    enableCrop: true,
+    enableEnhancement: true,
+  });
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
