@@ -16,6 +16,11 @@ export interface ProcessedImage {
   detectionResult: DetectionResult;
 }
 
+export interface ProcessingOptions {
+  enableCrop: boolean;
+  enableEnhancement: boolean;
+}
+
 interface Point {
   x: number;
   y: number;
