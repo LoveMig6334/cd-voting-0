@@ -1,12 +1,14 @@
 import { StudentData } from "../student-data";
 
 export interface ParseResult extends Partial<StudentData> {
+  nationalId?: string;
   confidence: {
     id: number;
     name: number;
     surname: number;
     classroom: number;
     no: number;
+    nationalId: number;
   };
 }
 
