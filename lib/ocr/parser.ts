@@ -25,7 +25,14 @@ export interface ParseResult extends Partial<StudentData> {
  */
 export function parseOCRText(text: string): ParseResult {
   const result: ParseResult = {
-    confidence: { id: 0, name: 0, surname: 0, classroom: 0, no: 0, nationalId: 0 },
+    confidence: {
+      id: 0,
+      name: 0,
+      surname: 0,
+      classroom: 0,
+      no: 0,
+      nationalId: 0,
+    },
   };
 
   // Normalize text: handle common OCR misreads
@@ -274,7 +281,9 @@ function extractNationalId(lines: string[], result: ParseResult): void {
  */
 function formatNationalId(id: string): string {
   if (id.length !== 13) return id;
-  return `${id[0]} ${id.slice(1, 5)} ${id.slice(5, 10)} ${id.slice(10, 12)} ${id[12]}`;
+  return `${id[0]} ${id.slice(1, 5)} ${id.slice(5, 10)} ${id.slice(10, 12)} ${
+    id[12]
+  }`;
 }
 
 /**
