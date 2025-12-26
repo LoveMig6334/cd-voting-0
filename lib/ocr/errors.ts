@@ -106,12 +106,16 @@ export class LowConfidenceError extends DetectionError {
     public readonly method: DetectionMethod
   ) {
     super(
-      `Detection confidence ${confidence.toFixed(1)}% is below threshold ${threshold}% using method: ${method}`
+      `Detection confidence ${confidence.toFixed(
+        1
+      )}% is below threshold ${threshold}% using method: ${method}`
     );
   }
 
   getUserMessage(): string {
-    return `Card detection confidence is low (${this.confidence.toFixed(0)}%). Try improving lighting or card positioning.`;
+    return `Card detection confidence is low (${this.confidence.toFixed(
+      0
+    )}%). Try improving lighting or card positioning.`;
   }
 }
 
@@ -128,7 +132,11 @@ export class InvalidAspectRatioError extends DetectionError {
     public readonly tolerance: { min: number; max: number }
   ) {
     super(
-      `Detected aspect ratio ${detectedRatio.toFixed(2)} is outside valid range [${tolerance.min}, ${tolerance.max}]. Expected ~${expectedRatio.toFixed(2)}.`
+      `Detected aspect ratio ${detectedRatio.toFixed(
+        2
+      )} is outside valid range [${tolerance.min}, ${
+        tolerance.max
+      }]. Expected ~${expectedRatio.toFixed(2)}.`
     );
   }
 
