@@ -70,9 +70,17 @@ export default function OCRDebugPage() {
     setOcrProgress(0);
 
     try {
-      // Process image (detect + crop) with options
-      const processed = await processImage(originalImage, processingOptions);
-      setProcessedImages(processed);
+      // Process image with full diagnostics
+      const result = await processImageWithDiagnostics(originalImage, processingOptions);
+      setPipelineResult(result);
+
+      if (!result.result.ok) {
+        console.error("Pipeline failed:", result.result.error.getUserMessage());
+        setPipelineStage("idle");
+        return;
+      }
+
+      const processed = result.result.value;
 
       // Stage 2: Cropping complete
       setPipelineStage("cropping");
