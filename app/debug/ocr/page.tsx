@@ -1,17 +1,16 @@
 "use client";
 
 import {
+  PipelineResult,
+  ProcessingOptions,
+  getMethodDescription,
+  processImageWithDiagnostics,
+} from "@/lib/ocr/image-processor";
+import {
   ParseResult,
   parseOCRText,
   validateParsedData,
 } from "@/lib/ocr/parser";
-import {
-  processImageWithDiagnostics,
-  PipelineResult,
-  ProcessingOptions,
-  PipelineManager,
-  getMethodDescription,
-} from "@/lib/ocr/image-processor";
 import { StudentData } from "@/lib/student-data";
 import React, { useEffect, useState } from "react";
 import Tesseract from "tesseract.js";
@@ -26,22 +25,35 @@ type PipelineStage = "idle" | "detecting" | "cropping" | "ocr" | "complete";
 
 export default function OCRDebugPage() {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
-  const [pipelineResult, setPipelineResult] = useState<PipelineResult | null>(null);
+  const [pipelineResult, setPipelineResult] = useState<PipelineResult | null>(
+    null
+  );
   const [rawText, setRawText] = useState<string>("");
   const [parsedData, setParsedData] = useState<ParseResult>({
-    confidence: { id: 0, name: 0, surname: 0, classroom: 0, no: 0, nationalId: 0 },
+    confidence: {
+      id: 0,
+      name: 0,
+      surname: 0,
+      classroom: 0,
+      no: 0,
+      nationalId: 0,
+    },
   });
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [pipelineStage, setPipelineStage] = useState<PipelineStage>("idle");
   const [ocrProgress, setOcrProgress] = useState(0);
   const [validating, setValidating] = useState(false);
-  const [processingOptions, setProcessingOptions] = useState<ProcessingOptions>({
-    enableCrop: true,
-    enableEnhancement: true,
-  });
+  const [processingOptions, setProcessingOptions] = useState<ProcessingOptions>(
+    {
+      enableCrop: true,
+      enableEnhancement: true,
+    }
+  );
 
   // Derived state for backward compatibility
-  const processedImages = pipelineResult?.result.ok ? pipelineResult.result.value : null;
+  const processedImages = pipelineResult?.result.ok
+    ? pipelineResult.result.value
+    : null;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,7 +65,14 @@ export default function OCRDebugPage() {
         setPipelineResult(null);
         setRawText("");
         setParsedData({
-          confidence: { id: 0, name: 0, surname: 0, classroom: 0, no: 0, nationalId: 0 },
+          confidence: {
+            id: 0,
+            name: 0,
+            surname: 0,
+            classroom: 0,
+            no: 0,
+            nationalId: 0,
+          },
         });
         setValidation(null);
         setPipelineStage("idle");
@@ -71,7 +90,10 @@ export default function OCRDebugPage() {
 
     try {
       // Process image with full diagnostics
-      const result = await processImageWithDiagnostics(originalImage, processingOptions);
+      const result = await processImageWithDiagnostics(
+        originalImage,
+        processingOptions
+      );
       setPipelineResult(result);
 
       if (!result.result.ok) {
@@ -133,7 +155,12 @@ export default function OCRDebugPage() {
   };
 
   const getStageStatus = (stage: PipelineStage) => {
-    const stages: PipelineStage[] = ["detecting", "cropping", "ocr", "complete"];
+    const stages: PipelineStage[] = [
+      "detecting",
+      "cropping",
+      "ocr",
+      "complete",
+    ];
     const currentIndex = stages.indexOf(pipelineStage);
     const stageIndex = stages.indexOf(stage);
 
@@ -146,7 +173,7 @@ export default function OCRDebugPage() {
   return (
     <div className="min-h-screen bg-slate-900 text-white p-8">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold bg-linear-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
           OCR Debug Laboratory
         </h1>
         <p className="text-slate-400 mt-2">
@@ -162,13 +189,17 @@ export default function OCRDebugPage() {
             label="Detection"
             status={getStageStatus("detecting")}
           />
-          <PipelineConnector active={getStageStatus("detecting") === "complete"} />
+          <PipelineConnector
+            active={getStageStatus("detecting") === "complete"}
+          />
           <PipelineStep
             number={2}
             label="Crop & Warp"
             status={getStageStatus("cropping")}
           />
-          <PipelineConnector active={getStageStatus("cropping") === "complete"} />
+          <PipelineConnector
+            active={getStageStatus("cropping") === "complete"}
+          />
           <PipelineStep
             number={3}
             label="OCR Analysis"
@@ -200,7 +231,7 @@ export default function OCRDebugPage() {
               hover:file:bg-blue-700 transition-all cursor-pointer"
           />
 
-          <div className="aspect-[4/3] bg-slate-900 rounded-xl border-2 border-dashed border-slate-600 overflow-hidden flex items-center justify-center">
+          <div className="aspect-4/3 bg-slate-900 rounded-xl border-2 border-dashed border-slate-600 overflow-hidden flex items-center justify-center">
             {processedImages?.originalWithOverlay ? (
               <img
                 src={processedImages.originalWithOverlay}
@@ -248,14 +279,21 @@ export default function OCRDebugPage() {
               </div>
               <div className="flex justify-between">
                 <span>Detection Method:</span>
-                <span className="text-blue-400 truncate max-w-[150px]" title={getMethodDescription(processedImages.detectionResult.method)}>
+                <span
+                  className="text-blue-400 truncate max-w-[150px]"
+                  title={getMethodDescription(
+                    processedImages.detectionResult.method
+                  )}
+                >
                   {processedImages.detectionResult.method}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>Aspect Ratio:</span>
                 <span className="text-purple-400">
-                  {processedImages.detectionResult.detectedAspectRatio.toFixed(3)}
+                  {processedImages.detectionResult.detectedAspectRatio.toFixed(
+                    3
+                  )}
                 </span>
               </div>
               {pipelineResult && (
@@ -271,11 +309,15 @@ export default function OCRDebugPage() {
 
           <button
             onClick={runPipeline}
-            disabled={!originalImage || pipelineStage !== "idle" && pipelineStage !== "complete"}
+            disabled={
+              !originalImage ||
+              (pipelineStage !== "idle" && pipelineStage !== "complete")
+            }
             className={`mt-4 w-full py-3 rounded-xl font-bold transition-all ${
-              !originalImage || (pipelineStage !== "idle" && pipelineStage !== "complete")
+              !originalImage ||
+              (pipelineStage !== "idle" && pipelineStage !== "complete")
                 ? "bg-slate-700 text-slate-500 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 shadow-lg"
+                : "bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 shadow-lg"
             }`}
           >
             {pipelineStage === "idle" || pipelineStage === "complete"
@@ -295,13 +337,18 @@ export default function OCRDebugPage() {
 
           {/* Processing Options */}
           <div className="mb-4 p-3 bg-slate-900/50 rounded-lg border border-slate-700/50 space-y-3">
-            <p className="text-xs text-slate-500 font-medium">Preprocessing Options</p>
+            <p className="text-xs text-slate-500 font-medium">
+              Preprocessing Options
+            </p>
             <ToggleSwitch
               label="Auto Crop"
               description="Crop to detected card boundaries"
               checked={processingOptions.enableCrop}
               onChange={(checked) =>
-                setProcessingOptions((prev) => ({ ...prev, enableCrop: checked }))
+                setProcessingOptions((prev) => ({
+                  ...prev,
+                  enableCrop: checked,
+                }))
               }
             />
             <ToggleSwitch
@@ -309,12 +356,15 @@ export default function OCRDebugPage() {
               description="Apply contrast & brightness boost"
               checked={processingOptions.enableEnhancement}
               onChange={(checked) =>
-                setProcessingOptions((prev) => ({ ...prev, enableEnhancement: checked }))
+                setProcessingOptions((prev) => ({
+                  ...prev,
+                  enableEnhancement: checked,
+                }))
               }
             />
           </div>
 
-          <div className="aspect-[4/3] bg-slate-900 rounded-xl border border-slate-700 overflow-hidden flex items-center justify-center">
+          <div className="aspect-4/3 bg-slate-900 rounded-xl border border-slate-700 overflow-hidden flex items-center justify-center">
             {processedImages?.croppedCard ? (
               <img
                 src={processedImages.croppedCard}
