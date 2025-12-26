@@ -26,9 +26,7 @@ type PipelineStage = "idle" | "detecting" | "cropping" | "ocr" | "complete";
 
 export default function OCRDebugPage() {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
-  const [processedImages, setProcessedImages] = useState<ProcessedImage | null>(
-    null
-  );
+  const [pipelineResult, setPipelineResult] = useState<PipelineResult | null>(null);
   const [rawText, setRawText] = useState<string>("");
   const [parsedData, setParsedData] = useState<ParseResult>({
     confidence: { id: 0, name: 0, surname: 0, classroom: 0, no: 0, nationalId: 0 },
@@ -41,6 +39,9 @@ export default function OCRDebugPage() {
     enableCrop: true,
     enableEnhancement: true,
   });
+
+  // Derived state for backward compatibility
+  const processedImages = pipelineResult?.result.ok ? pipelineResult.result.value : null;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
