@@ -5,7 +5,7 @@ import {
   parseOCRText,
   validateParsedData,
 } from "@/lib/ocr/parser";
-import { processImage, ProcessedImage } from "@/lib/ocr/image-processor";
+import { processImage, ProcessedImage, ProcessingOptions } from "@/lib/ocr/image-processor";
 import { StudentData } from "@/lib/student-data";
 import React, { useEffect, useState } from "react";
 import Tesseract from "tesseract.js";
