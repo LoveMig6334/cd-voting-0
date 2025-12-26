@@ -229,6 +229,55 @@ function extractName(lines: string[], result: ParseResult): void {
 }
 
 /**
+ * Extract Thai National ID (Citizen ID) - 13 digit number
+ * Format: X XXXX XXXXX XX X (with spaces/dashes between groups)
+ * Example: 1 1007 04166 24 8
+ */
+function extractNationalId(lines: string[], result: ParseResult): void {
+  // Patterns for 13-digit Thai national ID
+  const nationalIdPatterns = [
+    // With "เลขประจำตัวประชาชน" label (highest confidence)
+    /เลขประจำตัวประชาชน[:\s]*([\d\s-]{13,20})/,
+    // With "Citizen ID" or "ID Card" label
+    /(?:Citizen\s*ID|ID\s*Card|National\s*ID)[:\s]*([\d\s-]{13,20})/i,
+    // Standard format with spaces: X XXXX XXXXX XX X
+    /(\d[\s-]?\d{4}[\s-]?\d{5}[\s-]?\d{2}[\s-]?\d)/,
+    // Continuous 13 digits
+    /(\d{13})/,
+  ];
+
+  const confidenceScores = [100, 95, 85, 70];
+
+  for (const line of lines) {
+    for (let i = 0; i < nationalIdPatterns.length; i++) {
+      const match = line.match(nationalIdPatterns[i]);
+      if (match) {
+        // Clean up: remove spaces and dashes, keep only digits
+        const cleanId = match[1].replace(/[\s-]/g, "");
+
+        // Validate: must be exactly 13 digits
+        if (/^\d{13}$/.test(cleanId)) {
+          // Format nicely: X XXXX XXXXX XX X
+          result.nationalId = formatNationalId(cleanId);
+          result.confidence.nationalId = confidenceScores[i];
+          return;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Format 13-digit national ID into standard display format
+ * Input: 1100704166248
+ * Output: 1 1007 04166 24 8
+ */
+function formatNationalId(id: string): string {
+  if (id.length !== 13) return id;
+  return `${id[0]} ${id.slice(1, 5)} ${id.slice(5, 10)} ${id.slice(10, 12)} ${id[12]}`;
+}
+
+/**
  * Validates parsed OCR data against the student database
  */
 export async function validateParsedData(
