@@ -8,21 +8,17 @@ import {
   CanvasContextError,
   ImageLoadError,
   WarpFailedError,
-  ok,
   err,
+  ok,
   type Result,
 } from "./errors";
-import {
-  getPerspectiveTransform,
-  clampPixel,
-  type HomographyResult,
-} from "./geometry-utils";
+import { clampPixel, getPerspectiveTransform } from "./geometry-utils";
 import type {
-  Point,
-  ImageDimensions,
-  ImageDataWithDimensions,
   DetectionResult,
+  ImageDataWithDimensions,
+  ImageDimensions,
   Matrix3x3,
+  Point,
 } from "./types";
 
 /**
@@ -117,7 +113,8 @@ export function applySobelEdgeDetection(
         for (let kx = -1; kx <= 1; kx++) {
           const pixelIdx = ((y + ky) * width + (x + kx)) * 4;
           // Convert to grayscale using simple average
-          const gray = (data[pixelIdx] + data[pixelIdx + 1] + data[pixelIdx + 2]) / 3;
+          const gray =
+            (data[pixelIdx] + data[pixelIdx + 1] + data[pixelIdx + 2]) / 3;
           const kernelIdx = (ky + 1) * 3 + (kx + 1);
           gx += gray * sobelX[kernelIdx];
           gy += gray * sobelY[kernelIdx];
@@ -187,7 +184,15 @@ export function warpPerspective(
   const dstData = dstCtx.createImageData(width, height);
 
   // Perform inverse mapping
-  warpPixels(srcData, dstData, invH, srcImg.width, srcImg.height, width, height);
+  warpPixels(
+    srcData,
+    dstData,
+    invH,
+    srcImg.width,
+    srcImg.height,
+    width,
+    height
+  );
 
   dstCtx.putImageData(dstData, 0, 0);
 
@@ -218,7 +223,12 @@ function warpPixels(
       const srcY = (invH[3] * x + invH[4] * y + invH[5]) / denominator;
 
       // Check bounds (with 1px margin for bilinear interpolation)
-      if (srcX >= 0 && srcX < srcWidth - 1 && srcY >= 0 && srcY < srcHeight - 1) {
+      if (
+        srcX >= 0 &&
+        srcX < srcWidth - 1 &&
+        srcY >= 0 &&
+        srcY < srcHeight - 1
+      ) {
         // Bilinear interpolation
         const x0 = Math.floor(srcX);
         const y0 = Math.floor(srcY);
@@ -267,8 +277,12 @@ export function enhanceImage(
   for (let i = 0; i < data.length; i += 4) {
     // Apply contrast around center point, then add brightness
     data[i] = clampPixel((data[i] - center) * contrast + center + brightness);
-    data[i + 1] = clampPixel((data[i + 1] - center) * contrast + center + brightness);
-    data[i + 2] = clampPixel((data[i + 2] - center) * contrast + center + brightness);
+    data[i + 1] = clampPixel(
+      (data[i + 1] - center) * contrast + center + brightness
+    );
+    data[i + 2] = clampPixel(
+      (data[i + 2] - center) * contrast + center + brightness
+    );
     // Alpha channel unchanged
   }
 
