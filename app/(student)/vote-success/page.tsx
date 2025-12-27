@@ -1,20 +1,22 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { generateVoteToken } from "@/lib/token";
 
 export default function VoteSuccess() {
   const router = useRouter();
   const { user } = useAuth();
+  const [voteToken, setVoteToken] = useState("VOTE-XXXX-XXXX");
 
-  // Generate token once based on user's full name and current timestamp
-  // useMemo ensures the token remains stable during the component's lifecycle
-  const voteToken = useMemo(() => {
-    if (!user) return "VOTE-XXXX-XXXX";
-    const fullName = `${user.name} ${user.surname}`;
-    return generateVoteToken(fullName, Date.now());
+  // Generate token once on mount based on user's full name and timestamp
+  useEffect(() => {
+    if (user) {
+      const fullName = `${user.name} ${user.surname}`;
+      const timestamp = Date.now();
+      setVoteToken(generateVoteToken(fullName, timestamp));
+    }
   }, [user]);
 
   return (
