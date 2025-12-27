@@ -90,7 +90,7 @@ export function getImageData(
  * Returns a binary edge mask where edges are marked as 255
  *
  * Performance note: This is an O(width * height) operation with a 3x3 kernel.
- * For a 1920x1080 image, this processes ~2M pixels with 9 operations each.
+ * Optimized to pre-calculate grayscale to avoid redundant calculations.
  */
 export function applySobelEdgeDetection(
   data: Uint8ClampedArray,
@@ -102,6 +102,14 @@ export function applySobelEdgeDetection(
   const sobelY = EDGE_DETECTION.SOBEL_Y;
   const threshold = EDGE_DETECTION.MAGNITUDE_THRESHOLD;
 
+  // Pre-calculate grayscale image
+  const grayscale = new Uint8Array(width * height);
+  for (let i = 0; i < width * height; i++) {
+    const idx = i * 4;
+    // Simple average grayscale as used originally
+    grayscale[i] = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+  }
+
   // Skip border pixels (1px on each side)
   for (let y = 1; y < height - 1; y++) {
     for (let x = 1; x < width - 1; x++) {
@@ -111,10 +119,9 @@ export function applySobelEdgeDetection(
       // Apply 3x3 Sobel kernel
       for (let ky = -1; ky <= 1; ky++) {
         for (let kx = -1; kx <= 1; kx++) {
-          const pixelIdx = ((y + ky) * width + (x + kx)) * 4;
-          // Convert to grayscale using simple average
-          const gray =
-            (data[pixelIdx] + data[pixelIdx + 1] + data[pixelIdx + 2]) / 3;
+          const grayIdx = (y + ky) * width + (x + kx);
+          const gray = grayscale[grayIdx];
+
           const kernelIdx = (ky + 1) * 3 + (kx + 1);
           gx += gray * sobelX[kernelIdx];
           gy += gray * sobelY[kernelIdx];
