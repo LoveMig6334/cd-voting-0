@@ -1,23 +1,24 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { generateVoteToken } from "@/lib/token";
 
 export default function VoteSuccess() {
   const router = useRouter();
   const { user } = useAuth();
-  const [voteToken, setVoteToken] = useState("VOTE-XXXX-XXXX");
 
-  // Generate token once on mount based on user's full name and timestamp
-  useEffect(() => {
-    if (user) {
-      const fullName = `${user.name} ${user.surname}`;
-      const timestamp = Date.now();
-      setVoteToken(generateVoteToken(fullName, timestamp));
-    }
-  }, [user]);
+  // Capture timestamp once on initial render using a ref
+  const timestampRef = useRef<number | null>(null);
+  if (timestampRef.current === null) {
+    timestampRef.current = Date.now();
+  }
+
+  // Compute token as derived state
+  const voteToken = user
+    ? generateVoteToken(`${user.name} ${user.surname}`, timestampRef.current)
+    : "VOTE-XXXX-XXXX";
 
   return (
     <div className="mesh-gradient-bg font-display text-dark-slate min-h-screen flex flex-col items-center justify-center p-4">
