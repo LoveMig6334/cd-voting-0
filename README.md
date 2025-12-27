@@ -21,23 +21,21 @@
 
 เว็บแอปเลือกตั้งออนไลน์ ใช้ในการจัดการผู้สมัคร โหวต ตรวจสอบผล และสร้างประสบการณ์โหวตที่โปร่งใส โดยใช้:
 
-- Next.js (React Framework 16.0.10)
+- Next.js (version 15+ / React 19)
 - หน้าระบบแยก Student / Admin
-- ระบบ OCR เพื่อให้ลงทะเบียนง่ายด้วยการถ่ายรูปบัตรนักเรียน
-- ระบบส่งอีเมลยืนยัน Token หลังโหวตทุกครั้ง
+- ระบบ OCR ถ่ายรูปบัตรนักเรียนเพื่อลงทะเบียนอัตโนมัติ (Powered by OpenCV.js & Tesseract.js)
 - ระบบตรวจสอบประวัติการโหวตย้อนหลัง
 
 ---
 
 # 🧱 2. เทคโนโลยีที่ใช้
 
-- **Frontend Framework:** Next.js + React version 16.0.10
-- **UI:** Tailwind CSS
-- **State:** Context API / Zustand
-- **Database:** Firebase
-- **Authentication:** Custom Auth (Student ID + Password / OCR Register)
-- **OCR:** Cloud Vision หรือ OCR Engine เช่น Google Vision, Tesseract
-- **Email:** SMTP / SendGrid / Resend API
+- **Frontend Framework:** Next.js 15+ (React 19)
+- **UI:** Tailwind CSS 4+
+- **OCR Engine:** OpenCV.js (Pre-processing) + Tesseract.js (OCR)
+- **State Management:** React Hooks / Context API
+- **Database:** Local JSON (Development) / Planning for Firebase
+- **Authentication:** Custom Auth (LocalStorage / Student ID lookup)
 
 ---
 
@@ -105,12 +103,12 @@
 
 ```ts
 Student {
-  id: string;
+  id: number;
   name: string;
-  classRoom: string;
+  surname: string;
+  classroom: string;
+  no: number;
   role: "STUDENT" | "ADMIN";
-  hasVoted: { [electionId: string]: boolean };
-  email: string;
 }
 ```
 
@@ -121,10 +119,10 @@ Election {
   id: string;
   title: string;
   description: string;
-  startAt: Date;
-  endAt: Date;
-  status: "DRAFT" | "OPEN" | "CLOSED";
-  maxVote: number;
+  startDate: string;
+  endDate: string;
+  status: "OPEN" | "CLOSED";
+  type: string;
 }
 ```
 
@@ -133,25 +131,23 @@ Election {
 ```ts
 Candidate {
   id: string;
-  electionId: string;
   name: string;
-  number: number;
-  policy: string;
-  avatarUrl?: string;
-  classRoom?: string;
+  slogan: string;
+  imageUrl: string;
+  rank?: number;
 }
 ```
 
-## Vote (อัปเดตเพิ่ม Token ID)
+## Vote Record
 
 ```ts
-Vote {
+VoteRecord {
   id: string;
-  electionId: string;
-  studentId: string;
-  candidateId: string;
-  tokenId: string;
-  createdAt: Date;
+  electionTitle: string;
+  timestamp: string;
+  token: string;
+  verified: boolean;
+  imageUrl: string;
 }
 ```
 
@@ -270,58 +266,33 @@ project/
 │   │   ├── me/
 │   │   │   ├── votes/
 │   │   ├── vote-success/
-│   ├── (admin)/
+│   ├── admin/
 │   │   ├── elections/
-│   │   │   ├── [id]/
-│   │   ├── candidates/
-│   │   │   ├── [id]/
 │   │   ├── results/
-│   │   │   ├── [id]/
-│   │   ├── users/
-│   ├── api/
-│   │   ├── auth/
-│   │   │   ├── login/
-│   │   │   ├── register/
-│   │   ├── ocr/
-│   │   │   ├── student-card/
-│   │   ├── elections/
-│   │   │   ├── [id]/
-│   │   ├── vote/
-│   │   ├── me/
-│   │   │   ├── votes/
-│   │   ├── admin/
-│   │   │   ├── elections/
-│   │   │   │   ├── [id]/
-│   │   │   ├── candidates/
-│   │   │   │   ├── [id]/
-│   │   │   ├── results/
-│   │   │   │   ├── [id]/
+│   │   ├── students/
+│   │   ├── settings/
+│   ├── camera-overlay/
 │   ├── layout.tsx
 │   ├── page.tsx
 │
 │── components/
-│   ├── auth/
-│   ├── common/
-│   ├── elections/
-│   ├── ocr/
 │   ├── admin/
+│   ├── ocr/
+│   ├── BottomNav.tsx
 │
 │── lib/
-│   ├── auth/
-│   ├── api/
-│   ├── utils/
-│   ├── hooks/
-│   ├── types/
+│   ├── ocr/
+│   │   ├── card-detector.ts
+│   │   ├── image-processor.ts
+│   │   ├── pipeline-manager.ts
+│   │   ├── parser.ts
+│   ├── student-data.ts
 │
 │── public/
-│   ├── images/
-│   ├── icons/
-│
-│── styles/
-│   ├── globals.css
+│   ├── data.json
 │
 │── README.md
-│── next.config.js
+│── package.json
 │── tsconfig.json
 │── tailwind.config.ts
 ```
@@ -330,13 +301,14 @@ project/
 
 # 🚀 12. TODO List สำหรับพัฒนาต่อ
 
-- [ ] UI Wireframe
-- [ ] ระบบ Auth + แบ่ง role
-- [ ] ระบบ OCR + ทดสอบหลายสภาพแสง
-- [ ] ระบบ Vote + Token + Email
-- [ ] หน้า `/me/votes`
-- [ ] Admin Dashboard
-- [ ] ระบบรายงานผลเลือกตั้ง
-- [ ] ระบบป้องกันโหวตซ้ำ
-- [ ] ระบบ Privacy Policy
+- [x] UI Wireframe & Design System
+- [x] ระบบ Auth (Client-side Lookup)
+- [x] ระบบ OCR (OpenCV.js + Tesseract.js)
+- [/] ระบบ Election/Candidate Selection (UI Completed)
+- [/] ระบบ Vote + Token (UI Completed, Logic Pending Integration)
+- [x] หน้า `/me/votes` (UI Completed)
+- [/] Admin Dashboard (UI Completed)
+- [ ] ระบบ Backend (API Routes)
+- [ ] ระบบ Database Integration (Firebase/PostgreSQL)
+- [ ] ระบบป้องกันโหวตซ้ำ (Logic)
 - [ ] Unit Test / Integration Test
