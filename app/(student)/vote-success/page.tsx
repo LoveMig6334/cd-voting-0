@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { generateVoteToken } from "@/lib/token";
 
@@ -9,15 +9,12 @@ export default function VoteSuccess() {
   const router = useRouter();
   const { user } = useAuth();
 
-  // Capture timestamp once on initial render using a ref
-  const timestampRef = useRef<number | null>(null);
-  if (timestampRef.current === null) {
-    timestampRef.current = Date.now();
-  }
+  // Capture timestamp once using lazy state initializer (runs only on mount)
+  const [voteTimestamp] = useState(() => Date.now());
 
   // Compute token as derived state
   const voteToken = user
-    ? generateVoteToken(`${user.name} ${user.surname}`, timestampRef.current)
+    ? generateVoteToken(`${user.name} ${user.surname}`, voteTimestamp)
     : "VOTE-XXXX-XXXX";
 
   return (
