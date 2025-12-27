@@ -9,13 +9,7 @@ export default function VoteSuccess() {
     <div className="mesh-gradient-bg font-display text-dark-slate min-h-screen flex flex-col items-center justify-center p-4">
       <div className="relative flex w-full flex-col overflow-hidden max-w-md mx-auto glass-card rounded-2xl animate-scale-up border border-white/60 shadow-xl">
         {/* Header */}
-        <header className="flex items-center justify-between p-4 pt-6 z-10">
-          <div className="w-8"></div>
-          <h2 className="text-xs font-bold tracking-widest uppercase text-cool-gray">
-            Election 2024
-          </h2>
-          <div className="w-8"></div>
-        </header>
+        <header className="flex items-center justify-between p-4 pt-6 z-10"></header>
 
         <main className="flex-1 flex flex-col items-center justify-center px-6 pb-8 -mt-4">
           <div className="mb-8 relative flex items-center justify-center">
