@@ -56,7 +56,7 @@ export default function VoteSuccess() {
                   </span>
                   <div className="flex items-center gap-2 group/token cursor-pointer active:scale-95 transition-transform">
                     <span className="font-mono text-2xl font-bold tracking-wider select-all text-dark-slate">
-                      VOTE-9SG2-XQ11
+                      {voteToken}
                     </span>
                     <span className="material-symbols-outlined text-royal-blue text-sm opacity-60 group-hover/token:opacity-100 transition-opacity">
                       content_copy
