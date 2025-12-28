@@ -203,7 +203,7 @@ function warpWithOpenCV(
   if (!srcResult.ok) {
     return srcResult;
   }
-  const { canvas: srcCanvas, ctx: srcCtx } = srcResult.value;
+  const { ctx: srcCtx } = srcResult.value;
   srcCtx.drawImage(srcImg, 0, 0);
 
   // Create cv.Mat from canvas
