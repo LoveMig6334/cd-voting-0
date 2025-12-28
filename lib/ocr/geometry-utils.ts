@@ -45,6 +45,7 @@ declare global {
   interface CV {
     Mat: new () => CVMat;
     matFromArray(rows: number, cols: number, type: number, data: number[]): CVMat;
+    matFromImageData(imageData: ImageData): CVMat;
     getPerspectiveTransform(src: CVMat, dst: CVMat): CVMat;
     warpPerspective(
       src: CVMat,
@@ -60,6 +61,7 @@ declare global {
 
     // Constants
     CV_32FC2: number;
+    CV_8UC4: number;
     INTER_CUBIC: number;
     INTER_LINEAR: number;
     BORDER_CONSTANT: number;
