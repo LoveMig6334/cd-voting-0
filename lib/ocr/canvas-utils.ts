@@ -12,12 +12,17 @@ import {
   ok,
   type Result,
 } from "./errors";
-import { clampPixel, getPerspectiveTransform } from "./geometry-utils";
+import {
+  clampPixel,
+  getCardWarpDimensions,
+  isOpenCVReady,
+  robustSortCorners,
+  warpPerspectiveISO,
+} from "./geometry-utils";
 import type {
   DetectionResult,
   ImageDataWithDimensions,
   ImageDimensions,
-  Matrix3x3,
   Point,
 } from "./types";
 
