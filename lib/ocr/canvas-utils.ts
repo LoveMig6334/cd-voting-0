@@ -144,27 +144,131 @@ export function applySobelEdgeDetection(
 }
 
 /**
- * Perform perspective warp using inverse mapping with bilinear interpolation
+ * Perform perspective warp to correct card orientation
  *
- * Performance note: This is the most expensive operation in the pipeline.
- * For a 600x378 output, we perform ~226k pixel lookups with bilinear interpolation.
- * Each pixel requires:
- * - 3 multiplications + 2 additions for homography transform
- * - 1 division for perspective correction
- * - 4 memory reads + 16 multiplications for bilinear interpolation
+ * This function now uses OpenCV.js when available for better numerical stability
+ * and INTER_CUBIC interpolation (better text clarity than bilinear).
  *
- * Potential optimizations (not implemented):
- * - WebGL shader-based warping
- * - SIMD via WebAssembly
- * - Incremental homography computation along scanlines
+ * Falls back to canvas-based simple crop when OpenCV.js is not loaded.
+ *
+ * REFACTORED: Phase 1 - Now uses OpenCV.js warpPerspective instead of manual
+ * inverse mapping with bilinear interpolation. The OpenCV implementation:
+ * - Uses SVD-based homography computation (more stable)
+ * - Uses INTER_CUBIC interpolation (better text quality)
+ * - Handles edge cases more robustly
  */
 export function warpPerspective(
   srcImg: HTMLImageElement,
   srcCorners: readonly Point[],
-  dstCorners: readonly Point[],
-  outputDimensions: ImageDimensions
+  _dstCorners: readonly Point[], // Ignored - we now calculate from ISO 7810
+  _outputDimensions: ImageDimensions // Ignored - we now calculate from corners
 ): Result<HTMLCanvasElement, WarpFailedError | CanvasContextError> {
-  const { width, height } = outputDimensions;
+  // Sort corners robustly (handles rotation > 45 degrees)
+  const orderedCorners = robustSortCorners([...srcCorners]);
+
+  // Calculate ISO 7810 compliant output dimensions
+  const dimensions = getCardWarpDimensions(orderedCorners);
+  const { width, height } = dimensions;
+
+  // Try OpenCV.js warp first (preferred)
+  if (isOpenCVReady() && typeof cv !== "undefined") {
+    try {
+      return warpWithOpenCV(srcImg, orderedCorners, width, height);
+    } catch (error) {
+      // OpenCV failed, fall through to canvas fallback
+      console.warn(
+        "OpenCV warp failed, using canvas fallback:",
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    }
+  }
+
+  // Fallback: Canvas-based simple projection
+  // This doesn't do true perspective correction but handles basic cases
+  return warpWithCanvas(srcImg, orderedCorners, width, height);
+}
+
+/**
+ * OpenCV.js-based perspective warp
+ * Uses cv.getPerspectiveTransform and cv.warpPerspective with INTER_CUBIC
+ */
+function warpWithOpenCV(
+  srcImg: HTMLImageElement,
+  orderedCorners: readonly Point[],
+  width: number,
+  height: number
+): Result<HTMLCanvasElement, WarpFailedError | CanvasContextError> {
+  // Create source canvas
+  const srcResult = createCanvas(srcImg.width, srcImg.height);
+  if (!srcResult.ok) {
+    return srcResult;
+  }
+  const { canvas: srcCanvas, ctx: srcCtx } = srcResult.value;
+  srcCtx.drawImage(srcImg, 0, 0);
+
+  // Create cv.Mat from canvas
+  let srcMat: CVMat | null = null;
+  let dstMat: CVMat | null = null;
+
+  try {
+    // Read image into OpenCV Mat
+    const imageData = srcCtx.getImageData(0, 0, srcImg.width, srcImg.height);
+    srcMat = cv!.matFromImageData(imageData);
+
+    // Perform perspective warp using ISO 7810 compliant function
+    dstMat = warpPerspectiveISO(srcMat, orderedCorners);
+
+    // Create destination canvas
+    const dstResult = createCanvas(width, height);
+    if (!dstResult.ok) {
+      return dstResult;
+    }
+    const { canvas: dstCanvas, ctx: dstCtx } = dstResult.value;
+
+    // Copy result back to canvas
+    const dstImageData = new ImageData(
+      new Uint8ClampedArray(dstMat.data),
+      width,
+      height
+    );
+    dstCtx.putImageData(dstImageData, 0, 0);
+
+    return ok(dstCanvas);
+  } catch (error) {
+    return err(
+      new WarpFailedError(
+        error instanceof Error ? error.message : "OpenCV warp failed"
+      )
+    );
+  } finally {
+    if (srcMat) srcMat.delete();
+    if (dstMat) dstMat.delete();
+  }
+}
+
+/**
+ * Canvas-based fallback warp using drawImage with clipping
+ * This doesn't do true perspective correction but provides a reasonable fallback
+ * when OpenCV.js is not available. Uses the bounding box of corners.
+ */
+function warpWithCanvas(
+  srcImg: HTMLImageElement,
+  orderedCorners: readonly Point[],
+  width: number,
+  height: number
+): Result<HTMLCanvasElement, WarpFailedError | CanvasContextError> {
+  // Calculate bounding box from corners
+  const minX = Math.min(...orderedCorners.map((p) => p.x));
+  const maxX = Math.max(...orderedCorners.map((p) => p.x));
+  const minY = Math.min(...orderedCorners.map((p) => p.y));
+  const maxY = Math.max(...orderedCorners.map((p) => p.y));
+
+  const srcWidth = maxX - minX;
+  const srcHeight = maxY - minY;
+
+  if (srcWidth <= 0 || srcHeight <= 0) {
+    return err(new WarpFailedError("Invalid corner coordinates"));
+  }
 
   // Create destination canvas
   const dstResult = createCanvas(width, height);
@@ -173,101 +277,21 @@ export function warpPerspective(
   }
   const { canvas: dstCanvas, ctx: dstCtx } = dstResult.value;
 
-  // Create source canvas to read pixels
-  const srcResult = createCanvas(srcImg.width, srcImg.height);
-  if (!srcResult.ok) {
-    return srcResult;
-  }
-  const { ctx: srcCtx } = srcResult.value;
-  srcCtx.drawImage(srcImg, 0, 0);
-
-  // Get source image data
-  const srcData = srcCtx.getImageData(0, 0, srcImg.width, srcImg.height);
-
-  // Calculate homography (src -> dst), we need inverse (dst -> src)
-  const homographyResult = getPerspectiveTransform(srcCorners, dstCorners);
-  if (!homographyResult.ok) {
-    return err(new WarpFailedError("Failed to compute homography matrix"));
-  }
-
-  const invH = homographyResult.value.inverse;
-
-  // Create destination image data
-  const dstData = dstCtx.createImageData(width, height);
-
-  // Perform inverse mapping
-  warpPixels(
-    srcData,
-    dstData,
-    invH,
-    srcImg.width,
-    srcImg.height,
+  // Draw the bounded region scaled to output dimensions
+  // This is a simple crop/scale - not true perspective correction
+  dstCtx.drawImage(
+    srcImg,
+    minX,
+    minY,
+    srcWidth,
+    srcHeight,
+    0,
+    0,
     width,
     height
   );
 
-  dstCtx.putImageData(dstData, 0, 0);
-
   return ok(dstCanvas);
-}
-
-/**
- * Core pixel warping loop with bilinear interpolation
- * Separated for potential future optimization or WebAssembly replacement
- */
-function warpPixels(
-  srcData: ImageData,
-  dstData: ImageData,
-  invH: Matrix3x3,
-  srcWidth: number,
-  srcHeight: number,
-  dstWidth: number,
-  dstHeight: number
-): void {
-  const srcPixels = srcData.data;
-  const dstPixels = dstData.data;
-
-  for (let y = 0; y < dstHeight; y++) {
-    for (let x = 0; x < dstWidth; x++) {
-      // Apply inverse homography to find source coordinate
-      const denominator = invH[6] * x + invH[7] * y + invH[8];
-      const srcX = (invH[0] * x + invH[1] * y + invH[2]) / denominator;
-      const srcY = (invH[3] * x + invH[4] * y + invH[5]) / denominator;
-
-      // Check bounds (with 1px margin for bilinear interpolation)
-      if (
-        srcX >= 0 &&
-        srcX < srcWidth - 1 &&
-        srcY >= 0 &&
-        srcY < srcHeight - 1
-      ) {
-        // Bilinear interpolation
-        const x0 = Math.floor(srcX);
-        const y0 = Math.floor(srcY);
-        const dx = srcX - x0;
-        const dy = srcY - y0;
-
-        const dstIdx = (y * dstWidth + x) * 4;
-
-        // Get 4 neighbor pixel indices
-        const i00 = (y0 * srcWidth + x0) * 4;
-        const i10 = (y0 * srcWidth + (x0 + 1)) * 4;
-        const i01 = ((y0 + 1) * srcWidth + x0) * 4;
-        const i11 = ((y0 + 1) * srcWidth + (x0 + 1)) * 4;
-
-        // Interpolate each channel (R, G, B, A)
-        for (let c = 0; c < 4; c++) {
-          const val =
-            srcPixels[i00 + c] * (1 - dx) * (1 - dy) +
-            srcPixels[i10 + c] * dx * (1 - dy) +
-            srcPixels[i01 + c] * (1 - dx) * dy +
-            srcPixels[i11 + c] * dx * dy;
-          dstPixels[dstIdx + c] = val;
-        }
-      }
-      // Out-of-bounds pixels remain transparent (initialized to 0)
-    }
-  }
 }
 
 /**
