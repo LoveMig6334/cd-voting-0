@@ -106,16 +106,21 @@ export {
   crossProduct,
   distance,
   getBoundingRect,
-  getPerspectiveTransform,
-  invertMatrix3x3,
+  getCardWarpDimensions,
   isConvexQuadrilateral,
+  isOpenCVReady,
+  OpenCVError,
   orderCorners,
   quadrilateralArea,
   rectToCorners,
+  robustSortCorners,
   simplifyContour,
-  solveLinearSystem,
   transformPoint,
+  warpImageDataISO,
+  warpPerspectiveISO,
 } from "./geometry-utils";
+
+export type { CardWarpDimensions } from "./geometry-utils";
 
 // ============================================================================
 // Canvas Utilities Exports
