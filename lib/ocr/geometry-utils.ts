@@ -302,12 +302,14 @@ export function robustSortCorners(
   }
 
   // 1. Calculate Centroid (geometric center)
-  const center = points.reduce(
+  const sum = points.reduce(
     (acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }),
     { x: 0, y: 0 }
   );
-  center.x /= points.length;
-  center.y /= points.length;
+  const center = {
+    x: sum.x / points.length,
+    y: sum.y / points.length,
+  };
 
   // 2. Sort by angle around centroid (counter-clockwise from positive x-axis)
   // atan2 returns angles in range [-π, π], sorting ascending gives counter-clockwise order
