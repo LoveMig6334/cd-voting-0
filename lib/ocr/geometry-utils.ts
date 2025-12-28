@@ -1,34 +1,3 @@
-/**
- * Geometry Utilities for the Image Processing Pipeline
- * Contains math operations, corner sorting, and OpenCV.js perspective transformation
- *
- * REFACTORED: Phase 1 - OCR Robustness Optimization
- *
- * Changes from previous implementation:
- * - REMOVED: Manual Gaussian elimination solver (solveLinearSystem)
- *   Reason: Replaced by OpenCV.js cv.getPerspectiveTransform which uses optimized
- *   native LAPACK routines via WebAssembly, providing better numerical stability.
- *
- * - REMOVED: Manual 3x3 matrix inversion (invertMatrix3x3)
- *   Reason: OpenCV.js handles matrix operations internally with proper conditioning
- *   checks and numerical stability that manual JavaScript implementations lack.
- *
- * - REMOVED: Manual getPerspectiveTransform implementation
- *   Reason: cv.getPerspectiveTransform uses the Direct Linear Transform (DLT) with
- *   SVD decomposition, which is more numerically stable than solving via Gaussian
- *   elimination. It also handles edge cases better.
- *
- * - REMOVED: orderCorners with sum/difference heuristic
- *   Reason: The min(x+y)/max(x+y) approach fails when cards are rotated beyond
- *   45 degrees, causing "bowtie" distortion. Replaced with centroid-based angular
- *   sorting which is rotation-invariant.
- *
- * New functions:
- * - robustSortCorners: Centroid-based angular sorting for rotation robustness
- * - getCardWarpDimensions: ISO 7810 ID-1 aspect ratio enforcement
- * - warpPerspectiveISO: OpenCV.js-based perspective transformation with proper memory management
- */
-
 import { CARD_DIMENSIONS } from "./constants";
 import type { BoundingRect, Point } from "./types";
 
@@ -44,7 +13,12 @@ import type { BoundingRect, Point } from "./types";
 declare global {
   interface CV {
     Mat: new () => CVMat;
-    matFromArray(rows: number, cols: number, type: number, data: number[]): CVMat;
+    matFromArray(
+      rows: number,
+      cols: number,
+      type: number,
+      data: number[]
+    ): CVMat;
     matFromImageData(imageData: ImageData): CVMat;
     getPerspectiveTransform(src: CVMat, dst: CVMat): CVMat;
     warpPerspective(
@@ -57,7 +31,12 @@ declare global {
       borderValue?: CVScalar
     ): void;
     Size: new (width: number, height: number) => CVSize;
-    Scalar: new (v0?: number, v1?: number, v2?: number, v3?: number) => CVScalar;
+    Scalar: new (
+      v0?: number,
+      v1?: number,
+      v2?: number,
+      v3?: number
+    ) => CVScalar;
 
     // Constants
     CV_32FC2: number;
@@ -86,7 +65,6 @@ declare global {
     [index: number]: number;
   }
 
-  // eslint-disable-next-line no-var
   var cv: CV | undefined;
 }
 
@@ -294,18 +272,16 @@ export function clampPixel(value: number): number {
  * @param points - Array of exactly 4 corner points (unordered)
  * @returns Array of 4 points in [TL, TR, BR, BL] order
  */
-export function robustSortCorners(
-  points: readonly Point[]
-): readonly Point[] {
+export function robustSortCorners(points: readonly Point[]): readonly Point[] {
   if (points.length !== 4) {
     return points;
   }
 
   // 1. Calculate Centroid (geometric center)
-  const sum = points.reduce(
-    (acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }),
-    { x: 0, y: 0 }
-  );
+  const sum = points.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), {
+    x: 0,
+    y: 0,
+  });
   const center = {
     x: sum.x / points.length,
     y: sum.y / points.length,
@@ -412,10 +388,7 @@ export function getCardWarpDimensions(
  * Error thrown when OpenCV.js operations fail
  */
 export class OpenCVError extends Error {
-  constructor(
-    message: string,
-    public readonly operation: string
-  ) {
+  constructor(message: string, public readonly operation: string) {
     super(`OpenCV ${operation} failed: ${message}`);
     this.name = "OpenCVError";
   }
@@ -474,19 +447,27 @@ export function warpPerspectiveISO(
     // Order: TL, TR, BR, BL - matching cv.getPerspectiveTransform expectations
     const [tl, tr, br, bl] = orderedCorners;
     srcTri = cv!.matFromArray(4, 1, cv!.CV_32FC2, [
-      tl.x, tl.y,
-      tr.x, tr.y,
-      br.x, br.y,
-      bl.x, bl.y,
+      tl.x,
+      tl.y,
+      tr.x,
+      tr.y,
+      br.x,
+      br.y,
+      bl.x,
+      bl.y,
     ]);
 
     // 3. Create destination points matrix (output rectangle)
     // Maps to: (0,0) -> (w,0) -> (w,h) -> (0,h)
     dstTri = cv!.matFromArray(4, 1, cv!.CV_32FC2, [
-      0, 0,
-      targetWidth, 0,
-      targetWidth, targetHeight,
-      0, targetHeight,
+      0,
+      0,
+      targetWidth,
+      0,
+      targetWidth,
+      targetHeight,
+      0,
+      targetHeight,
     ]);
 
     // 4. Compute perspective transformation matrix
@@ -599,7 +580,17 @@ export function warpImageDataISO(
  */
 export function transformPoint(
   p: Point,
-  h: readonly [number, number, number, number, number, number, number, number, number]
+  h: readonly [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number
+  ]
 ): Point {
   const denominator = h[6] * p.x + h[7] * p.y + h[8];
   return {
