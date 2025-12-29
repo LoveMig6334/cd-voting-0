@@ -53,8 +53,22 @@ export interface DetectionResult {
 export type DetectionMethod =
   | "quadrilateral"
   | "edge_boundary"
-  | "center_crop_portrait"
-  | "center_crop_landscape";
+  | "connected_component"
+  | "color_region_fallback";
+
+/**
+ * Connected component representing a contiguous region of pixels
+ */
+export interface ConnectedComponent {
+  /** Bounding rectangle of the component */
+  readonly boundingRect: BoundingRect;
+  /** Number of pixels in the component */
+  readonly pixelCount: number;
+  /** Density: pixelCount / (width * height) of bounding box */
+  readonly density: number;
+  /** Aspect ratio of the bounding box (width / height) */
+  readonly aspectRatio: number;
+}
 
 /**
  * Extended detection result with method information
