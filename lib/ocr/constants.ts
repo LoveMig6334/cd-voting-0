@@ -121,12 +121,34 @@ export const FALLBACK = {
   MIN_ASPECT_RATIO: 1.1,
   /** Maximum fallback aspect ratio */
   MAX_ASPECT_RATIO: 2.5,
-  /** Portrait mode: width as fraction of image width */
-  PORTRAIT_WIDTH_FRACTION: 0.9,
-  /** Landscape mode: dimensions as fraction of image */
-  LANDSCAPE_DIMENSION_FRACTION: 0.8,
-  /** Landscape mode: margin as fraction of image */
-  LANDSCAPE_MARGIN_FRACTION: 0.1,
+} as const;
+
+/**
+ * Connected component detection configuration
+ */
+export const CONNECTED_COMPONENT = {
+  /** Minimum component area as fraction of image area */
+  MIN_AREA_RATIO: 0.05,
+  /** Maximum component area as fraction of image area */
+  MAX_AREA_RATIO: 0.90,
+  /** Minimum aspect ratio for card candidates */
+  MIN_ASPECT_RATIO: 1.0,
+  /** Maximum aspect ratio for card candidates */
+  MAX_ASPECT_RATIO: 3.0,
+  /** Minimum pixel density within bounding box (0-1) */
+  MIN_DENSITY: 0.15,
+  /** Confidence score for connected component detection */
+  CONFIDENCE: 40,
+  /** Confidence score for color region fallback */
+  FALLBACK_CONFIDENCE: 25,
+  /** Weight for aspect ratio similarity in scoring */
+  ASPECT_RATIO_WEIGHT: 40,
+  /** Weight for size in scoring */
+  SIZE_WEIGHT: 30,
+  /** Weight for density in scoring */
+  DENSITY_WEIGHT: 20,
+  /** Weight for center proximity in scoring */
+  CENTER_WEIGHT: 10,
 } as const;
 
 /**
