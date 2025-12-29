@@ -24,6 +24,7 @@ import {
 } from "./geometry-utils";
 import type {
   BoundingRect,
+  ConnectedComponent,
   DetectionMethod,
   ExtendedDetectionResult,
   ImageOrientation,
