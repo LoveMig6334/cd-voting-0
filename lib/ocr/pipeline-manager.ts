@@ -349,7 +349,7 @@ export async function processImage(
       corners: [],
       boundingRect: { x: 0, y: 0, width: 0, height: 0 },
       confidence: 0,
-      method: "center_crop_landscape",
+      method: "color_region_fallback",
       imageDimensions: { width: 0, height: 0 },
       detectedAspectRatio: 0,
     },
