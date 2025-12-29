@@ -827,10 +827,10 @@ export function getMethodDescription(method: DetectionMethod): string {
       return "Detected card corners using edge analysis";
     case "edge_boundary":
       return "Detected card boundary from edges and colors";
-    case "center_crop_portrait":
-      return "Using center crop (portrait orientation fallback)";
-    case "center_crop_landscape":
-      return "Using center crop (landscape orientation fallback)";
+    case "connected_component":
+      return "Detected card region using connected component analysis";
+    case "color_region_fallback":
+      return "Detected card using color-based region finding";
     default:
       return "Unknown detection method";
   }
