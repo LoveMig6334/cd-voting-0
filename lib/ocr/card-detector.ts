@@ -57,6 +57,12 @@ interface QuadCandidate {
 /**
  * Main card detection function
  * Attempts multiple detection strategies and returns the best result
+ *
+ * Strategy order:
+ * 1. Quadrilateral detection (edge-based, highest accuracy)
+ * 2. Edge boundary detection (combined edge + color masks)
+ * 3. Connected component detection (isolates card region from background)
+ * 4. Color region fallback (uses largest color-detected region)
  */
 export function detectCard(
   imageData: ImageData,
@@ -78,8 +84,14 @@ export function detectCard(
     return edgeResult;
   }
 
-  // Strategy 3: Smart fallback based on image orientation
-  return createSmartFallback(state);
+  // Strategy 3: Try connected component detection on color mask
+  const componentResult = detectByConnectedComponents(state);
+  if (componentResult) {
+    return componentResult;
+  }
+
+  // Strategy 4: Ultimate fallback using largest color region
+  return createColorBasedFallback(state);
 }
 
 /**
