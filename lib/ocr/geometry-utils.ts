@@ -38,13 +38,69 @@ declare global {
       v3?: number
     ) => CVScalar;
 
+    // Image processing functions for Canny edge detection
+    cvtColor(src: CVMat, dst: CVMat, code: number): void;
+    GaussianBlur(
+      src: CVMat,
+      dst: CVMat,
+      ksize: CVSize,
+      sigmaX: number,
+      sigmaY?: number
+    ): void;
+    morphologyEx(
+      src: CVMat,
+      dst: CVMat,
+      op: number,
+      kernel: CVMat,
+      anchor?: CVPoint,
+      iterations?: number
+    ): void;
+    getStructuringElement(shape: number, ksize: CVSize): CVMat;
+    Canny(
+      src: CVMat,
+      dst: CVMat,
+      threshold1: number,
+      threshold2: number,
+      apertureSize?: number,
+      L2gradient?: boolean
+    ): void;
+    HoughLines(
+      image: CVMat,
+      lines: CVMat,
+      rho: number,
+      theta: number,
+      threshold: number
+    ): void;
+    resize(
+      src: CVMat,
+      dst: CVMat,
+      dsize: CVSize,
+      fx?: number,
+      fy?: number,
+      interpolation?: number
+    ): void;
+    contourArea(contour: CVMat): number;
+    drawContours(
+      image: CVMat,
+      contours: CVMatVector,
+      contourIdx: number,
+      color: CVScalar,
+      thickness?: number
+    ): void;
+
     // Constants
     CV_32FC2: number;
     CV_8UC4: number;
+    CV_8UC1: number;
     INTER_CUBIC: number;
     INTER_LINEAR: number;
+    INTER_AREA: number;
     BORDER_CONSTANT: number;
     BORDER_REPLICATE: number;
+    COLOR_RGBA2GRAY: number;
+    COLOR_BGR2GRAY: number;
+    MORPH_RECT: number;
+    MORPH_CLOSE: number;
   }
 
   interface CVMat {
@@ -63,6 +119,18 @@ declare global {
 
   interface CVScalar {
     [index: number]: number;
+  }
+
+  interface CVPoint {
+    x: number;
+    y: number;
+  }
+
+  interface CVMatVector {
+    size(): number;
+    get(index: number): CVMat;
+    push_back(mat: CVMat): void;
+    delete(): void;
   }
 
   var cv: CV | undefined;
