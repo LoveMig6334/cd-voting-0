@@ -541,7 +541,8 @@ export class PipelineManager {
   private async cropAndWarp(
     img: HTMLImageElement,
     detection: ExtendedDetectionResult,
-    options: ProcessingOptions
+    options: ProcessingOptions,
+    imageData?: ImageData
   ): Promise<Result<string, DetectionError>> {
     const outputDimensions: ImageDimensions = {
       width: CARD_DIMENSIONS.OUTPUT_WIDTH,
@@ -569,7 +570,8 @@ export class PipelineManager {
           { x: outputDimensions.width, y: outputDimensions.height },
           { x: 0, y: outputDimensions.height },
         ],
-        outputDimensions
+        outputDimensions,
+        imageData
       );
 
       if (warpResult.ok) {
