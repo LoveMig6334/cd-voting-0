@@ -106,8 +106,27 @@ declare global {
       dst: CVMat
     ): void;
 
+    // Thresholding functions
+    threshold(
+      src: CVMat,
+      dst: CVMat,
+      thresh: number,
+      maxval: number,
+      type: number
+    ): void;
+    adaptiveThreshold(
+      src: CVMat,
+      dst: CVMat,
+      maxValue: number,
+      adaptiveMethod: number,
+      thresholdType: number,
+      blockSize: number,
+      C: number
+    ): void;
+
     // Constants
     COLOR_RGBA2GRAY: number;
+    COLOR_GRAY2RGBA: number;
     MORPH_RECT: number;
     MORPH_CLOSE: number;
     INTER_AREA: number;
@@ -116,6 +135,8 @@ declare global {
     BORDER_CONSTANT: number;
     CV_32FC2: number;
     CV_8UC4: number;
+    THRESH_BINARY: number;
+    ADAPTIVE_THRESH_GAUSSIAN_C: number;
   }
 
   interface CVMat {
@@ -124,6 +145,9 @@ declare global {
     cols: number;
     data: Uint8Array;
     data32F: Float32Array;
+    channels(): number;
+    copyTo(dst: CVMat): void;
+    setTo(value: CVScalar, mask?: CVMat): void;
   }
 
   interface CVSize {

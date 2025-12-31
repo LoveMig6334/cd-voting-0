@@ -190,10 +190,10 @@ export function grayscaleImage(
   height: number
 ): void {
   const imageData = ctx.getImageData(0, 0, width, height);
-  const src = (cv as any)!.matFromImageData(imageData);
-  const dst = new (cv as any)!.Mat();
+  const src: CVMat = cv!.matFromImageData(imageData);
+  const dst: CVMat = new cv!.Mat();
 
-  (cv as any)!.cvtColor(src, dst, (cv as any)!.COLOR_RGBA2GRAY);
+  cv!.cvtColor(src, dst, cv!.COLOR_RGBA2GRAY);
   const grayImageData = new ImageData(
     new Uint8ClampedArray(dst.data),
     dst.cols,
@@ -232,54 +232,53 @@ export function applyAdaptiveThresholdToData(
     return null;
   }
 
-  const cvAny = cv as any;
-  let src: any = null;
-  let gray: any = null;
-  let adaptive: any = null;
-  let mask: any = null;
-  let rgba: any = null;
+  let src: CVMat | null = null;
+  let gray: CVMat | null = null;
+  let adaptive: CVMat | null = null;
+  let mask: CVMat | null = null;
+  let rgba: CVMat | null = null;
 
   try {
-    src = cvAny.matFromImageData(imageData);
-    gray = new cvAny.Mat();
-    adaptive = new cvAny.Mat();
-    mask = new cvAny.Mat();
+    src = cv!.matFromImageData(imageData);
+    gray = new cv!.Mat();
+    adaptive = new cv!.Mat();
+    mask = new cv!.Mat();
 
     // 1. Convert to grayscale
     if (src.channels() > 1) {
-      cvAny.cvtColor(src, gray, cvAny.COLOR_RGBA2GRAY);
+      cv!.cvtColor(src, gray, cv!.COLOR_RGBA2GRAY);
     } else {
       src.copyTo(gray);
     }
 
     // 2. Perform adaptive thresholding for sharp text edges
-    cvAny.adaptiveThreshold(
+    cv!.adaptiveThreshold(
       gray,
       adaptive,
       255,
-      cvAny.ADAPTIVE_THRESH_GAUSSIAN_C,
-      cvAny.THRESH_BINARY,
+      cv!.ADAPTIVE_THRESH_GAUSSIAN_C,
+      cv!.THRESH_BINARY,
       OCR_PROCESSING.ADAPTIVE_THRESHOLD_BLOCK_SIZE,
       OCR_PROCESSING.ADAPTIVE_THRESHOLD_C
     );
 
     // 3. Global threshold pre-pass: Filter out anything not 'close to black'
     // Any pixel brighter than GLOBAL_THRESHOLD (e.g., 120) is forced to white
-    cvAny.threshold(
+    cv!.threshold(
       gray,
       mask,
       OCR_PROCESSING.GLOBAL_THRESHOLD,
       255,
-      cvAny.THRESH_BINARY
+      cv!.THRESH_BINARY
     );
 
     // 4. Combine: Force globally 'light' pixels to white in the adaptive result
     // This removes background noise that adaptive thresholding might mistakenly pick up
-    adaptive.setTo(new cvAny.Scalar(255), mask);
+    adaptive.setTo(new cv!.Scalar(255), mask);
 
     // 5. Convert binary result back to RGBA for canvas display
-    rgba = new cvAny.Mat();
-    cvAny.cvtColor(adaptive, rgba, cvAny.COLOR_GRAY2RGBA);
+    rgba = new cv!.Mat();
+    cv!.cvtColor(adaptive, rgba, cv!.COLOR_GRAY2RGBA);
 
     return new ImageData(
       new Uint8ClampedArray(rgba.data),
