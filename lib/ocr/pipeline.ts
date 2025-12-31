@@ -484,7 +484,7 @@ export class PipelineManager {
     if (isErr(overlayResult)) return this.createPipelineResult(overlayResult);
 
     const cropResult = await this.runStage("crop_and_warp", async () =>
-      this.cropAndWarp(img, detection, options)
+      this.cropAndWarp(img, detection, options, imageDataResult.value.imageData)
     );
     if (isErr(cropResult)) return this.createPipelineResult(cropResult);
 
