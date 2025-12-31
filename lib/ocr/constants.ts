@@ -9,7 +9,7 @@
  */
 export const CARD_DIMENSIONS = {
   /** Standard ID card aspect ratio (width / height) */
-  ASPECT_RATIO: 1.586,
+  ASPECT_RATIO: 1.6,
   /** Minimum acceptable aspect ratio for detected cards */
   MIN_ASPECT_RATIO: 1.0,
   /** Maximum acceptable aspect ratio for detected cards */
@@ -71,8 +71,8 @@ export const ENHANCEMENT = {
   CONTRAST_CENTER: 200,
   /** Sharpening kernel size (must be odd, larger = more blur before sharpening) */
   SHARPEN_KERNEL_SIZE: 5,
-  /** Sharpening intensity (0-1, higher = more aggressive sharpening) */
-  SHARPEN_INTENSITY: 0.6,
+  /** Sharpening intensity (0-256, higher = more aggressive sharpening) */
+  SHARPEN_INTENSITY: 1.5,
 } as const;
 
 /**
@@ -80,11 +80,11 @@ export const ENHANCEMENT = {
  */
 export const OCR_PROCESSING = {
   /** Adaptive threshold block size (must be odd) */
-  ADAPTIVE_THRESHOLD_BLOCK_SIZE: 31,
+  ADAPTIVE_THRESHOLD_BLOCK_SIZE: 35,
   /** Constant subtracted from the mean in adaptive thresholding */
   ADAPTIVE_THRESHOLD_C: 10,
   /** Global threshold to filter out light colors (0-255, lower is more selective) */
-  GLOBAL_THRESHOLD: 60,
+  GLOBAL_THRESHOLD: 70,
   /** Target language for OCR (Thai only) */
   LANGUAGE: "tha",
 } as const;
@@ -100,9 +100,9 @@ export const OVERLAY = {
   /** Failure stroke color */
   FAILURE_STROKE: "#ef4444",
   /** Success stroke width */
-  SUCCESS_LINE_WIDTH: 3,
+  SUCCESS_LINE_WIDTH: 8,
   /** Failure stroke width */
-  FAILURE_LINE_WIDTH: 2,
+  FAILURE_LINE_WIDTH: 8,
   /** Corner marker radius */
   CORNER_RADIUS: 6,
   /** Dash pattern for failed detection */
