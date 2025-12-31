@@ -1,837 +1,766 @@
 /**
- * Card Detector Module for the Image Processing Pipeline
- * Handles color-based segmentation, contour detection, and card boundary detection
+ * Card Detector Module - Canny Edge Detection Implementation
+ *
+ * This module implements card boundary detection using Canny edge detection,
+ * Hough line transform, and quadrilateral cycle detection.
+ *
+ * Algorithm Overview:
+ * 1. Rescale image to target height (500px) for faster processing
+ * 2. Convert to grayscale
+ * 3. Apply Gaussian blur to reduce noise
+ * 4. Apply morphological close to fill small holes
+ * 5. Apply Canny edge detection
+ * 6. Detect lines using Hough line transform
+ * 7. Find intersections between lines
+ * 8. Build a graph of intersections connected by lines
+ * 9. Find 4-cycles (quadrilaterals) in the graph
+ * 10. Score and select the best quadrilateral
  */
 
-import { applySobelEdgeDetection } from "./canvas-utils";
+import { CANNY_EDGE_DETECTION, CARD_DIMENSIONS } from "./constants";
 import {
-  CARD_DIMENSIONS,
-  COLOR_THRESHOLDS,
-  CONFIDENCE,
-  CONNECTED_COMPONENT,
-  CONTOUR_DETECTION,
-  FALLBACK,
-  QUADRILATERAL,
-} from "./constants";
-import {
-  convexHull,
   getBoundingRect,
-  isConvexQuadrilateral,
-  orderCorners,
-  quadrilateralArea,
-  rectToCorners,
-  simplifyContour,
+  isOpenCVReady,
+  robustSortCorners,
 } from "./geometry-utils";
-import type {
-  BoundingRect,
-  ConnectedComponent,
-  DetectionMethod,
-  ExtendedDetectionResult,
-  ImageOrientation,
-  Point,
-} from "./types";
-import { getImageOrientation } from "./types";
+import type { BoundingRect, ExtendedDetectionResult, Point } from "./types";
+
+// ============================================================================
+// Performance Timing Utilities
+// ============================================================================
 
 /**
- * Internal detection state for multi-stage detection
+ * Step timing information for performance monitoring
  */
-interface DetectionState {
-  readonly width: number;
-  readonly height: number;
-  readonly orientation: ImageOrientation;
-  readonly imageArea: number;
-  readonly colorMask: Uint8Array;
-  readonly edgeMask: Uint8Array;
+interface StepTiming {
+  readonly step: string;
+  readonly durationMs: number;
 }
 
 /**
- * Quadrilateral candidate with scoring
+ * Detection timings for all steps
  */
-interface QuadCandidate {
+interface DetectionTimings {
+  readonly steps: readonly StepTiming[];
+  readonly totalMs: number;
+}
+
+/**
+ * Timer class for tracking step durations
+ */
+class PerformanceTimer {
+  private steps: StepTiming[] = [];
+  private startTime: number = 0;
+
+  start(): void {
+    this.startTime = performance.now();
+    this.steps = [];
+  }
+
+  markStep(step: string): void {
+    const now = performance.now();
+    const durationMs = now - this.startTime;
+    this.steps.push({ step, durationMs: Math.round(durationMs * 100) / 100 });
+    this.startTime = now;
+  }
+
+  getTimings(): DetectionTimings {
+    const totalMs = this.steps.reduce((sum, s) => sum + s.durationMs, 0);
+    return {
+      steps: this.steps,
+      totalMs: Math.round(totalMs * 100) / 100,
+    };
+  }
+
+  logTimings(): void {
+    const timings = this.getTimings();
+    console.group("🕐 Card Detection Performance");
+    for (const step of timings.steps) {
+      console.log(`  ${step.step}: ${step.durationMs}ms`);
+    }
+    console.log(`  📊 Total: ${timings.totalMs}ms`);
+    console.groupEnd();
+  }
+}
+
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+/**
+ * Hough line in polar form (rho, theta)
+ */
+interface HoughLine {
+  readonly rho: number;
+  readonly theta: number;
+}
+
+/**
+ * Line intersection point with metadata
+ */
+interface LineIntersection {
+  readonly point: Point;
+  readonly lineIndices: readonly [number, number];
+}
+
+/**
+ * Quadrilateral contour candidate
+ */
+interface QuadContour {
   readonly corners: readonly Point[];
   readonly area: number;
-  readonly aspectRatio: number;
-  readonly confidence: number;
+  readonly score: number;
 }
 
+// ============================================================================
+// Main Detection Function
+// ============================================================================
+
 /**
- * Main card detection function
- * Attempts multiple detection strategies and returns the best result
+ * Main card detection function using Canny edge detection.
+ * Attempts to find a quadrilateral card boundary in the image.
  *
- * Strategy order:
- * 1. Quadrilateral detection (edge-based, highest accuracy)
- * 2. Edge boundary detection (combined edge + color masks)
- * 3. Connected component detection (isolates card region from background)
- * 4. Color region fallback (uses largest color-detected region)
+ * @param imageData - ImageData from canvas
+ * @param width - Image width
+ * @param height - Image height
+ * @returns Extended detection result with corners and diagnostics
  */
 export function detectCard(
   imageData: ImageData,
   width: number,
   height: number
 ): ExtendedDetectionResult {
-  // Initialize detection state
-  const state = initializeDetectionState(imageData, width, height);
+  const timer = new PerformanceTimer();
+  timer.start();
 
-  // Strategy 1: Try quadrilateral detection from contours
-  const quadResult = detectQuadrilateral(state);
-  if (quadResult) {
-    return quadResult;
+  // Check if OpenCV is available
+  if (!isOpenCVReady()) {
+    console.warn("OpenCV.js not loaded, using fallback detection");
+    timer.markStep("opencv_check_failed");
+    timer.logTimings();
+    return createCenteredFallback(width, height);
   }
 
-  // Strategy 2: Try edge-based boundary detection
-  const edgeResult = detectEdgeBoundary(state);
-  if (edgeResult) {
-    return edgeResult;
+  timer.markStep("opencv_check");
+
+  let src: CVMat | null = null;
+  let result: ExtendedDetectionResult;
+
+  try {
+    // Convert ImageData to OpenCV Mat
+    src = cv!.matFromImageData(imageData);
+    timer.markStep("image_to_mat");
+
+    // Run the Canny edge detection pipeline
+    result = runCannyDetection(src, width, height, timer);
+  } catch (error) {
+    console.error("Canny detection failed:", error);
+    timer.markStep("detection_error");
+    result = createCenteredFallback(width, height);
+  } finally {
+    // Clean up OpenCV resources
+    if (src) src.delete();
+    timer.markStep("cleanup");
   }
 
-  // Strategy 3: Try connected component detection on color mask
-  const componentResult = detectByConnectedComponents(state);
-  if (componentResult) {
-    return componentResult;
-  }
-
-  // Strategy 4: Ultimate fallback using largest color region
-  return createColorBasedFallback(state);
+  timer.logTimings();
+  return result;
 }
 
 /**
- * Initialize detection state with color and edge masks
+ * Run the full Canny edge detection pipeline
  */
-function initializeDetectionState(
-  imageData: ImageData,
-  width: number,
-  height: number
-): DetectionState {
-  const data = imageData.data;
-  const pixelCount = width * height;
-  const colorMask = new Uint8Array(pixelCount);
+function runCannyDetection(
+  src: CVMat,
+  originalWidth: number,
+  originalHeight: number,
+  timer: PerformanceTimer
+): ExtendedDetectionResult {
+  // Step 1: Rescale image to target height
+  const targetHeight = CANNY_EDGE_DETECTION.RESCALED_HEIGHT;
+  const scale = targetHeight / originalHeight;
+  const targetWidth = Math.round(originalWidth * scale);
 
-  // Apply color-based segmentation for Thai ID cards
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    const pixelIndex = i / 4;
+  let scaled: CVMat | null = null;
+  let gray: CVMat | null = null;
+  let blurred: CVMat | null = null;
+  let morphed: CVMat | null = null;
+  let edges: CVMat | null = null;
+  let lines: CVMat | null = null;
+  let kernel: CVMat | null = null;
 
-    // Detect bright pixels (against dark backgrounds)
-    const isBright =
-      r > COLOR_THRESHOLDS.BRIGHTNESS.RED_MIN &&
-      g > COLOR_THRESHOLDS.BRIGHTNESS.GREEN_MIN &&
-      b > COLOR_THRESHOLDS.BRIGHTNESS.BLUE_MIN;
+  try {
+    // Rescale
+    scaled = new cv!.Mat();
+    cv!.resize(
+      src,
+      scaled,
+      new cv!.Size(targetWidth, targetHeight),
+      0,
+      0,
+      cv!.INTER_AREA
+    );
+    timer.markStep("rescale");
 
-    // Detect yellow/gold pixels (typical Thai student ID)
-    const isYellow =
-      r > COLOR_THRESHOLDS.YELLOW.RED_MIN &&
-      g > COLOR_THRESHOLDS.YELLOW.GREEN_MIN &&
-      b < COLOR_THRESHOLDS.YELLOW.BLUE_MAX &&
-      r > b;
+    // Convert to grayscale
+    gray = new cv!.Mat();
+    cv!.cvtColor(scaled, gray, cv!.COLOR_RGBA2GRAY);
+    timer.markStep("grayscale");
 
-    // Detect blue pixels (some card variants)
-    const isBlue = b > COLOR_THRESHOLDS.BLUE.BLUE_MIN && b > r && b > g;
+    // Apply Gaussian blur
+    blurred = new cv!.Mat();
+    const blurSize = CANNY_EDGE_DETECTION.BLUR_KERNEL_SIZE;
+    cv!.GaussianBlur(gray, blurred, new cv!.Size(blurSize, blurSize), 0);
+    timer.markStep("gaussian_blur");
 
-    if (isYellow || isBlue || isBright) {
-      colorMask[pixelIndex] = 255;
+    // Apply morphological close operation
+    morphed = new cv!.Mat();
+    const morphSize = CANNY_EDGE_DETECTION.MORPH_KERNEL_SIZE;
+    kernel = cv!.getStructuringElement(
+      cv!.MORPH_RECT,
+      new cv!.Size(morphSize, morphSize)
+    );
+    cv!.morphologyEx(blurred, morphed, cv!.MORPH_CLOSE, kernel);
+    timer.markStep("morphology_close");
+
+    // Apply Canny edge detection
+    edges = new cv!.Mat();
+    cv!.Canny(
+      morphed,
+      edges,
+      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_LOW,
+      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH
+    );
+    timer.markStep("canny_edge");
+
+    // Apply Hough line transform
+    lines = new cv!.Mat();
+    const houghLines = findHoughLines(edges, timer);
+
+    if (!houghLines || houghLines.length === 0) {
+      timer.markStep("no_hough_lines");
+      return createCenteredFallback(originalWidth, originalHeight);
     }
+
+    timer.markStep("hough_transform");
+
+    // Find intersections between lines
+    const intersections = findLineIntersections(
+      houghLines,
+      targetWidth,
+      targetHeight
+    );
+    timer.markStep("find_intersections");
+
+    if (intersections.length < 4) {
+      timer.markStep("insufficient_intersections");
+      return createCenteredFallback(originalWidth, originalHeight);
+    }
+
+    // Find quadrilateral contours
+    const contours = findQuadrilateralContours(
+      intersections,
+      houghLines.length,
+      targetWidth,
+      targetHeight
+    );
+    timer.markStep("find_quadrilaterals");
+
+    if (contours.length === 0) {
+      timer.markStep("no_quadrilaterals");
+      return createCenteredFallback(originalWidth, originalHeight);
+    }
+
+    // Select the best contour
+    const bestContour = selectBestContour(
+      contours,
+      edges,
+      targetWidth,
+      targetHeight
+    );
+    timer.markStep("select_best_contour");
+
+    if (!bestContour) {
+      timer.markStep("no_valid_contour");
+      return createCenteredFallback(originalWidth, originalHeight);
+    }
+
+    // Scale corners back to original image size
+    const scaledCorners = bestContour.corners.map((p) => ({
+      x: Math.round(p.x / scale),
+      y: Math.round(p.y / scale),
+    }));
+    timer.markStep("scale_corners");
+
+    // Order corners as TL, TR, BR, BL
+    const orderedCorners = robustSortCorners(scaledCorners);
+    timer.markStep("order_corners");
+
+    const boundingRect = getBoundingRect(orderedCorners);
+    const aspectRatio = boundingRect.width / boundingRect.height;
+
+    return {
+      success: true,
+      corners: orderedCorners,
+      boundingRect,
+      confidence: CANNY_EDGE_DETECTION.SUCCESS_CONFIDENCE,
+      method: "canny_edge_detection",
+      imageDimensions: { width: originalWidth, height: originalHeight },
+      detectedAspectRatio: aspectRatio,
+    };
+  } finally {
+    // Clean up all OpenCV resources
+    if (scaled) scaled.delete();
+    if (gray) gray.delete();
+    if (blurred) blurred.delete();
+    if (morphed) morphed.delete();
+    if (edges) edges.delete();
+    if (lines) lines.delete();
+    if (kernel) kernel.delete();
   }
+}
 
-  // Apply Sobel edge detection
-  const edgeMask = applySobelEdgeDetection(data, width, height);
+// ============================================================================
+// Hough Line Detection
+// ============================================================================
 
-  return {
-    width,
-    height,
-    orientation: getImageOrientation(width, height),
-    imageArea: width * height,
-    colorMask,
-    edgeMask,
-  };
+/**
+ * Find lines using Hough transform with adaptive threshold
+ */
+function findHoughLines(
+  edges: CVMat,
+  timer: PerformanceTimer
+): HoughLine[] | null {
+  const thresholds = CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS;
+  const maxLines = CANNY_EDGE_DETECTION.HOUGH_MAX_LINES;
+
+  let lines: CVMat | null = null;
+
+  try {
+    for (const threshold of thresholds) {
+      lines = new cv!.Mat();
+      cv!.HoughLines(
+        edges,
+        lines,
+        CANNY_EDGE_DETECTION.HOUGH_RHO,
+        CANNY_EDGE_DETECTION.HOUGH_THETA,
+        threshold
+      );
+
+      if (lines.rows > 0 && lines.rows <= maxLines) {
+        break;
+      }
+
+      lines.delete();
+      lines = null;
+    }
+
+    if (!lines || lines.rows === 0) {
+      return null;
+    }
+
+    // Extract line data from OpenCV Mat
+    const result: HoughLine[] = [];
+    for (let i = 0; i < lines.rows; i++) {
+      const rho = lines.data32F[i * 2];
+      const theta = lines.data32F[i * 2 + 1];
+      result.push({ rho, theta });
+    }
+
+    return result;
+  } finally {
+    if (lines) lines.delete();
+  }
+}
+
+// ============================================================================
+// Line Intersection Detection
+// ============================================================================
+
+/**
+ * Calculate Euclidean distance between two points
+ */
+function euclideanDistance(p1: Point, p2: Point): number {
+  return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
 }
 
 /**
- * Attempt to detect a quadrilateral card shape from contours
+ * Find intersection point of two lines in Hough space
+ * Returns null if lines are parallel or intersection is out of bounds
  */
-function detectQuadrilateral(
-  state: DetectionState
-): ExtendedDetectionResult | null {
-  const contours = findContours(state.edgeMask, state.width, state.height);
-  const candidate = findBestQuadrilateral(contours, state);
+function lineIntersection(
+  line1: HoughLine,
+  line2: HoughLine,
+  maxX: number,
+  maxY: number
+): Point | null {
+  const { rho: rho1, theta: theta1 } = line1;
+  const { rho: rho2, theta: theta2 } = line2;
 
-  if (!candidate) {
+  // Check minimum angle between lines
+  const angle1 = Math.abs(theta1 - theta2);
+  const angle2 = Math.PI - angle1;
+  const minAngle = Math.min(angle1, angle2);
+
+  if (minAngle < CANNY_EDGE_DETECTION.MIN_INTERSECTION_ANGLE) {
+    return null; // Lines are nearly parallel
+  }
+
+  // Solve linear system to find intersection
+  // cos(theta1) * x + sin(theta1) * y = rho1
+  // cos(theta2) * x + sin(theta2) * y = rho2
+  const cos1 = Math.cos(theta1);
+  const sin1 = Math.sin(theta1);
+  const cos2 = Math.cos(theta2);
+  const sin2 = Math.sin(theta2);
+
+  const det = cos1 * sin2 - cos2 * sin1;
+  if (Math.abs(det) < 1e-10) {
+    return null; // Singular matrix (parallel lines)
+  }
+
+  const x = (rho1 * sin2 - rho2 * sin1) / det;
+  const y = (cos1 * rho2 - cos2 * rho1) / det;
+
+  // Check bounds
+  if (x < 0 || x > maxX || y < 0 || y > maxY) {
     return null;
   }
 
-  // Validate aspect ratio
-  if (
-    candidate.aspectRatio < CARD_DIMENSIONS.MIN_ASPECT_RATIO ||
-    candidate.aspectRatio > CARD_DIMENSIONS.MAX_ASPECT_RATIO
-  ) {
-    return null;
-  }
-
-  // Check confidence threshold
-  if (candidate.confidence < CONFIDENCE.MIN_THRESHOLD) {
-    return null;
-  }
-
-  const boundingRect = getBoundingRect(candidate.corners);
-
-  return {
-    success: true,
-    corners: candidate.corners,
-    boundingRect,
-    confidence: candidate.confidence,
-    method: "quadrilateral",
-    imageDimensions: { width: state.width, height: state.height },
-    detectedAspectRatio: candidate.aspectRatio,
-  };
+  return { x: Math.round(x), y: Math.round(y) };
 }
 
 /**
- * Find contours in the edge mask using flood-fill based tracing
+ * Find all valid intersections between lines
  */
-function findContours(
-  edgeMask: Uint8Array,
-  width: number,
-  height: number
-): readonly Point[][] {
-  const contours: Point[][] = [];
-  const visited = new Uint8Array(width * height);
+function findLineIntersections(
+  lines: HoughLine[],
+  maxX: number,
+  maxY: number
+): LineIntersection[] {
+  const intersections: LineIntersection[] = [];
 
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const idx = y * width + x;
-      if (edgeMask[idx] === 255 && visited[idx] === 0) {
-        const contour = traceContour(edgeMask, visited, x, y, width, height);
-        if (contour.length >= CONTOUR_DETECTION.MIN_CONTOUR_POINTS) {
-          contours.push(contour);
-        }
+  for (let i = 0; i < lines.length; i++) {
+    for (let j = i + 1; j < lines.length; j++) {
+      const point = lineIntersection(lines[i], lines[j], maxX, maxY);
+      if (point) {
+        intersections.push({
+          point,
+          lineIndices: [i, j],
+        });
       }
     }
+  }
+
+  return intersections;
+}
+
+// ============================================================================
+// Quadrilateral Detection (Graph-based Cycle Finding)
+// ============================================================================
+
+/**
+ * Build adjacency graph from intersections
+ * Two intersections are adjacent if they share a line
+ */
+function buildIntersectionGraph(
+  intersections: LineIntersection[],
+  _numLines: number
+): Set<number>[] {
+  const graph: Set<number>[] = intersections.map(() => new Set());
+
+  const minCornerDistance = CANNY_EDGE_DETECTION.MIN_CORNER_DISTANCE;
+
+  for (let i = 0; i < intersections.length; i++) {
+    for (let j = i + 1; j < intersections.length; j++) {
+      // Check if intersections share a line
+      const lines1 = intersections[i].lineIndices;
+      const lines2 = intersections[j].lineIndices;
+
+      const sharedLine =
+        lines1[0] === lines2[0] ||
+        lines1[0] === lines2[1] ||
+        lines1[1] === lines2[0] ||
+        lines1[1] === lines2[1];
+
+      if (!sharedLine) continue;
+
+      // Check minimum distance between corners
+      const dist = euclideanDistance(
+        intersections[i].point,
+        intersections[j].point
+      );
+
+      if (dist < minCornerDistance) continue;
+
+      // Add edge to graph
+      graph[i].add(j);
+      graph[j].add(i);
+    }
+  }
+
+  return graph;
+}
+
+/**
+ * Find all 4-cycles (quadrilaterals) in the graph using DFS
+ */
+function findCycles(graph: Set<number>[], length: number): number[][] {
+  const allCycles: number[][] = [];
+
+  function dfs(visited: number[], current: number, target: number[]): void {
+    if (visited.length === length) {
+      // Check if we can complete the cycle
+      if (graph[current].has(visited[0])) {
+        allCycles.push([...visited]);
+      }
+      return;
+    }
+
+    for (const neighbor of graph[current]) {
+      if (!visited.includes(neighbor)) {
+        visited.push(neighbor);
+        dfs(visited, neighbor, target);
+        visited.pop();
+      }
+    }
+  }
+
+  // Start DFS from each node
+  for (let i = 0; i < graph.length; i++) {
+    dfs([i], i, []);
+  }
+
+  // Deduplicate cycles (same cycle can be found in multiple ways)
+  const uniqueCycles = deduplicateCycles(allCycles);
+
+  return uniqueCycles;
+}
+
+/**
+ * Deduplicate cycles by normalizing their representation
+ */
+function deduplicateCycles(cycles: number[][]): number[][] {
+  const seen = new Set<string>();
+  const unique: number[][] = [];
+
+  for (const cycle of cycles) {
+    // Normalize: rotate to start with minimum element, pick smaller of forward/reverse
+    const minIdx = cycle.indexOf(Math.min(...cycle));
+    const rotated = [...cycle.slice(minIdx), ...cycle.slice(0, minIdx)];
+    const reversed = [rotated[0], ...rotated.slice(1).reverse()];
+
+    const key1 = rotated.join(",");
+    const key2 = reversed.join(",");
+    const key = key1 < key2 ? key1 : key2;
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(rotated);
+    }
+  }
+
+  return unique;
+}
+
+/**
+ * Find quadrilateral contours from intersections
+ */
+function findQuadrilateralContours(
+  intersections: LineIntersection[],
+  numLines: number,
+  imageWidth: number,
+  imageHeight: number
+): QuadContour[] {
+  if (intersections.length < 4) {
+    return [];
+  }
+
+  // Build intersection graph
+  const graph = buildIntersectionGraph(intersections, numLines);
+
+  // Find all 4-cycles
+  const cycles = findCycles(graph, 4);
+
+  // Convert cycles to contours
+  const imageArea = imageWidth * imageHeight;
+  const minArea = imageArea * CANNY_EDGE_DETECTION.MIN_CONTOUR_AREA_RATIO;
+
+  const contours: QuadContour[] = [];
+
+  for (const cycle of cycles) {
+    const corners = cycle.map((idx) => intersections[idx].point);
+    const area = computePolygonArea(corners);
+
+    if (area < minArea) {
+      continue;
+    }
+
+    contours.push({
+      corners,
+      area,
+      score: 0, // Will be computed later
+    });
   }
 
   return contours;
 }
 
 /**
- * Trace a single contour starting from a point using 8-connectivity flood fill
+ * Compute area of a polygon using the shoelace formula
  */
-function traceContour(
-  edgeMask: Uint8Array,
-  visited: Uint8Array,
-  startX: number,
-  startY: number,
-  width: number,
-  height: number
-): Point[] {
-  const contour: Point[] = [];
-  const stack: Point[] = [{ x: startX, y: startY }];
-  const directions = CONTOUR_DETECTION.DIRECTIONS;
-  const maxPoints = CONTOUR_DETECTION.MAX_CONTOUR_POINTS;
+function computePolygonArea(points: readonly Point[]): number {
+  let area = 0;
+  const n = points.length;
 
-  while (stack.length > 0 && contour.length < maxPoints) {
-    const point = stack.pop()!;
-    const idx = point.y * width + point.x;
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    area += points[i].x * points[j].y;
+    area -= points[j].x * points[i].y;
+  }
 
-    if (visited[idx] === 1) continue;
-    visited[idx] = 1;
-    contour.push(point);
+  return Math.abs(area) / 2;
+}
 
-    // Check 8-connected neighbors
-    for (const [dy, dx] of directions) {
-      const nx = point.x + dx;
-      const ny = point.y + dy;
+// ============================================================================
+// Contour Scoring and Selection
+// ============================================================================
 
-      if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-        const nidx = ny * width + nx;
-        if (edgeMask[nidx] === 255 && visited[nidx] === 0) {
-          stack.push({ x: nx, y: ny });
-        }
-      }
+/**
+ * Order contour corners in [TL, TR, BR, BL] order
+ */
+function orderContour(contour: readonly Point[]): readonly Point[] {
+  if (contour.length !== 4) return contour;
+
+  // Find top-left point (smallest sum of x+y)
+  let tlIndex = 0;
+  let minSum = contour[0].x + contour[0].y;
+
+  for (let i = 1; i < 4; i++) {
+    const sum = contour[i].x + contour[i].y;
+    if (sum < minSum) {
+      minSum = sum;
+      tlIndex = i;
     }
   }
 
-  return contour;
+  const tl = contour[tlIndex];
+
+  // For remaining points, sort by angle from TL
+  const others = contour
+    .filter((_, idx) => idx !== tlIndex)
+    .map((p) => ({
+      point: p,
+      angle: Math.atan2(p.y - tl.y, p.x - tl.x),
+    }))
+    .sort((a, b) => a.angle - b.angle);
+
+  // Order: TL, then by increasing angle (TR, BR, BL)
+  return [tl, others[0].point, others[1].point, others[2].point];
 }
 
 /**
- * Find the best quadrilateral candidate from contours
+ * Score contour based on edge overlap
+ * Higher score = contour matches detected edges better
  */
-function findBestQuadrilateral(
-  contours: readonly Point[][],
-  state: DetectionState
-): QuadCandidate | null {
-  let bestCandidate: QuadCandidate | null = null;
-  let bestArea = 0;
-
-  const minArea = state.imageArea * QUADRILATERAL.MIN_AREA_RATIO;
-  const maxArea = state.imageArea * QUADRILATERAL.MAX_AREA_RATIO;
-
-  for (const contour of contours) {
-    // Simplify contour to reduce noise
-    const simplified = simplifyContour(
-      contour,
-      CONTOUR_DETECTION.SIMPLIFICATION_EPSILON
-    );
-
-    // Compute convex hull
-    const hull = convexHull(simplified);
-
-    if (hull.length < 4) continue;
-
-    // Order corners geometrically (TL, TR, BR, BL)
-    const quad = orderCorners(hull);
-
-    if (quad.length !== 4) continue;
-
-    // Validate convexity
-    if (!isConvexQuadrilateral(quad)) continue;
-
-    // Calculate area
-    const area = quadrilateralArea(quad);
-
-    if (area <= minArea || area >= maxArea) continue;
-
-    // Calculate aspect ratio from bounding rect
-    const rect = getBoundingRect(quad);
-    const aspectRatio = rect.width / rect.height;
-
-    // Calculate confidence
-    const confidence = calculateConfidence(rect, state.width, state.height);
-
-    if (area > bestArea) {
-      bestArea = area;
-      bestCandidate = {
-        corners: quad,
-        area,
-        aspectRatio,
-        confidence,
-      };
-    }
-  }
-
-  return bestCandidate;
-}
-
-/**
- * Calculate detection confidence score (0-100)
- */
-function calculateConfidence(
-  rect: BoundingRect,
-  imageWidth: number,
-  imageHeight: number
+function scoreContour(
+  contour: readonly Point[],
+  edges: CVMat,
+  _imageWidth: number,
+  _imageHeight: number
 ): number {
-  // Score based on aspect ratio similarity to ID card
-  const aspectRatio = rect.width / rect.height;
-  const ratioDeviation = Math.abs(aspectRatio - CARD_DIMENSIONS.ASPECT_RATIO);
-  const ratioScore = Math.max(
-    0,
-    100 - ratioDeviation * CONFIDENCE.ASPECT_RATIO_WEIGHT
-  );
+  // Simple scoring based on contour area
+  // In the Python version, this draws the contour and computes overlap with edges
+  // For now, we use a simplified scoring based on area and aspect ratio
 
-  // Score based on coverage (how much of image the card occupies)
-  const coverageRatio = (rect.width * rect.height) / (imageWidth * imageHeight);
-  const coverageScore =
-    coverageRatio > CONFIDENCE.MIN_COVERAGE_RATIO &&
-    coverageRatio < CONFIDENCE.MAX_COVERAGE_RATIO
-      ? CONFIDENCE.COVERAGE_SCORE_VALID
-      : CONFIDENCE.COVERAGE_SCORE_INVALID;
+  const orderedContour = orderContour(contour);
+  const area = computePolygonArea(orderedContour);
 
-  return Math.max(0, Math.min(100, (ratioScore + coverageScore) / 2));
-}
-
-/**
- * Detect card boundary using combined edge and color masks
- */
-function detectEdgeBoundary(
-  state: DetectionState
-): ExtendedDetectionResult | null {
-  const boundary = findBoundaryFromMasks(
-    state.edgeMask,
-    state.colorMask,
-    state.width,
-    state.height
-  );
-
-  if (!boundary || boundary.width === 0 || boundary.height === 0) {
-    return null;
-  }
-
-  // Validate aspect ratio for edge-based detection
-  const aspectRatio = boundary.width / boundary.height;
-  if (
-    aspectRatio < FALLBACK.MIN_ASPECT_RATIO ||
-    aspectRatio > FALLBACK.MAX_ASPECT_RATIO
-  ) {
-    return null;
-  }
-
-  return {
-    success: true,
-    corners: rectToCorners(boundary),
-    boundingRect: boundary,
-    confidence: CONFIDENCE.FALLBACK_CONFIDENCE,
-    method: "edge_boundary",
-    imageDimensions: { width: state.width, height: state.height },
-    detectedAspectRatio: aspectRatio,
-  };
-}
-
-/**
- * Find bounding box of combined edge and color mask pixels
- */
-function findBoundaryFromMasks(
-  edgeMask: Uint8Array,
-  colorMask: Uint8Array,
-  width: number,
-  height: number
-): BoundingRect | null {
-  let minX = width;
-  let maxX = 0;
-  let minY = height;
-  let maxY = 0;
-  let found = false;
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const idx = y * width + x;
-      if (colorMask[idx] === 255 || edgeMask[idx] === 255) {
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-        found = true;
-      }
-    }
-  }
-
-  if (!found || maxX <= minX || maxY <= minY) {
-    return null;
-  }
-
-  // Add padding
-  const padding = FALLBACK.EDGE_PADDING;
-  return {
-    x: Math.max(0, minX - padding),
-    y: Math.max(0, minY - padding),
-    width: Math.min(width - minX + padding, maxX - minX + padding * 2),
-    height: Math.min(height - minY + padding, maxY - minY + padding * 2),
-  };
-}
-
-// ============================================================================
-// Connected Component Detection (Strategy 3)
-// ============================================================================
-
-/**
- * Detect card using connected component analysis on the color mask.
- * This finds contiguous regions of card-colored pixels and selects
- * the best candidate based on size, aspect ratio, and density.
- */
-function detectByConnectedComponents(
-  state: DetectionState
-): ExtendedDetectionResult | null {
-  // Find all connected components in the color mask
-  const components = findConnectedComponents(
-    state.colorMask,
-    state.width,
-    state.height
-  );
-
-  // Filter to valid card candidates
-  const candidates = filterCardCandidates(components, state.imageArea);
-
-  if (candidates.length === 0) {
-    return null;
-  }
-
-  // Select the best candidate
-  const bestCandidate = selectBestCandidate(candidates, state);
-
-  if (!bestCandidate) {
-    return null;
-  }
-
-  return {
-    success: true,
-    corners: rectToCorners(bestCandidate.boundingRect),
-    boundingRect: bestCandidate.boundingRect,
-    confidence: CONNECTED_COMPONENT.CONFIDENCE,
-    method: "connected_component",
-    imageDimensions: { width: state.width, height: state.height },
-    detectedAspectRatio: bestCandidate.aspectRatio,
-  };
-}
-
-/**
- * Find connected components in a binary mask using flood-fill algorithm.
- * Returns array of components with their bounding boxes and statistics.
- */
-function findConnectedComponents(
-  mask: Uint8Array,
-  width: number,
-  height: number
-): ConnectedComponent[] {
-  const components: ConnectedComponent[] = [];
-  const visited = new Uint8Array(width * height);
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const idx = y * width + x;
-
-      // Skip if not a foreground pixel or already visited
-      if (mask[idx] === 0 || visited[idx] === 1) {
-        continue;
-      }
-
-      // Flood-fill to find all pixels in this component
-      const component = floodFillComponent(mask, visited, x, y, width, height);
-
-      if (component) {
-        components.push(component);
-      }
-    }
-  }
-
-  return components;
-}
-
-/**
- * Flood-fill from a starting point to find a connected component.
- * Uses iterative BFS to avoid stack overflow on large components.
- */
-function floodFillComponent(
-  mask: Uint8Array,
-  visited: Uint8Array,
-  startX: number,
-  startY: number,
-  width: number,
-  height: number
-): ConnectedComponent | null {
-  const queue: Array<{ x: number; y: number }> = [{ x: startX, y: startY }];
-  let pixelCount = 0;
-  let minX = startX;
-  let maxX = startX;
-  let minY = startY;
-  let maxY = startY;
-
-  // 4-connectivity directions (faster than 8-connectivity, sufficient for cards)
-  const directions = [
-    [0, 1],
-    [0, -1],
-    [1, 0],
-    [-1, 0],
-  ];
-
-  while (queue.length > 0) {
-    const point = queue.shift()!;
-    const idx = point.y * width + point.x;
-
-    if (visited[idx] === 1) {
-      continue;
-    }
-
-    visited[idx] = 1;
-    pixelCount++;
-
-    // Update bounding box
-    if (point.x < minX) minX = point.x;
-    if (point.x > maxX) maxX = point.x;
-    if (point.y < minY) minY = point.y;
-    if (point.y > maxY) maxY = point.y;
-
-    // Check neighbors
-    for (const [dy, dx] of directions) {
-      const nx = point.x + dx;
-      const ny = point.y + dy;
-
-      if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-        const nidx = ny * width + nx;
-        if (mask[nidx] === 255 && visited[nidx] === 0) {
-          queue.push({ x: nx, y: ny });
-        }
-      }
-    }
-  }
-
-  // Skip very small components (noise)
-  if (pixelCount < 100) {
-    return null;
-  }
-
-  const boundingWidth = maxX - minX + 1;
-  const boundingHeight = maxY - minY + 1;
-  const boundingArea = boundingWidth * boundingHeight;
-
-  return {
-    boundingRect: {
-      x: minX,
-      y: minY,
-      width: boundingWidth,
-      height: boundingHeight,
-    },
-    pixelCount,
-    density: pixelCount / boundingArea,
-    aspectRatio: boundingWidth / boundingHeight,
-  };
-}
-
-/**
- * Filter connected components to those that could be ID cards.
- * Applies size, aspect ratio, and density filters.
- */
-function filterCardCandidates(
-  components: ConnectedComponent[],
-  imageArea: number
-): ConnectedComponent[] {
-  const minArea = imageArea * CONNECTED_COMPONENT.MIN_AREA_RATIO;
-  const maxArea = imageArea * CONNECTED_COMPONENT.MAX_AREA_RATIO;
-
-  return components.filter((comp) => {
-    const area = comp.boundingRect.width * comp.boundingRect.height;
-
-    // Size filter
-    if (area < minArea || area > maxArea) {
-      return false;
-    }
-
-    // Aspect ratio filter
-    if (
-      comp.aspectRatio < CONNECTED_COMPONENT.MIN_ASPECT_RATIO ||
-      comp.aspectRatio > CONNECTED_COMPONENT.MAX_ASPECT_RATIO
-    ) {
-      return false;
-    }
-
-    // Density filter (avoid sparse noise regions)
-    if (comp.density < CONNECTED_COMPONENT.MIN_DENSITY) {
-      return false;
-    }
-
-    return true;
-  });
-}
-
-/**
- * Select the best card candidate from filtered components.
- * Scores based on: aspect ratio similarity, size, density, and center proximity.
- */
-function selectBestCandidate(
-  candidates: ConnectedComponent[],
-  state: DetectionState
-): ConnectedComponent | null {
-  if (candidates.length === 0) {
-    return null;
-  }
-
-  let bestCandidate: ConnectedComponent | null = null;
-  let bestScore = -Infinity;
-
-  const imageCenterX = state.width / 2;
-  const imageCenterY = state.height / 2;
-  const maxDistance = Math.sqrt(
-    imageCenterX * imageCenterX + imageCenterY * imageCenterY
-  );
-
-  for (const candidate of candidates) {
-    // Score 1: Aspect ratio similarity to ISO 7810 (1.586)
-    const ratioDeviation = Math.abs(
-      candidate.aspectRatio - CARD_DIMENSIONS.ASPECT_RATIO
-    );
-    const ratioScore = Math.max(0, 100 - ratioDeviation * 50);
-
-    // Score 2: Size (larger is better, normalized to image area)
-    const area = candidate.boundingRect.width * candidate.boundingRect.height;
-    const sizeScore = (area / state.imageArea) * 100;
-
-    // Score 3: Density (higher is better)
-    const densityScore = candidate.density * 100;
-
-    // Score 4: Center proximity (closer to center is better)
-    const candidateCenterX =
-      candidate.boundingRect.x + candidate.boundingRect.width / 2;
-    const candidateCenterY =
-      candidate.boundingRect.y + candidate.boundingRect.height / 2;
-    const distanceToCenter = Math.sqrt(
-      Math.pow(candidateCenterX - imageCenterX, 2) +
-        Math.pow(candidateCenterY - imageCenterY, 2)
-    );
-    const centerScore = (1 - distanceToCenter / maxDistance) * 100;
-
-    // Weighted total score
-    const totalScore =
-      (ratioScore * CONNECTED_COMPONENT.ASPECT_RATIO_WEIGHT +
-        sizeScore * CONNECTED_COMPONENT.SIZE_WEIGHT +
-        densityScore * CONNECTED_COMPONENT.DENSITY_WEIGHT +
-        centerScore * CONNECTED_COMPONENT.CENTER_WEIGHT) /
-      100;
-
-    if (totalScore > bestScore) {
-      bestScore = totalScore;
-      bestCandidate = candidate;
-    }
-  }
-
-  return bestCandidate;
-}
-
-// ============================================================================
-// Color-Based Fallback (Strategy 4)
-// ============================================================================
-
-/**
- * Ultimate fallback: Find the largest color-detected region.
- * Unlike the old center-crop approach, this actually uses detected pixels
- * to find where the card likely is.
- */
-function createColorBasedFallback(state: DetectionState): ExtendedDetectionResult {
-  // Find bounding box of all color-detected pixels
-  let minX = state.width;
-  let maxX = 0;
-  let minY = state.height;
-  let maxY = 0;
-  let foundPixels = false;
-
-  for (let y = 0; y < state.height; y++) {
-    for (let x = 0; x < state.width; x++) {
-      const idx = y * state.width + x;
-      if (state.colorMask[idx] === 255) {
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-        foundPixels = true;
-      }
-    }
-  }
-
-  // If no color pixels found, use a centered rectangle based on image dimensions
-  if (!foundPixels || maxX <= minX || maxY <= minY) {
-    return createCenteredFallback(state);
-  }
-
-  // Add padding around detected region
-  const padding = FALLBACK.EDGE_PADDING;
-  const boundingRect: BoundingRect = {
-    x: Math.max(0, minX - padding),
-    y: Math.max(0, minY - padding),
-    width: Math.min(state.width - minX + padding, maxX - minX + padding * 2),
-    height: Math.min(state.height - minY + padding, maxY - minY + padding * 2),
-  };
-
+  // Calculate aspect ratio
+  const boundingRect = getBoundingRect(orderedContour);
   const aspectRatio = boundingRect.width / boundingRect.height;
 
-  // If aspect ratio is reasonable, use this region
-  if (
-    aspectRatio >= CONNECTED_COMPONENT.MIN_ASPECT_RATIO &&
-    aspectRatio <= CONNECTED_COMPONENT.MAX_ASPECT_RATIO
-  ) {
-    return {
-      success: true, // Mark as success since we found something
-      corners: rectToCorners(boundingRect),
-      boundingRect,
-      confidence: CONNECTED_COMPONENT.FALLBACK_CONFIDENCE,
-      method: "color_region_fallback",
-      imageDimensions: { width: state.width, height: state.height },
-      detectedAspectRatio: aspectRatio,
-    };
-  }
+  // Score based on aspect ratio similarity to ID card
+  const idealRatio = CARD_DIMENSIONS.ASPECT_RATIO;
+  const ratioDeviation = Math.abs(aspectRatio - idealRatio);
+  const ratioScore = Math.max(0, 100 - ratioDeviation * 40);
 
-  // Aspect ratio is wrong, try to correct it
-  return createCorrectedFallback(boundingRect, state);
+  // Combined score (area weighted by ratio score)
+  return area * (ratioScore / 100);
 }
 
 /**
- * Create a centered fallback when no color pixels are detected.
- * This is the last resort when all detection methods fail.
+ * Select the best contour from candidates
  */
-function createCenteredFallback(state: DetectionState): ExtendedDetectionResult {
+function selectBestContour(
+  contours: QuadContour[],
+  edges: CVMat,
+  imageWidth: number,
+  imageHeight: number
+): QuadContour | null {
+  if (contours.length === 0) {
+    return null;
+  }
+
+  let bestContour: QuadContour | null = null;
+  let bestScore = 0;
+
+  for (const contour of contours) {
+    const score = scoreContour(contour.corners, edges, imageWidth, imageHeight);
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestContour = { ...contour, score };
+    }
+  }
+
+  return bestContour;
+}
+
+// ============================================================================
+// Fallback Detection
+// ============================================================================
+
+/**
+ * Create a centered fallback rectangle when detection fails.
+ * Uses 70% of the smaller dimension with ID card aspect ratio.
+ */
+function createCenteredFallback(
+  width: number,
+  height: number
+): ExtendedDetectionResult {
   // Use 70% of the smaller dimension to create a card-shaped region
-  const smallerDim = Math.min(state.width, state.height);
+  const smallerDim = Math.min(width, height);
   const cropWidth = Math.floor(smallerDim * 0.7);
   const cropHeight = Math.floor(cropWidth / CARD_DIMENSIONS.ASPECT_RATIO);
 
-  const cropX = Math.floor((state.width - cropWidth) / 2);
-  const cropY = Math.floor((state.height - cropHeight) / 2);
+  const cropX = Math.floor((width - cropWidth) / 2);
+  const cropY = Math.floor((height - cropHeight) / 2);
 
   const boundingRect: BoundingRect = {
     x: Math.max(0, cropX),
     y: Math.max(0, cropY),
-    width: Math.min(cropWidth, state.width),
-    height: Math.min(cropHeight, state.height),
+    width: Math.min(cropWidth, width),
+    height: Math.min(cropHeight, height),
   };
+
+  const corners: readonly Point[] = [
+    { x: boundingRect.x, y: boundingRect.y },
+    { x: boundingRect.x + boundingRect.width, y: boundingRect.y },
+    {
+      x: boundingRect.x + boundingRect.width,
+      y: boundingRect.y + boundingRect.height,
+    },
+    { x: boundingRect.x, y: boundingRect.y + boundingRect.height },
+  ];
 
   return {
-    success: false, // Mark as false - this is a blind guess
-    corners: rectToCorners(boundingRect),
+    success: false, // Fallback is not a true detection
+    corners,
     boundingRect,
-    confidence: CONNECTED_COMPONENT.FALLBACK_CONFIDENCE,
-    method: "color_region_fallback",
-    imageDimensions: { width: state.width, height: state.height },
-    detectedAspectRatio: boundingRect.width / boundingRect.height,
+    confidence: CANNY_EDGE_DETECTION.FALLBACK_CONFIDENCE,
+    method: "canny_edge_detection",
+    imageDimensions: { width, height },
+    detectedAspectRatio: CARD_DIMENSIONS.ASPECT_RATIO,
   };
-}
-
-/**
- * Create a corrected fallback when detected region has wrong aspect ratio.
- * Adjusts the bounding box to match ID card proportions while staying centered on detected region.
- */
-function createCorrectedFallback(
-  detected: BoundingRect,
-  state: DetectionState
-): ExtendedDetectionResult {
-  const detectedCenterX = detected.x + detected.width / 2;
-  const detectedCenterY = detected.y + detected.height / 2;
-
-  // Use the detected width and calculate proper height
-  let newWidth = detected.width;
-  let newHeight = Math.floor(newWidth / CARD_DIMENSIONS.ASPECT_RATIO);
-
-  // If height would exceed image bounds, use height-based calculation instead
-  if (newHeight > state.height * 0.9) {
-    newHeight = Math.floor(state.height * 0.8);
-    newWidth = Math.floor(newHeight * CARD_DIMENSIONS.ASPECT_RATIO);
-  }
-
-  // Center on detected region
-  let newX = Math.floor(detectedCenterX - newWidth / 2);
-  let newY = Math.floor(detectedCenterY - newHeight / 2);
-
-  // Clamp to image bounds
-  newX = Math.max(0, Math.min(newX, state.width - newWidth));
-  newY = Math.max(0, Math.min(newY, state.height - newHeight));
-
-  const boundingRect: BoundingRect = {
-    x: newX,
-    y: newY,
-    width: newWidth,
-    height: newHeight,
-  };
-
-  return {
-    success: true,
-    corners: rectToCorners(boundingRect),
-    boundingRect,
-    confidence: CONNECTED_COMPONENT.FALLBACK_CONFIDENCE,
-    method: "color_region_fallback",
-    imageDimensions: { width: state.width, height: state.height },
-    detectedAspectRatio: boundingRect.width / boundingRect.height,
-  };
-}
-
-/**
- * Get a human-readable description of the detection method
- */
-export function getMethodDescription(method: DetectionMethod): string {
-  switch (method) {
-    case "quadrilateral":
-      return "Detected card corners using edge analysis";
-    case "edge_boundary":
-      return "Detected card boundary from edges and colors";
-    case "connected_component":
-      return "Detected card region using connected component analysis";
-    case "color_region_fallback":
-      return "Detected card using color-based region finding";
-    default:
-      return "Unknown detection method";
-  }
 }
