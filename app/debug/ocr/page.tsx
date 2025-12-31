@@ -5,7 +5,7 @@ import {
   ProcessingOptions,
   getMethodDescription,
   processImageWithDiagnostics,
-} from "@/lib/ocr/image-processor";
+} from "@/lib/ocr";
 import {
   ParseResult,
   parseOCRText,
