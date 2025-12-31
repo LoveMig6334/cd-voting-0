@@ -4,6 +4,7 @@ import {
   PipelineResult,
   ProcessingOptions,
   getMethodDescription,
+  loadOpenCV,
   processImageWithDiagnostics,
 } from "@/lib/ocr";
 import {
@@ -81,6 +82,14 @@ export default function OCRDebugPage() {
       }
     };
   }, []);
+
+  // Preload OpenCV when page mounts (reduces first pipeline run latency)
+  useEffect(() => {
+    loadOpenCV()
+      .then(() => console.log("✓ OpenCV preloaded"))
+      .catch((err) => console.warn("OpenCV preload failed:", err));
+  }, []);
+
   const [processingOptions, setProcessingOptions] = useState<ProcessingOptions>(
     {
       enableCrop: true,
@@ -611,7 +620,7 @@ export default function OCRDebugPage() {
                       {stage.success ? "✓" : "✗"}
                     </span>
                     <span className="text-slate-300 text-sm font-mono">
-                      {stage.stage}
+                      {idx + 1}. {stage.stage}
                     </span>
                   </div>
                   <span className="text-cyan-400 text-xs font-mono">
