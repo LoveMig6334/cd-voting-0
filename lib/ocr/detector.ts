@@ -375,9 +375,11 @@ function runCannyDetection(
 
     const houghLines = findHoughLines(edges);
     if (!houghLines || houghLines.length === 0) {
+      console.warn("🔍 Detection failed: No Hough lines found");
       timer.markStep("no_hough_lines");
       return createCenteredFallback(originalWidth, originalHeight);
     }
+    console.log(`🔍 Hough lines found: ${houghLines.length}`);
     timer.markStep("hough_transform");
 
     const intersections = findLineIntersections(
@@ -385,9 +387,13 @@ function runCannyDetection(
       targetWidth,
       targetHeight
     );
+    console.log(`🔍 Intersections found: ${intersections.length}`);
     timer.markStep("find_intersections");
 
     if (intersections.length < 4) {
+      console.warn(
+        `🔍 Detection failed: Only ${intersections.length} intersections (need 4+)`
+      );
       timer.markStep("insufficient_intersections");
       return createCenteredFallback(originalWidth, originalHeight);
     }
@@ -398,9 +404,11 @@ function runCannyDetection(
       targetWidth,
       targetHeight
     );
+    console.log(`🔍 Quadrilaterals found: ${contours.length}`);
     timer.markStep("find_quadrilaterals");
 
     if (contours.length === 0) {
+      console.warn("🔍 Detection failed: No valid quadrilaterals found");
       timer.markStep("no_quadrilaterals");
       return createCenteredFallback(originalWidth, originalHeight);
     }
@@ -409,9 +417,14 @@ function runCannyDetection(
     timer.markStep("select_best_contour");
 
     if (!bestContour) {
+      console.warn("🔍 Detection failed: No contour passed scoring");
       timer.markStep("no_valid_contour");
       return createCenteredFallback(originalWidth, originalHeight);
     }
+    console.log(
+      `🔍 Best contour selected with score: ${bestContour.score.toFixed(2)}`
+    );
+    console.log(`🔍 Corners:`, bestContour.corners);
 
     const scaledCorners = bestContour.corners.map((p) => ({
       x: Math.round(p.x / scale),
@@ -671,11 +684,12 @@ function selectBestContour(contours: QuadContour[]): QuadContour | null {
     const ratioDeviation = Math.abs(aspectRatio - idealRatio);
     const ratioScore = Math.max(0, 100 - ratioDeviation * 40);
 
-    // Corner angle scoring: penalize non-90° corners
+    // Corner angle scoring: provides bonus for near-90° corners (0-20% bonus)
     const angleScore = computeCornerAngleScore(orderedContour);
+    const angleBonus = 1 + (angleScore / 100) * 0.2; // 1.0 to 1.2 multiplier
 
-    // Combined score: area * ratio quality * angle quality
-    const score = area * (ratioScore / 100) * (angleScore / 100);
+    // Combined score: base = area * ratio quality, with angle bonus
+    const score = area * (ratioScore / 100) * angleBonus;
 
     if (score > bestScore) {
       bestScore = score;
