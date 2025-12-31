@@ -8,11 +8,14 @@
         "Homography",
         "ksize",
         "nidx",
+        "readback",
+        "readbacks",
         "scanlines",
         "SOBEL",
         "Tanawat",
         "temporay",
         "Tesseract",
+        "thresholding",
         "Unvote",
         "vercel"
     ]
