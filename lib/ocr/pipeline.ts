@@ -153,6 +153,14 @@ export function enhanceImage(
   height: number
 ): void {
   const imageData = ctx.getImageData(0, 0, width, height);
+  enhanceImageData(imageData);
+  ctx.putImageData(imageData, 0, 0);
+}
+
+/**
+ * Enhance image data in place (Contrast & Brightness)
+ */
+export function enhanceImageData(imageData: ImageData): void {
   const data = imageData.data;
   const contrast = ENHANCEMENT.CONTRAST;
   const brightness = ENHANCEMENT.BRIGHTNESS;
@@ -167,7 +175,6 @@ export function enhanceImage(
       (data[i + 2] - center) * contrast + center + brightness
     );
   }
-  ctx.putImageData(imageData, 0, 0);
 }
 
 function clampPixel(value: number): number {
@@ -209,62 +216,87 @@ export function applyAdaptiveThreshold(
   height: number
 ): void {
   const imageData = ctx.getImageData(0, 0, width, height);
-  const cvAny = cv as any;
-  const src = cvAny.matFromImageData(imageData);
-  const gray = new cvAny.Mat();
-  const adaptive = new cvAny.Mat();
-  const mask = new cvAny.Mat();
+  const thresholded = applyAdaptiveThresholdToData(imageData);
+  if (thresholded) {
+    ctx.putImageData(thresholded, 0, 0);
+  }
+}
 
-  // 1. Convert to grayscale
-  if (src.channels() > 1) {
-    cvAny.cvtColor(src, gray, cvAny.COLOR_RGBA2GRAY);
-  } else {
-    src.copyTo(gray);
+/**
+ * Apply adaptive thresholding to ImageData
+ */
+export function applyAdaptiveThresholdToData(
+  imageData: ImageData
+): ImageData | null {
+  if (!isOpenCVReady() || typeof cv === "undefined") {
+    return null;
   }
 
-  // 2. Perform adaptive thresholding for sharp text edges
-  cvAny.adaptiveThreshold(
-    gray,
-    adaptive,
-    255,
-    cvAny.ADAPTIVE_THRESH_GAUSSIAN_C,
-    cvAny.THRESH_BINARY,
-    OCR_PROCESSING.ADAPTIVE_THRESHOLD_BLOCK_SIZE,
-    OCR_PROCESSING.ADAPTIVE_THRESHOLD_C
-  );
+  const cvAny = cv as any;
+  let src: any = null;
+  let gray: any = null;
+  let adaptive: any = null;
+  let mask: any = null;
+  let rgba: any = null;
 
-  // 3. Global threshold pre-pass: Filter out anything not 'close to black'
-  // Any pixel brighter than GLOBAL_THRESHOLD (e.g., 120) is forced to white
-  cvAny.threshold(
-    gray,
-    mask,
-    OCR_PROCESSING.GLOBAL_THRESHOLD,
-    255,
-    cvAny.THRESH_BINARY
-  );
+  try {
+    src = cvAny.matFromImageData(imageData);
+    gray = new cvAny.Mat();
+    adaptive = new cvAny.Mat();
+    mask = new cvAny.Mat();
 
-  // 4. Combine: Force globally 'light' pixels to white in the adaptive result
-  // This removes background noise that adaptive thresholding might mistakenly pick up
-  adaptive.setTo(new cvAny.Scalar(255), mask);
+    // 1. Convert to grayscale
+    if (src.channels() > 1) {
+      cvAny.cvtColor(src, gray, cvAny.COLOR_RGBA2GRAY);
+    } else {
+      src.copyTo(gray);
+    }
 
-  // 5. Convert binary result back to RGBA for canvas display
-  const rgba = new cvAny.Mat();
-  cvAny.cvtColor(adaptive, rgba, cvAny.COLOR_GRAY2RGBA);
+    // 2. Perform adaptive thresholding for sharp text edges
+    cvAny.adaptiveThreshold(
+      gray,
+      adaptive,
+      255,
+      cvAny.ADAPTIVE_THRESH_GAUSSIAN_C,
+      cvAny.THRESH_BINARY,
+      OCR_PROCESSING.ADAPTIVE_THRESHOLD_BLOCK_SIZE,
+      OCR_PROCESSING.ADAPTIVE_THRESHOLD_C
+    );
 
-  const thresholdedImageData = new ImageData(
-    new Uint8ClampedArray(rgba.data),
-    rgba.cols,
-    rgba.rows
-  );
+    // 3. Global threshold pre-pass: Filter out anything not 'close to black'
+    // Any pixel brighter than GLOBAL_THRESHOLD (e.g., 120) is forced to white
+    cvAny.threshold(
+      gray,
+      mask,
+      OCR_PROCESSING.GLOBAL_THRESHOLD,
+      255,
+      cvAny.THRESH_BINARY
+    );
 
-  ctx.putImageData(thresholdedImageData, 0, 0);
+    // 4. Combine: Force globally 'light' pixels to white in the adaptive result
+    // This removes background noise that adaptive thresholding might mistakenly pick up
+    adaptive.setTo(new cvAny.Scalar(255), mask);
 
-  // Cleanup
-  src.delete();
-  gray.delete();
-  adaptive.delete();
-  mask.delete();
-  rgba.delete();
+    // 5. Convert binary result back to RGBA for canvas display
+    rgba = new cvAny.Mat();
+    cvAny.cvtColor(adaptive, rgba, cvAny.COLOR_GRAY2RGBA);
+
+    return new ImageData(
+      new Uint8ClampedArray(rgba.data),
+      rgba.cols,
+      rgba.rows
+    );
+  } catch (error) {
+    console.error("Adaptive threshold failed:", error);
+    return null;
+  } finally {
+    // Cleanup
+    if (src) src.delete();
+    if (gray) gray.delete();
+    if (adaptive) adaptive.delete();
+    if (mask) mask.delete();
+    if (rgba) rgba.delete();
+  }
 }
 
 /**
@@ -276,10 +308,21 @@ export function sharpenImage(
   width: number,
   height: number
 ): void {
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const sharpened = sharpenImageData(imageData);
+  if (sharpened) {
+    ctx.putImageData(sharpened, 0, 0);
+  }
+}
+
+/**
+ * Sharpen ImageData using OpenCV
+ */
+export function sharpenImageData(imageData: ImageData): ImageData | null {
   // Check if OpenCV is available
   if (!isOpenCVReady() || typeof cv === "undefined") {
     console.warn("OpenCV not available, skipping sharpening");
-    return;
+    return null;
   }
 
   let srcMat: CVMat | null = null;
@@ -287,8 +330,6 @@ export function sharpenImage(
   let sharpenedMat: CVMat | null = null;
 
   try {
-    // Get image data from canvas
-    const imageData = ctx.getImageData(0, 0, width, height);
     srcMat = cv.matFromImageData(imageData);
 
     // Create blurred version using Gaussian blur
@@ -306,16 +347,15 @@ export function sharpenImage(
 
     cv.addWeighted(srcMat, alpha, blurredMat, beta, gamma, sharpenedMat);
 
-    // Put the sharpened image back to canvas
-    const sharpenedData = new ImageData(
+    // Return the sharpened image data
+    return new ImageData(
       new Uint8ClampedArray(sharpenedMat.data),
-      width,
-      height
+      imageData.width,
+      imageData.height
     );
-    ctx.putImageData(sharpenedData, 0, 0);
   } catch (error) {
     console.warn("Sharpening failed:", error);
-    // On failure, leave the original image unchanged
+    return null;
   } finally {
     // Clean up OpenCV matrices
     if (srcMat) srcMat.delete();
@@ -745,21 +785,38 @@ export class PipelineManager {
     const enhancementResult = await this.runStage(
       "image_enhancement",
       async () => {
-        if (!options.enableEnhancement) {
-          return ok(cardCanvas);
+        let imageData: ImageData | null = null;
+        if (options.enableEnhancement) {
+          const ctx = cardCanvas.getContext("2d");
+          if (ctx) {
+            // Get ImageData ONCE for both operations
+            imageData = ctx.getImageData(
+              0,
+              0,
+              cardCanvas.width,
+              cardCanvas.height
+            );
+
+            // Apply sharpening (returns new ImageData or null)
+            const sharpened = sharpenImageData(imageData);
+            if (sharpened) imageData = sharpened;
+
+            // Apply contrast/brightness (modifies in place)
+            enhanceImageData(imageData);
+
+            // Put modified data back ONCE
+            ctx.putImageData(imageData, 0, 0);
+          }
         }
-        const ctx = cardCanvas.getContext("2d");
-        if (ctx) {
-          // Apply sharpening first, then contrast/brightness
-          sharpenImage(ctx, cardCanvas.width, cardCanvas.height);
-          enhanceImage(ctx, cardCanvas.width, cardCanvas.height);
-        }
-        return ok(cardCanvas);
+        // Return both canvas and the latest imageData
+        return ok({ canvas: cardCanvas, imageData });
       }
     );
     if (isErr(enhancementResult))
       return this.createPipelineResult(enhancementResult);
-    cardCanvas = enhancementResult.value;
+
+    cardCanvas = enhancementResult.value.canvas;
+    const enhancedImageData = enhancementResult.value.imageData;
 
     const thresholdResult = await this.runStage(
       "ocr_preprocessing",
@@ -767,17 +824,39 @@ export class PipelineManager {
         if (!options.enableOcrPreprocessing) {
           return ok(canvasToDataUrl(cardCanvas));
         }
-        // Create a copy of the card for thresholding
+
+        // If we have enhancedImageData from previous step, use it directly
+        // Otherwise get it from the canvas
+        let srcImageData = enhancedImageData;
+        if (!srcImageData) {
+          const ctx = cardCanvas.getContext("2d");
+          if (!ctx) return err(new CanvasContextError());
+          srcImageData = ctx.getImageData(
+            0,
+            0,
+            cardCanvas.width,
+            cardCanvas.height
+          );
+        }
+
+        // Apply adaptive thresholding to ImageData (avoiding drawImage + getImageData)
+        const thresholdedData = applyAdaptiveThresholdToData(srcImageData);
+
+        // Create result canvas
         const ocrCanvasResult = createCanvas(
           cardCanvas.width,
           cardCanvas.height
         );
         if (!ocrCanvasResult.ok) return ocrCanvasResult;
         const { canvas: ocrCanvas, ctx: ocrCtx } = ocrCanvasResult.value;
-        ocrCtx.drawImage(cardCanvas, 0, 0);
 
-        // Apply adaptive thresholding for better OCR
-        applyAdaptiveThreshold(ocrCtx, ocrCanvas.width, ocrCanvas.height);
+        if (thresholdedData) {
+          ocrCtx.putImageData(thresholdedData, 0, 0);
+        } else {
+          // Fallback if thresholding failed
+          ocrCtx.drawImage(cardCanvas, 0, 0);
+        }
+
         return ok(canvasToDataUrl(ocrCanvas));
       }
     );
