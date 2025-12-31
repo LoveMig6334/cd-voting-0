@@ -52,7 +52,7 @@ export const CANNY_EDGE_DETECTION = {
   /** Minimum distance between contour corners in pixels */
   MIN_CORNER_DISTANCE: 50,
   /** Corner margin ratio - corners are moved inward by this percentage to avoid cutting edges */
-  CORNER_MARGIN_RATIO: 0.02,
+  CORNER_MARGIN_RATIO: 0,
   /** Confidence score for successful Canny detection */
   SUCCESS_CONFIDENCE: 85,
   /** Confidence score for fallback centered rectangle */
