@@ -62,11 +62,11 @@ export const CANNY_EDGE_DETECTION = {
  */
 export const ENHANCEMENT = {
   /** Contrast multiplier */
-  CONTRAST: 1.2,
+  CONTRAST: 1.6,
   /** Brightness offset */
-  BRIGHTNESS: 10,
+  BRIGHTNESS: 5,
   /** Center value for contrast adjustment */
-  CONTRAST_CENTER: 128,
+  CONTRAST_CENTER: 200,
 } as const;
 
 /**
