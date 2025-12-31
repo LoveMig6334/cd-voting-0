@@ -12,7 +12,7 @@ import {
   validateParsedData,
 } from "@/lib/ocr/parser";
 import { StudentData } from "@/lib/student-data";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Tesseract from "tesseract.js";
 
 interface ValidationResult {
@@ -43,10 +43,49 @@ export default function OCRDebugPage() {
   const [pipelineStage, setPipelineStage] = useState<PipelineStage>("idle");
   const [ocrProgress, setOcrProgress] = useState(0);
   const [validating, setValidating] = useState(false);
+  const [showThreshold, setShowThreshold] = useState(false);
+  const [worker, setWorker] = useState<Tesseract.Worker | null>(null);
+  const [workerReady, setWorkerReady] = useState(false);
+
+  // Use a ref for the logger to avoid worker re-init
+  const loggerRef = useRef<(m: Tesseract.LoggerMessage) => void>(null);
+  loggerRef.current = (m) => {
+    if (m.status === "recognizing text") {
+      setOcrProgress(Math.floor(m.progress * 100));
+    }
+  };
+
+  // Initialize persistent worker
+  useEffect(() => {
+    let activeWorker: Tesseract.Worker | null = null;
+
+    const init = async () => {
+      try {
+        const w = await Tesseract.createWorker("tha", 1, {
+          logger: (m) => loggerRef.current?.(m),
+        });
+        activeWorker = w;
+        setWorker(w);
+        setWorkerReady(true);
+        console.log("✓ Tesseract worker ready (Thai)");
+      } catch (err) {
+        console.error("Failed to init Tesseract worker:", err);
+      }
+    };
+
+    init();
+
+    return () => {
+      if (activeWorker) {
+        activeWorker.terminate();
+      }
+    };
+  }, []);
   const [processingOptions, setProcessingOptions] = useState<ProcessingOptions>(
     {
       enableCrop: true,
       enableEnhancement: true,
+      enableOcrPreprocessing: true,
     }
   );
 
@@ -110,15 +149,24 @@ export default function OCRDebugPage() {
 
       // Stage 3: OCR Analysis
       setPipelineStage("ocr");
-      const {
-        data: { text },
-      } = await Tesseract.recognize(processed.croppedCard, "tha+eng", {
-        logger: (m) => {
-          if (m.status === "recognizing text") {
-            setOcrProgress(Math.floor(m.progress * 100));
+
+      let text = "";
+      if (worker && workerReady) {
+        // Use persistent worker
+        const result = await worker.recognize(processed.thresholdedCard);
+        text = result.data.text;
+      } else {
+        // Fallback to one-off recognize if worker not ready
+        console.warn("Worker not ready, using one-off recognition");
+        const result = await Tesseract.recognize(
+          processed.thresholdedCard,
+          "tha",
+          {
+            logger: (m) => loggerRef.current?.(m),
           }
-        },
-      });
+        );
+        text = result.data.text;
+      }
 
       setRawText(text);
       setPipelineStage("complete");
@@ -362,15 +410,50 @@ export default function OCRDebugPage() {
                 }))
               }
             />
+            <ToggleSwitch
+              label="OCR Preprocessing"
+              description="Adaptive thresholding for OCR"
+              checked={processingOptions.enableOcrPreprocessing}
+              onChange={(checked) =>
+                setProcessingOptions((prev) => ({
+                  ...prev,
+                  enableOcrPreprocessing: checked,
+                }))
+              }
+            />
           </div>
 
-          <div className="aspect-4/3 bg-slate-900 rounded-xl border border-slate-700 overflow-hidden flex items-center justify-center">
+          <div className="aspect-4/3 bg-slate-900 rounded-xl border border-slate-700 overflow-hidden relative group flex items-center justify-center">
             {processedImages?.croppedCard ? (
-              <img
-                src={processedImages.croppedCard}
-                alt="Cropped Card"
-                className="w-full h-full object-contain"
-              />
+              <>
+                <img
+                  src={
+                    showThreshold && processedImages.thresholdedCard
+                      ? processedImages.thresholdedCard
+                      : processedImages.croppedCard
+                  }
+                  alt="Cropped Card"
+                  className="w-full h-full object-contain"
+                />
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => setShowThreshold(false)}
+                    className={`px-2 py-1 rounded-md text-[10px] font-bold ${
+                      !showThreshold ? "bg-emerald-600" : "bg-slate-700"
+                    }`}
+                  >
+                    CLEANED
+                  </button>
+                  <button
+                    onClick={() => setShowThreshold(true)}
+                    className={`px-2 py-1 rounded-md text-[10px] font-bold ${
+                      showThreshold ? "bg-emerald-600" : "bg-slate-700"
+                    }`}
+                  >
+                    OCR-READY
+                  </button>
+                </div>
+              </>
             ) : (
               <div className="text-center text-slate-600 text-sm">
                 <span className="material-symbols-outlined text-4xl mb-2 block opacity-50">

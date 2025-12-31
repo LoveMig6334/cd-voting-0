@@ -3,8 +3,14 @@
  * Orchestrates detection, warping, enhancement, and canvas operations
  */
 
-import { CARD_DIMENSIONS, ENHANCEMENT, OVERLAY } from "./constants";
+import {
+  CARD_DIMENSIONS,
+  ENHANCEMENT,
+  OCR_PROCESSING,
+  OVERLAY,
+} from "./constants";
 import { detectCard, getMethodDescription } from "./detector";
+import { loadOpenCV } from "./opencv-loader";
 import {
   CanvasContextError,
   createDefaultProcessingOptions,
@@ -59,7 +65,7 @@ export function createCanvas(
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) {
     return err(new CanvasContextError());
   }
@@ -166,6 +172,99 @@ export function enhanceImage(
 
 function clampPixel(value: number): number {
   return Math.max(0, Math.min(255, Math.round(value)));
+}
+
+/**
+ * Convert image to grayscale using OpenCV
+ */
+export function grayscaleImage(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+): void {
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const src = (cv as any)!.matFromImageData(imageData);
+  const dst = new (cv as any)!.Mat();
+
+  (cv as any)!.cvtColor(src, dst, (cv as any)!.COLOR_RGBA2GRAY);
+  const grayImageData = new ImageData(
+    new Uint8ClampedArray(dst.data),
+    dst.cols,
+    dst.rows
+  );
+
+  ctx.putImageData(grayImageData, 0, 0);
+
+  src.delete();
+  dst.delete();
+}
+
+/**
+ * Apply adaptive thresholding to create a binary image
+ * This is highly effective for OCR preprocessing
+ */
+export function applyAdaptiveThreshold(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+): void {
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const cvAny = cv as any;
+  const src = cvAny.matFromImageData(imageData);
+  const gray = new cvAny.Mat();
+  const adaptive = new cvAny.Mat();
+  const mask = new cvAny.Mat();
+
+  // 1. Convert to grayscale
+  if (src.channels() > 1) {
+    cvAny.cvtColor(src, gray, cvAny.COLOR_RGBA2GRAY);
+  } else {
+    src.copyTo(gray);
+  }
+
+  // 2. Perform adaptive thresholding for sharp text edges
+  cvAny.adaptiveThreshold(
+    gray,
+    adaptive,
+    255,
+    cvAny.ADAPTIVE_THRESH_GAUSSIAN_C,
+    cvAny.THRESH_BINARY,
+    OCR_PROCESSING.ADAPTIVE_THRESHOLD_BLOCK_SIZE,
+    OCR_PROCESSING.ADAPTIVE_THRESHOLD_C
+  );
+
+  // 3. Global threshold pre-pass: Filter out anything not 'close to black'
+  // Any pixel brighter than GLOBAL_THRESHOLD (e.g., 120) is forced to white
+  cvAny.threshold(
+    gray,
+    mask,
+    OCR_PROCESSING.GLOBAL_THRESHOLD,
+    255,
+    cvAny.THRESH_BINARY
+  );
+
+  // 4. Combine: Force globally 'light' pixels to white in the adaptive result
+  // This removes background noise that adaptive thresholding might mistakenly pick up
+  adaptive.setTo(new cvAny.Scalar(255), mask);
+
+  // 5. Convert binary result back to RGBA for canvas display
+  const rgba = new cvAny.Mat();
+  cvAny.cvtColor(adaptive, rgba, cvAny.COLOR_GRAY2RGBA);
+
+  const thresholdedImageData = new ImageData(
+    new Uint8ClampedArray(rgba.data),
+    rgba.cols,
+    rgba.rows
+  );
+
+  ctx.putImageData(thresholdedImageData, 0, 0);
+
+  // Cleanup
+  src.delete();
+  gray.delete();
+  adaptive.delete();
+  mask.delete();
+  rgba.delete();
 }
 
 /**
@@ -521,21 +620,84 @@ export class PipelineManager {
     this.stages = [];
     this.startTime = performance.now();
 
+    // Load OpenCV first (this is a no-op if already loaded)
+    try {
+      console.log("Stage: Loading OpenCV...");
+      await loadOpenCV();
+      console.log("Stage: OpenCV Ready");
+      this.stages.push({
+        stage: "load_opencv",
+        success: true,
+        durationMs: performance.now() - this.startTime,
+      });
+    } catch (error) {
+      console.warn("OpenCV failed to load: ", error);
+      this.stages.push({
+        stage: "load_opencv",
+        success: false,
+        durationMs: performance.now() - this.startTime,
+        details: { error: String(error) },
+      });
+    }
+
     const loadResult = await this.runStage("load_image", async () =>
       loadImage(imageDataUrl)
     );
     if (isErr(loadResult)) return this.createPipelineResult(loadResult);
     const img = loadResult.value;
 
-    const imageDataResult = await this.runStage("get_image_data", async () =>
-      getImageData(img)
-    );
+    const imageDataResult = await this.runStage("get_image_data", async () => {
+      // Hardware-accelerated resize to intermediate detection size.
+      // 1024px provides a good balance: small enough for fast readback,
+      // but large enough for OpenCV's INTER_AREA to find sharp edges.
+      const targetHeight = 1024;
+      const scale = targetHeight / img.height;
+      const targetWidth = Math.round(img.width * scale);
+
+      const result = createCanvas(targetWidth, targetHeight);
+      if (!result.ok) return result;
+      const { ctx } = result.value;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+      return ok({
+        imageData: ctx.getImageData(0, 0, targetWidth, targetHeight),
+        width: targetWidth,
+        height: targetHeight,
+        originalWidth: img.width,
+        originalHeight: img.height,
+      });
+    });
     if (isErr(imageDataResult))
       return this.createPipelineResult(imageDataResult);
 
     const detectionResult = await this.runStage("detect_card", async () => {
-      const { imageData, width, height } = imageDataResult.value;
-      return ok(detectCard(imageData, width, height));
+      const { imageData, width, height, originalWidth, originalHeight } =
+        imageDataResult.value;
+
+      // Run detection on the small image
+      const detection = detectCard(imageData, width, height);
+
+      // Map detection results back to original high-res coordinates
+      const scaleX = originalWidth / width;
+      const scaleY = originalHeight / height;
+
+      const scaledDetection: ExtendedDetectionResult = {
+        ...detection,
+        corners: detection.corners.map((p) => ({
+          x: p.x * scaleX,
+          y: p.y * scaleY,
+        })),
+        boundingRect: {
+          x: detection.boundingRect.x * scaleX,
+          y: detection.boundingRect.y * scaleY,
+          width: detection.boundingRect.width * scaleX,
+          height: detection.boundingRect.height * scaleY,
+        },
+        imageDimensions: { width: originalWidth, height: originalHeight },
+      };
+
+      return ok(scaledDetection);
     });
     if (isErr(detectionResult))
       return this.createPipelineResult(detectionResult);
@@ -547,13 +709,42 @@ export class PipelineManager {
     if (isErr(overlayResult)) return this.createPipelineResult(overlayResult);
 
     const cropResult = await this.runStage("crop_and_warp", async () =>
-      this.cropAndWarp(img, detection, options, imageDataResult.value.imageData)
+      // Note: We intentionally do NOT pass imageDataResult.value.imageData here.
+      // That imageData is for the 1024px detection-only image, but our corners
+      // have already been scaled back to the original image dimensions.
+      // Passing undefined forces warpWithOpenCV to read pixels from the full-res img.
+      this.cropAndWarp(img, detection, options, undefined)
     );
     if (isErr(cropResult)) return this.createPipelineResult(cropResult);
+    const cardCanvas = cropResult.value;
+
+    const thresholdResult = await this.runStage(
+      "ocr_preprocessing",
+      async () => {
+        if (!options.enableOcrPreprocessing) {
+          return ok(canvasToDataUrl(cardCanvas));
+        }
+        // Create a copy of the card for thresholding
+        const ocrCanvasResult = createCanvas(
+          cardCanvas.width,
+          cardCanvas.height
+        );
+        if (!ocrCanvasResult.ok) return ocrCanvasResult;
+        const { canvas: ocrCanvas, ctx: ocrCtx } = ocrCanvasResult.value;
+        ocrCtx.drawImage(cardCanvas, 0, 0);
+
+        // Apply adaptive thresholding for better OCR
+        applyAdaptiveThreshold(ocrCtx, ocrCanvas.width, ocrCanvas.height);
+        return ok(canvasToDataUrl(ocrCanvas));
+      }
+    );
+    if (isErr(thresholdResult))
+      return this.createPipelineResult(thresholdResult);
 
     const processedImage: ProcessedImage = {
       originalWithOverlay: overlayResult.value,
-      croppedCard: cropResult.value,
+      croppedCard: canvasToDataUrl(cardCanvas),
+      thresholdedCard: thresholdResult.value,
       detectionResult: detection,
     };
 
@@ -593,11 +784,41 @@ export class PipelineManager {
     img: HTMLImageElement,
     detection: ExtendedDetectionResult
   ): Promise<Result<string, DetectionError>> {
-    const canvasResult = createCanvas(img.width, img.height);
+    // Determine preview dimensions (optimize by downscaling large images)
+    const maxDim = OVERLAY.MAX_PREVIEW_WIDTH;
+    let width = img.width;
+    let height = img.height;
+    let scale = 1;
+
+    if (width > maxDim) {
+      scale = maxDim / width;
+      width = maxDim;
+      height = Math.round(img.height * scale);
+    }
+
+    const canvasResult = createCanvas(width, height);
     if (!canvasResult.ok) return canvasResult;
     const { canvas, ctx } = canvasResult.value;
-    ctx.drawImage(img, 0, 0);
-    drawDetectionOverlay(ctx, detection);
+
+    // Draw downscaled base image
+    ctx.drawImage(img, 0, 0, width, height);
+
+    // Adjust detection corners for the new scale
+    const scaledDetection = {
+      ...detection,
+      corners: detection.corners.map((p) => ({
+        x: p.x * scale,
+        y: p.y * scale,
+      })),
+      boundingRect: {
+        x: detection.boundingRect.x * scale,
+        y: detection.boundingRect.y * scale,
+        width: detection.boundingRect.width * scale,
+        height: detection.boundingRect.height * scale,
+      },
+    };
+
+    drawDetectionOverlay(ctx, scaledDetection);
     return ok(canvasToDataUrl(canvas));
   }
 
@@ -606,7 +827,7 @@ export class PipelineManager {
     detection: ExtendedDetectionResult,
     options: ProcessingOptions,
     imageData?: ImageData
-  ): Promise<Result<string, DetectionError>> {
+  ): Promise<Result<HTMLCanvasElement, DetectionError>> {
     const outputDimensions: ImageDimensions = {
       width: CARD_DIMENSIONS.OUTPUT_WIDTH,
       height: CARD_DIMENSIONS.OUTPUT_HEIGHT,
@@ -624,7 +845,7 @@ export class PipelineManager {
           enhanceImage(ctx, canvas.width, canvas.height);
         }
       }
-      return ok(canvasToDataUrl(canvas));
+      return ok(canvas);
     }
 
     if (detection.success && detection.corners.length === 4) {
@@ -651,7 +872,7 @@ export class PipelineManager {
             enhanceImage(ctx, canvas.width, canvas.height);
           }
         }
-        return ok(canvasToDataUrl(canvas));
+        return ok(canvas);
       }
       console.warn("Perspective warp failed, using simple crop");
     }
@@ -671,7 +892,7 @@ export class PipelineManager {
         enhanceImage(ctx, canvas.width, canvas.height);
       }
     }
-    return ok(canvasToDataUrl(canvas));
+    return ok(canvas);
   }
 
   private createPipelineResult<T>(
@@ -730,6 +951,7 @@ export async function processImage(
   return {
     originalWithOverlay: imageDataUrl,
     croppedCard: imageDataUrl,
+    thresholdedCard: imageDataUrl,
     detectionResult: {
       success: false,
       corners: [],

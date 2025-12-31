@@ -76,6 +76,20 @@ export const ENHANCEMENT = {
 } as const;
 
 /**
+ * OCR specific preprocessing configuration
+ */
+export const OCR_PROCESSING = {
+  /** Adaptive threshold block size (must be odd) */
+  ADAPTIVE_THRESHOLD_BLOCK_SIZE: 31,
+  /** Constant subtracted from the mean in adaptive thresholding */
+  ADAPTIVE_THRESHOLD_C: 10,
+  /** Global threshold to filter out light colors (0-255, lower is more selective) */
+  GLOBAL_THRESHOLD: 60,
+  /** Target language for OCR (Thai only) */
+  LANGUAGE: "tha",
+} as const;
+
+/**
  * Visualization overlay configuration
  */
 export const OVERLAY = {
@@ -93,4 +107,6 @@ export const OVERLAY = {
   CORNER_RADIUS: 6,
   /** Dash pattern for failed detection */
   FAILURE_DASH_PATTERN: [10, 5] as const,
+  /** Maximum width for the preview overlay image to optimize performance */
+  MAX_PREVIEW_WIDTH: 1024,
 } as const;

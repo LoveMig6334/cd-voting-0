@@ -82,8 +82,10 @@ export interface ExtendedDetectionResult extends DetectionResult {
 export interface ProcessedImage {
   /** Base64 image with detection overlay */
   readonly originalWithOverlay: string;
-  /** Base64 cropped and warped card */
+  /** Base64 cropped and warped card for display */
   readonly croppedCard: string;
+  /** Base64 binary image optimized for OCR recognition */
+  readonly thresholdedCard: string;
   /** Detection result details */
   readonly detectionResult: ExtendedDetectionResult;
 }
@@ -96,6 +98,8 @@ export interface ProcessingOptions {
   readonly enableCrop: boolean;
   /** Enable image enhancement (contrast/brightness) */
   readonly enableEnhancement: boolean;
+  /** Enable OCR-specific preprocessing (adaptive thresholding) */
+  readonly enableOcrPreprocessing: boolean;
 }
 
 /**
@@ -118,6 +122,7 @@ export function createDefaultProcessingOptions(): ProcessingOptions {
   return {
     enableCrop: true,
     enableEnhancement: true,
+    enableOcrPreprocessing: true,
   };
 }
 
