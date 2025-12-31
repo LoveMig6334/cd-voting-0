@@ -316,11 +316,6 @@ function warpWithOpenCV(
   height: number,
   sourceImageData?: ImageData
 ): Result<HTMLCanvasElement, WarpFailedError | CanvasContextError> {
-  const srcResult = createCanvas(srcImg.width, srcImg.height);
-  if (!srcResult.ok) return srcResult;
-  const { ctx: srcCtx } = srcResult.value;
-  srcCtx.drawImage(srcImg, 0, 0);
-
   let srcMat: CVMat | null = null;
   let dstMat: CVMat | null = null;
   let srcTri: CVMat | null = null;
@@ -328,8 +323,16 @@ function warpWithOpenCV(
   let M: CVMat | null = null;
 
   try {
-    const imageData = srcCtx.getImageData(0, 0, srcImg.width, srcImg.height);
-    srcMat = cv!.matFromImageData(imageData);
+    if (sourceImageData) {
+      srcMat = cv!.matFromImageData(sourceImageData);
+    } else {
+      const srcResult = createCanvas(srcImg.width, srcImg.height);
+      if (!srcResult.ok) return srcResult;
+      const { ctx: srcCtx } = srcResult.value;
+      srcCtx.drawImage(srcImg, 0, 0);
+      const imageData = srcCtx.getImageData(0, 0, srcImg.width, srcImg.height);
+      srcMat = cv!.matFromImageData(imageData);
+    }
 
     const [tl, tr, br, bl] = orderedCorners;
     srcTri = cv!.matFromArray(4, 1, cv!.CV_32FC2, [
