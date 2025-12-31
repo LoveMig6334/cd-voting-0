@@ -30,11 +30,11 @@ export const CANNY_EDGE_DETECTION = {
   /** Target height for rescaling (smaller = faster processing) */
   RESCALED_HEIGHT: 500,
   /** Gaussian blur kernel size (must be odd) */
-  BLUR_KERNEL_SIZE: 13,
+  BLUR_KERNEL_SIZE: 7,
   /** Morphological operation kernel size */
-  MORPH_KERNEL_SIZE: 13,
+  MORPH_KERNEL_SIZE: 5,
   /** Canny edge detection lower threshold */
-  CANNY_THRESHOLD_LOW: 0,
+  CANNY_THRESHOLD_LOW: 30,
   /** Canny edge detection upper threshold */
   CANNY_THRESHOLD_HIGH: 84,
   /** Hough transform rho resolution in pixels */
@@ -48,9 +48,11 @@ export const CANNY_EDGE_DETECTION = {
   /** Minimum angle between intersecting lines (radians, 60 degrees) */
   MIN_INTERSECTION_ANGLE: (60 * Math.PI) / 180,
   /** Minimum contour area as ratio of image area */
-  MIN_CONTOUR_AREA_RATIO: 0.2,
+  MIN_CONTOUR_AREA_RATIO: 0.25,
   /** Minimum distance between contour corners in pixels */
   MIN_CORNER_DISTANCE: 50,
+  /** Corner margin ratio - corners are moved inward by this percentage to avoid cutting edges */
+  CORNER_MARGIN_RATIO: 0.02,
   /** Confidence score for successful Canny detection */
   SUCCESS_CONFIDENCE: 85,
   /** Confidence score for fallback centered rectangle */

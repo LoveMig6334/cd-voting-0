@@ -227,6 +227,32 @@ function getBoundingRect(points: readonly Point[]): BoundingRect {
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
+/**
+ * Apply margin to corners by moving them slightly inward toward the center.
+ * This prevents cutting off card edges during cropping.
+ */
+function applyCornerMargin(corners: readonly Point[]): readonly Point[] {
+  if (corners.length !== 4) return corners;
+
+  const margin = CANNY_EDGE_DETECTION.CORNER_MARGIN_RATIO;
+
+  // Calculate center of the quadrilateral
+  const center = {
+    x: corners.reduce((sum, p) => sum + p.x, 0) / 4,
+    y: corners.reduce((sum, p) => sum + p.y, 0) / 4,
+  };
+
+  // Move each corner slightly toward the center
+  return corners.map((corner) => {
+    const dx = center.x - corner.x;
+    const dy = center.y - corner.y;
+    return {
+      x: Math.round(corner.x + dx * margin),
+      y: Math.round(corner.y + dy * margin),
+    };
+  });
+}
+
 // ============================================================================
 // Type Definitions
 // ============================================================================
@@ -396,12 +422,16 @@ function runCannyDetection(
     const orderedCorners = robustSortCorners(scaledCorners);
     timer.markStep("order_corners");
 
-    const boundingRect = getBoundingRect(orderedCorners);
+    // Apply margin to prevent cutting off card edges
+    const marginedCorners = applyCornerMargin(orderedCorners);
+    timer.markStep("apply_margin");
+
+    const boundingRect = getBoundingRect(marginedCorners);
     const aspectRatio = boundingRect.width / boundingRect.height;
 
     return {
       success: true,
-      corners: orderedCorners,
+      corners: marginedCorners,
       boundingRect,
       confidence: CANNY_EDGE_DETECTION.SUCCESS_CONFIDENCE,
       method: "canny_edge_detection",
@@ -640,14 +670,60 @@ function selectBestContour(contours: QuadContour[]): QuadContour | null {
     const idealRatio = CARD_DIMENSIONS.ASPECT_RATIO;
     const ratioDeviation = Math.abs(aspectRatio - idealRatio);
     const ratioScore = Math.max(0, 100 - ratioDeviation * 40);
-    const score = area * (ratioScore / 100);
+
+    // Corner angle scoring: penalize non-90° corners
+    const angleScore = computeCornerAngleScore(orderedContour);
+
+    // Combined score: area * ratio quality * angle quality
+    const score = area * (ratioScore / 100) * (angleScore / 100);
 
     if (score > bestScore) {
       bestScore = score;
-      bestContour = { ...contour, score };
+      bestContour = { ...contour, corners: [...orderedContour], score };
     }
   }
   return bestContour;
+}
+
+/**
+ * Compute a score based on how close the corners are to 90 degrees.
+ * Returns 0-100 where 100 means all corners are exactly 90°.
+ */
+function computeCornerAngleScore(corners: readonly Point[]): number {
+  if (corners.length !== 4) return 0;
+
+  let totalDeviation = 0;
+  const idealAngle = Math.PI / 2; // 90 degrees
+
+  for (let i = 0; i < 4; i++) {
+    const prev = corners[(i + 3) % 4];
+    const curr = corners[i];
+    const next = corners[(i + 1) % 4];
+
+    // Vectors from current corner to adjacent corners
+    const v1 = { x: prev.x - curr.x, y: prev.y - curr.y };
+    const v2 = { x: next.x - curr.x, y: next.y - curr.y };
+
+    // Compute angle between vectors using dot product
+    const dot = v1.x * v2.x + v1.y * v2.y;
+    const mag1 = Math.sqrt(v1.x ** 2 + v1.y ** 2);
+    const mag2 = Math.sqrt(v2.x ** 2 + v2.y ** 2);
+
+    if (mag1 === 0 || mag2 === 0) return 0;
+
+    const cosAngle = Math.max(-1, Math.min(1, dot / (mag1 * mag2)));
+    const angle = Math.acos(cosAngle);
+
+    // How far from 90 degrees
+    totalDeviation += Math.abs(angle - idealAngle);
+  }
+
+  // Average deviation (max reasonable is ~45° per corner)
+  const avgDeviation = totalDeviation / 4;
+  const maxDeviation = Math.PI / 4; // 45 degrees
+  const score = Math.max(0, 100 * (1 - avgDeviation / maxDeviation));
+
+  return score;
 }
 
 function orderContour(contour: readonly Point[]): readonly Point[] {
