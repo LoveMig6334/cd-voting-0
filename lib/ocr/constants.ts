@@ -70,7 +70,7 @@ export const ENHANCEMENT = {
   /** Sharpening kernel size (must be odd, larger = more blur before sharpening) */
   SHARPEN_KERNEL_SIZE: 5,
   /** Sharpening intensity (0-1, higher = more aggressive sharpening) */
-  SHARPEN_INTENSITY: 0.5,
+  SHARPEN_INTENSITY: 0.6,
 } as const;
 
 /**
