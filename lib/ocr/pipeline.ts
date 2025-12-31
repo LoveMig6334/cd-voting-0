@@ -301,7 +301,7 @@ export function warpPerspective(
   if (isOpenCVReady() && typeof cv !== "undefined") {
     try {
       return warpWithOpenCV(srcImg, orderedCorners, width, height, sourceImageData);
-    } catch (error) {
+    } catch {
       console.warn("OpenCV warp failed, using canvas fallback");
     }
   }
