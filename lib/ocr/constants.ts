@@ -84,7 +84,7 @@ export const OCR_PROCESSING = {
   /** Constant subtracted from the mean in adaptive thresholding */
   ADAPTIVE_THRESHOLD_C: 10,
   /** Global threshold to filter out light colors (0-255, lower is more selective) */
-  GLOBAL_THRESHOLD: 70,
+  GLOBAL_THRESHOLD: 65,
   /** Target language for OCR (Thai only) */
   LANGUAGE: "tha",
 } as const;
