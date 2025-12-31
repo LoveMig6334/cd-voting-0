@@ -485,18 +485,41 @@ function warpWithOpenCV(
   let M: CVMat | null = null;
 
   try {
+    // Phase 2 optimization: Downscale large images before warp
+    // This dramatically reduces warpPerspective computation time
+    const MAX_WARP_WIDTH = 1500;
+    let scale = 1;
+    let srcWidth = srcImg.width;
+    let srcHeight = srcImg.height;
+
+    // Determine if downscaling is needed
+    if (srcWidth > MAX_WARP_WIDTH && !sourceImageData) {
+      scale = MAX_WARP_WIDTH / srcWidth;
+      srcWidth = MAX_WARP_WIDTH;
+      srcHeight = Math.round(srcImg.height * scale);
+    }
+
+    // Scale corner coordinates to match the potentially downscaled image
+    const scaledCorners = orderedCorners.map((p) => ({
+      x: p.x * scale,
+      y: p.y * scale,
+    }));
+
     if (sourceImageData) {
       srcMat = cv!.matFromImageData(sourceImageData);
     } else {
-      const srcResult = createCanvas(srcImg.width, srcImg.height);
+      // Use GPU-accelerated canvas.drawImage for downscaling
+      const srcResult = createCanvas(srcWidth, srcHeight);
       if (!srcResult.ok) return srcResult;
       const { ctx: srcCtx } = srcResult.value;
-      srcCtx.drawImage(srcImg, 0, 0);
-      const imageData = srcCtx.getImageData(0, 0, srcImg.width, srcImg.height);
+      srcCtx.imageSmoothingEnabled = true;
+      srcCtx.imageSmoothingQuality = "high";
+      srcCtx.drawImage(srcImg, 0, 0, srcWidth, srcHeight);
+      const imageData = srcCtx.getImageData(0, 0, srcWidth, srcHeight);
       srcMat = cv!.matFromImageData(imageData);
     }
 
-    const [tl, tr, br, bl] = orderedCorners;
+    const [tl, tr, br, bl] = scaledCorners;
     srcTri = cv!.matFromArray(4, 1, cv!.CV_32FC2, [
       tl.x,
       tl.y,
@@ -525,7 +548,7 @@ function warpWithOpenCV(
       dstMat,
       M,
       new cv!.Size(width, height),
-      cv!.INTER_CUBIC,
+      cv!.INTER_LINEAR,
       cv!.BORDER_CONSTANT,
       new cv!.Scalar(0, 0, 0, 255)
     );
@@ -716,7 +739,27 @@ export class PipelineManager {
       this.cropAndWarp(img, detection, options, undefined)
     );
     if (isErr(cropResult)) return this.createPipelineResult(cropResult);
-    const cardCanvas = cropResult.value;
+    let cardCanvas = cropResult.value;
+
+    // Phase 1 optimization: separate enhancement stage for accurate timing
+    const enhancementResult = await this.runStage(
+      "image_enhancement",
+      async () => {
+        if (!options.enableEnhancement) {
+          return ok(cardCanvas);
+        }
+        const ctx = cardCanvas.getContext("2d");
+        if (ctx) {
+          // Apply sharpening first, then contrast/brightness
+          sharpenImage(ctx, cardCanvas.width, cardCanvas.height);
+          enhanceImage(ctx, cardCanvas.width, cardCanvas.height);
+        }
+        return ok(cardCanvas);
+      }
+    );
+    if (isErr(enhancementResult))
+      return this.createPipelineResult(enhancementResult);
+    cardCanvas = enhancementResult.value;
 
     const thresholdResult = await this.runStage(
       "ocr_preprocessing",
@@ -836,16 +879,7 @@ export class PipelineManager {
     if (!options.enableCrop) {
       const scaleResult = scaleImage(img, CARD_DIMENSIONS.OUTPUT_WIDTH);
       if (!scaleResult.ok) return scaleResult;
-      const canvas = scaleResult.value;
-      if (options.enableEnhancement) {
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          // Apply sharpening first, then contrast/brightness
-          sharpenImage(ctx, canvas.width, canvas.height);
-          enhanceImage(ctx, canvas.width, canvas.height);
-        }
-      }
-      return ok(canvas);
+      return ok(scaleResult.value);
     }
 
     if (detection.success && detection.corners.length === 4) {
@@ -863,16 +897,7 @@ export class PipelineManager {
       );
 
       if (warpResult.ok) {
-        const canvas = warpResult.value;
-        if (options.enableEnhancement) {
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            // Apply sharpening first, then contrast/brightness
-            sharpenImage(ctx, canvas.width, canvas.height);
-            enhanceImage(ctx, canvas.width, canvas.height);
-          }
-        }
-        return ok(canvas);
+        return ok(warpResult.value);
       }
       console.warn("Perspective warp failed, using simple crop");
     }
@@ -883,16 +908,7 @@ export class PipelineManager {
       outputDimensions
     );
     if (!cropResult.ok) return cropResult;
-    const canvas = cropResult.value;
-    if (options.enableEnhancement) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        // Apply sharpening first, then contrast/brightness
-        sharpenImage(ctx, canvas.width, canvas.height);
-        enhanceImage(ctx, canvas.width, canvas.height);
-      }
-    }
-    return ok(canvas);
+    return ok(cropResult.value);
   }
 
   private createPipelineResult<T>(

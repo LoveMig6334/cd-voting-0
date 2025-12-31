@@ -111,6 +111,7 @@ declare global {
     MORPH_RECT: number;
     MORPH_CLOSE: number;
     INTER_AREA: number;
+    INTER_LINEAR: number;
     INTER_CUBIC: number;
     BORDER_CONSTANT: number;
     CV_32FC2: number;
