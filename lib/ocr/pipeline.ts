@@ -25,63 +25,7 @@ import {
   WarpFailedError,
 } from "./types";
 
-// ============================================================================
-// OpenCV.js Type Declarations
-// ============================================================================
-
-declare global {
-  interface CV {
-    Mat: new () => CVMat;
-    matFromArray(
-      rows: number,
-      cols: number,
-      type: number,
-      data: number[]
-    ): CVMat;
-    matFromImageData(imageData: ImageData): CVMat;
-    getPerspectiveTransform(src: CVMat, dst: CVMat): CVMat;
-    warpPerspective(
-      src: CVMat,
-      dst: CVMat,
-      M: CVMat,
-      dsize: CVSize,
-      flags?: number,
-      borderMode?: number,
-      borderValue?: CVScalar
-    ): void;
-    Size: new (width: number, height: number) => CVSize;
-    Scalar: new (
-      v0?: number,
-      v1?: number,
-      v2?: number,
-      v3?: number
-    ) => CVScalar;
-
-    CV_32FC2: number;
-    CV_8UC4: number;
-    INTER_CUBIC: number;
-    BORDER_CONSTANT: number;
-  }
-
-  interface CVMat {
-    delete(): void;
-    rows: number;
-    cols: number;
-    data: Uint8Array;
-    data32F: Float32Array;
-  }
-
-  interface CVSize {
-    width: number;
-    height: number;
-  }
-
-  interface CVScalar {
-    [index: number]: number;
-  }
-
-  var cv: CV | undefined;
-}
+// Note: OpenCV.js types (CV, CVMat, CVSize, CVScalar) are declared globally in detector.ts
 
 // ============================================================================
 // Canvas Utilities
