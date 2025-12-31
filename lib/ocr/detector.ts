@@ -28,61 +28,32 @@ declare global {
   interface CV {
     Mat: new () => CVMat;
     matFromImageData(imageData: ImageData): CVMat;
+    matFromArray(rows: number, cols: number, type: number, data: number[]): CVMat;
     Size: new (width: number, height: number) => CVSize;
-    Scalar: new (
-      v0?: number,
-      v1?: number,
-      v2?: number,
-      v3?: number
-    ) => CVScalar;
+    Scalar: new (v0?: number, v1?: number, v2?: number, v3?: number) => CVScalar;
 
     // Image processing functions
     cvtColor(src: CVMat, dst: CVMat, code: number): void;
-    GaussianBlur(
-      src: CVMat,
-      dst: CVMat,
-      ksize: CVSize,
-      sigmaX: number,
-      sigmaY?: number
-    ): void;
-    morphologyEx(
-      src: CVMat,
-      dst: CVMat,
-      op: number,
-      kernel: CVMat,
-      anchor?: CVPoint,
-      iterations?: number
-    ): void;
+    GaussianBlur(src: CVMat, dst: CVMat, ksize: CVSize, sigmaX: number, sigmaY?: number): void;
+    morphologyEx(src: CVMat, dst: CVMat, op: number, kernel: CVMat, anchor?: CVPoint, iterations?: number): void;
     getStructuringElement(shape: number, ksize: CVSize): CVMat;
-    Canny(
-      src: CVMat,
-      dst: CVMat,
-      threshold1: number,
-      threshold2: number,
-      apertureSize?: number,
-      L2gradient?: boolean
-    ): void;
-    HoughLines(
-      image: CVMat,
-      lines: CVMat,
-      rho: number,
-      theta: number,
-      threshold: number
-    ): void;
-    resize(
-      src: CVMat,
-      dst: CVMat,
-      dsize: CVSize,
-      fx?: number,
-      fy?: number,
-      interpolation?: number
-    ): void;
+    Canny(src: CVMat, dst: CVMat, threshold1: number, threshold2: number, apertureSize?: number, L2gradient?: boolean): void;
+    HoughLines(image: CVMat, lines: CVMat, rho: number, theta: number, threshold: number): void;
+    resize(src: CVMat, dst: CVMat, dsize: CVSize, fx?: number, fy?: number, interpolation?: number): void;
+    
+    // Perspective warp functions
+    getPerspectiveTransform(src: CVMat, dst: CVMat): CVMat;
+    warpPerspective(src: CVMat, dst: CVMat, M: CVMat, dsize: CVSize, flags?: number, borderMode?: number, borderValue?: CVScalar): void;
 
     // Constants
     COLOR_RGBA2GRAY: number;
     MORPH_RECT: number;
     MORPH_CLOSE: number;
     INTER_AREA: number;
+    INTER_CUBIC: number;
+    BORDER_CONSTANT: number;
+    CV_32FC2: number;
+    CV_8UC4: number;
   }
 
   interface CVMat {
