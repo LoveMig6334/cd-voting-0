@@ -34,18 +34,18 @@ export type {
 
 export {
   CanvasContextError,
-  DetectionErrorCode,
-  ImageLoadError,
-  WarpFailedError,
   createBoundingRect,
   createDefaultProcessingOptions,
   createPoint,
+  DetectionErrorCode,
   err,
   errorToDiagnostic,
   getImageOrientation,
+  ImageLoadError,
   isErr,
   isOk,
   ok,
+  WarpFailedError,
 } from "./types";
 
 // ============================================================================
@@ -72,7 +72,6 @@ export { detectCard, getMethodDescription } from "./detector";
 export type { PipelineResult, PipelineStageResult } from "./pipeline";
 
 export {
-  PipelineManager,
   canvasToDataUrl,
   createCanvas,
   drawDetectionOverlay,
@@ -80,6 +79,7 @@ export {
   getImageData,
   isOpenCVReady,
   loadImage,
+  PipelineManager,
   processImage,
   processImageWithDiagnostics,
   scaleImage,
