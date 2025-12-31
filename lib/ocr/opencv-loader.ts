@@ -4,6 +4,18 @@
  * Loads OpenCV.js via script tag with polling and timeout detection.
  */
 
+// Type definition for the extended window object with OpenCV
+interface WindowWithCV extends Window {
+  cv?: {
+    Mat?: unknown;
+    [key: string]: unknown;
+  };
+  Module?: {
+    onRuntimeInitialized?: () => void;
+    [key: string]: unknown;
+  };
+}
+
 let cvLoaded = false;
 let cvLoadPromise: Promise<void> | null = null;
 
@@ -13,7 +25,7 @@ let cvLoadPromise: Promise<void> | null = null;
 export function isOpenCVLoaded(): boolean {
   if (cvLoaded) return true;
 
-  const win = typeof window !== "undefined" ? (window as any) : null;
+  const win = typeof window !== "undefined" ? (window as WindowWithCV) : null;
   // Check if cv exists and is initialized (having Mat is a good indicator)
   if (win && win.cv && win.cv.Mat) {
     cvLoaded = true;
@@ -39,7 +51,7 @@ export function loadOpenCV(): Promise<void> {
       return;
     }
 
-    const win = window as any;
+    const win = window as WindowWithCV;
     const timeout = setTimeout(() => {
       if (isOpenCVLoaded()) {
         resolve();
