@@ -2,6 +2,10 @@
  * Type definitions for the Image Processing Pipeline
  */
 
+// ============================================================================
+// Core Types
+// ============================================================================
+
 /**
  * 2D point with x and y coordinates
  */
@@ -33,6 +37,15 @@ export interface ImageDimensions {
  */
 export type ImageOrientation = "portrait" | "landscape" | "square";
 
+// ============================================================================
+// Detection Types
+// ============================================================================
+
+/**
+ * Detection method used (for diagnostics)
+ */
+export type DetectionMethod = "canny_edge_detection";
+
 /**
  * Result of card boundary detection
  */
@@ -48,25 +61,6 @@ export interface DetectionResult {
 }
 
 /**
- * Detection method used (for diagnostics)
- */
-export type DetectionMethod = "canny_edge_detection";
-
-/**
- * Connected component representing a contiguous region of pixels
- */
-export interface ConnectedComponent {
-  /** Bounding rectangle of the component */
-  readonly boundingRect: BoundingRect;
-  /** Number of pixels in the component */
-  readonly pixelCount: number;
-  /** Density: pixelCount / (width * height) of bounding box */
-  readonly density: number;
-  /** Aspect ratio of the bounding box (width / height) */
-  readonly aspectRatio: number;
-}
-
-/**
  * Extended detection result with method information
  */
 export interface ExtendedDetectionResult extends DetectionResult {
@@ -77,6 +71,10 @@ export interface ExtendedDetectionResult extends DetectionResult {
   /** Detected aspect ratio */
   readonly detectedAspectRatio: number;
 }
+
+// ============================================================================
+// Pipeline Types
+// ============================================================================
 
 /**
  * Processed image output containing all pipeline results
@@ -101,92 +99,6 @@ export interface ProcessingOptions {
 }
 
 /**
- * Color mask result from color-based segmentation
- */
-export interface ColorMaskResult {
-  /** Binary mask of detected color pixels */
-  readonly mask: Uint8Array;
-  /** Number of pixels detected */
-  readonly pixelCount: number;
-}
-
-/**
- * Edge detection result
- */
-export interface EdgeDetectionResult {
-  /** Binary edge mask */
-  readonly edgeMask: Uint8Array;
-  /** Image width */
-  readonly width: number;
-  /** Image height */
-  readonly height: number;
-}
-
-/**
- * Contour representation
- */
-export interface Contour {
-  /** Points forming the contour */
-  readonly points: readonly Point[];
-  /** Area enclosed by contour (if closed) */
-  readonly area?: number;
-}
-
-/**
- * Quadrilateral (4-point polygon) used for perspective warp
- */
-export interface Quadrilateral {
-  /** Top-left corner */
-  readonly topLeft: Point;
-  /** Top-right corner */
-  readonly topRight: Point;
-  /** Bottom-right corner */
-  readonly bottomRight: Point;
-  /** Bottom-left corner */
-  readonly bottomLeft: Point;
-}
-
-/**
- * 3x3 matrix as flat array (row-major order)
- */
-export type Matrix3x3 = readonly [
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number
-];
-
-/**
- * Mutable version of Matrix3x3 for computation
- */
-export type MutableMatrix3x3 = [
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number
-];
-
-/**
- * Homography matrix result
- */
-export interface HomographyResult {
-  /** The 3x3 homography matrix */
-  readonly matrix: Matrix3x3;
-  /** Inverse of the homography matrix */
-  readonly inverse: Matrix3x3;
-}
-
-/**
  * Image data with dimensions
  */
 export interface ImageDataWithDimensions {
@@ -195,27 +107,9 @@ export interface ImageDataWithDimensions {
   readonly height: number;
 }
 
-/**
- * Perspective warp configuration
- */
-export interface WarpConfig {
-  /** Source corners (detected card corners) */
-  readonly srcCorners: readonly Point[];
-  /** Destination corners (output rectangle) */
-  readonly dstCorners: readonly Point[];
-  /** Output dimensions */
-  readonly outputDimensions: ImageDimensions;
-}
-
-/**
- * Enhancement configuration
- */
-export interface EnhancementConfig {
-  /** Contrast multiplier (1.0 = no change) */
-  readonly contrast: number;
-  /** Brightness offset */
-  readonly brightness: number;
-}
+// ============================================================================
+// Helper Functions
+// ============================================================================
 
 /**
  * Create default processing options
@@ -258,22 +152,160 @@ export function getImageOrientation(
   return "square";
 }
 
+// ============================================================================
+// Error Handling (Result Pattern)
+// ============================================================================
+
 /**
- * Convert quadrilateral to array of points in order: TL, TR, BR, BL
+ * Error codes for categorizing detection failures
  */
-export function quadToPoints(quad: Quadrilateral): readonly Point[] {
-  return [quad.topLeft, quad.topRight, quad.bottomRight, quad.bottomLeft];
+export enum DetectionErrorCode {
+  IMAGE_LOAD_FAILED = "IMAGE_LOAD_FAILED",
+  NO_QUADRILATERAL_FOUND = "NO_QUADRILATERAL_FOUND",
+  LOW_CONFIDENCE = "LOW_CONFIDENCE",
+  INVALID_ASPECT_RATIO = "INVALID_ASPECT_RATIO",
+  AREA_TOO_SMALL = "AREA_TOO_SMALL",
+  AREA_TOO_LARGE = "AREA_TOO_LARGE",
+  WARP_FAILED = "WARP_FAILED",
+  SINGULAR_MATRIX = "SINGULAR_MATRIX",
+  CANVAS_CONTEXT_ERROR = "CANVAS_CONTEXT_ERROR",
+  UNKNOWN_ERROR = "UNKNOWN_ERROR",
 }
 
 /**
- * Convert array of points to quadrilateral (expects TL, TR, BR, BL order)
+ * Base class for all detection errors
  */
-export function pointsToQuad(points: readonly Point[]): Quadrilateral | null {
-  if (points.length !== 4) return null;
+export abstract class DetectionError extends Error {
+  abstract readonly code: DetectionErrorCode;
+  abstract readonly recoverable: boolean;
+
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+
+  getUserMessage(): string {
+    return this.message;
+  }
+}
+
+/**
+ * Image failed to load
+ */
+export class ImageLoadError extends DetectionError {
+  readonly code = DetectionErrorCode.IMAGE_LOAD_FAILED;
+  readonly recoverable = false;
+
+  constructor(
+    public readonly imageSource: string,
+    public readonly originalError?: Error
+  ) {
+    super(`Failed to load image: ${originalError?.message || "Unknown error"}`);
+  }
+
+  getUserMessage(): string {
+    return "Could not load the image. Please try a different image.";
+  }
+}
+
+/**
+ * Canvas context not available
+ */
+export class CanvasContextError extends DetectionError {
+  readonly code = DetectionErrorCode.CANVAS_CONTEXT_ERROR;
+  readonly recoverable = false;
+
+  constructor() {
+    super("Failed to get 2D canvas context");
+  }
+
+  getUserMessage(): string {
+    return "Browser canvas not available. Please try a different browser.";
+  }
+}
+
+/**
+ * Perspective warp failed
+ */
+export class WarpFailedError extends DetectionError {
+  readonly code = DetectionErrorCode.WARP_FAILED;
+  readonly recoverable = true;
+
+  constructor(public readonly reason: string) {
+    super(`Perspective warp failed: ${reason}`);
+  }
+
+  getUserMessage(): string {
+    return "Could not correct card perspective. The card may not be fully visible.";
+  }
+}
+
+// ============================================================================
+// Result Pattern for Error Handling
+// ============================================================================
+
+/**
+ * Success result
+ */
+export interface Ok<T> {
+  readonly ok: true;
+  readonly value: T;
+}
+
+/**
+ * Error result
+ */
+export interface Err<E> {
+  readonly ok: false;
+  readonly error: E;
+}
+
+/**
+ * Result type - either success or error
+ */
+export type Result<T, E> = Ok<T> | Err<E>;
+
+/**
+ * Create a success result
+ */
+export function ok<T>(value: T): Ok<T> {
+  return { ok: true, value };
+}
+
+/**
+ * Create an error result
+ */
+export function err<E>(error: E): Err<E> {
+  return { ok: false, error };
+}
+
+/**
+ * Check if result is success
+ */
+export function isOk<T, E>(result: Result<T, E>): result is Ok<T> {
+  return result.ok;
+}
+
+/**
+ * Check if result is error
+ */
+export function isErr<T, E>(result: Result<T, E>): result is Err<E> {
+  return !result.ok;
+}
+
+/**
+ * Convert error to diagnostic object for logging
+ */
+export function errorToDiagnostic(
+  error: DetectionError
+): Record<string, unknown> {
   return {
-    topLeft: points[0],
-    topRight: points[1],
-    bottomRight: points[2],
-    bottomLeft: points[3],
+    code: error.code,
+    message: error.message,
+    recoverable: error.recoverable,
+    name: error.name,
   };
 }
