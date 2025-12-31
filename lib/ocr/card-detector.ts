@@ -764,3 +764,23 @@ function createCenteredFallback(
     detectedAspectRatio: CARD_DIMENSIONS.ASPECT_RATIO,
   };
 }
+
+// ============================================================================
+// Method Description Utility
+// ============================================================================
+
+/**
+ * Get a human-readable description of the detection method.
+ * Used for diagnostics and UI display.
+ *
+ * @param method - The detection method used
+ * @returns Human-readable description of the method
+ */
+export function getMethodDescription(method: string): string {
+  switch (method) {
+    case "canny_edge_detection":
+      return "Canny Edge Detection with Hough Lines";
+    default:
+      return "Unknown detection method";
+  }
+}

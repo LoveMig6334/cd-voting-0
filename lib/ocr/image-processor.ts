@@ -57,25 +57,25 @@ export {
 export type { DetectionError, Result } from "./errors";
 
 export {
-  andThen,
   CanvasContextError,
   DetectionErrorCode,
-  err,
-  errorToDiagnostic,
   ImageLoadError,
   InvalidAreaError,
   InvalidAspectRatioError,
+  LowConfidenceError,
+  NoQuadrilateralFoundError,
+  SingularMatrixError,
+  WarpFailedError,
+  andThen,
+  err,
+  errorToDiagnostic,
   isErr,
   isOk,
-  LowConfidenceError,
   map,
   mapErr,
-  NoQuadrilateralFoundError,
   ok,
-  SingularMatrixError,
   unwrap,
   unwrapOr,
-  WarpFailedError,
 } from "./errors";
 
 // ============================================================================
@@ -83,6 +83,7 @@ export {
 // ============================================================================
 
 export {
+  CANNY_EDGE_DETECTION,
   CARD_DIMENSIONS,
   COLOR_THRESHOLDS,
   CONFIDENCE,
@@ -100,6 +101,7 @@ export {
 // ============================================================================
 
 export {
+  OpenCVError,
   clamp,
   clampPixel,
   convexHull,
@@ -109,7 +111,6 @@ export {
   getCardWarpDimensions,
   isConvexQuadrilateral,
   isOpenCVReady,
-  OpenCVError,
   orderCorners,
   quadrilateralArea,
   rectToCorners,
