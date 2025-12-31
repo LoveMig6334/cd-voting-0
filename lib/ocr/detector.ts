@@ -96,6 +96,16 @@ declare global {
       borderValue?: CVScalar
     ): void;
 
+    // Image blending functions
+    addWeighted(
+      src1: CVMat,
+      alpha: number,
+      src2: CVMat,
+      beta: number,
+      gamma: number,
+      dst: CVMat
+    ): void;
+
     // Constants
     COLOR_RGBA2GRAY: number;
     MORPH_RECT: number;

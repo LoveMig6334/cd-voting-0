@@ -169,6 +169,63 @@ function clampPixel(value: number): number {
 }
 
 /**
+ * Sharpen image using OpenCV unsharp mask technique
+ * This enhances text edges for better OCR recognition
+ */
+export function sharpenImage(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+): void {
+  // Check if OpenCV is available
+  if (!isOpenCVReady() || typeof cv === "undefined") {
+    console.warn("OpenCV not available, skipping sharpening");
+    return;
+  }
+
+  let srcMat: CVMat | null = null;
+  let blurredMat: CVMat | null = null;
+  let sharpenedMat: CVMat | null = null;
+
+  try {
+    // Get image data from canvas
+    const imageData = ctx.getImageData(0, 0, width, height);
+    srcMat = cv.matFromImageData(imageData);
+
+    // Create blurred version using Gaussian blur
+    blurredMat = new cv.Mat();
+    const kernelSize = ENHANCEMENT.SHARPEN_KERNEL_SIZE;
+    cv.GaussianBlur(srcMat, blurredMat, new cv.Size(kernelSize, kernelSize), 0);
+
+    // Apply unsharp mask: sharpened = original + intensity * (original - blurred)
+    // Using addWeighted: sharpened = (1 + intensity) * original - intensity * blurred
+    sharpenedMat = new cv.Mat();
+    const intensity = ENHANCEMENT.SHARPEN_INTENSITY;
+    const alpha = 1 + intensity; // Weight for original
+    const beta = -intensity; // Weight for blurred (negative to subtract)
+    const gamma = 0; // No additional brightness
+
+    cv.addWeighted(srcMat, alpha, blurredMat, beta, gamma, sharpenedMat);
+
+    // Put the sharpened image back to canvas
+    const sharpenedData = new ImageData(
+      new Uint8ClampedArray(sharpenedMat.data),
+      width,
+      height
+    );
+    ctx.putImageData(sharpenedData, 0, 0);
+  } catch (error) {
+    console.warn("Sharpening failed:", error);
+    // On failure, leave the original image unchanged
+  } finally {
+    // Clean up OpenCV matrices
+    if (srcMat) srcMat.delete();
+    if (blurredMat) blurredMat.delete();
+    if (sharpenedMat) sharpenedMat.delete();
+  }
+}
+
+/**
  * Simple crop and scale
  */
 export function simpleCrop(
@@ -300,7 +357,13 @@ export function warpPerspective(
 
   if (isOpenCVReady() && typeof cv !== "undefined") {
     try {
-      return warpWithOpenCV(srcImg, orderedCorners, width, height, sourceImageData);
+      return warpWithOpenCV(
+        srcImg,
+        orderedCorners,
+        width,
+        height,
+        sourceImageData
+      );
     } catch {
       console.warn("OpenCV warp failed, using canvas fallback");
     }
@@ -555,7 +618,11 @@ export class PipelineManager {
       const canvas = scaleResult.value;
       if (options.enableEnhancement) {
         const ctx = canvas.getContext("2d");
-        if (ctx) enhanceImage(ctx, canvas.width, canvas.height);
+        if (ctx) {
+          // Apply sharpening first, then contrast/brightness
+          sharpenImage(ctx, canvas.width, canvas.height);
+          enhanceImage(ctx, canvas.width, canvas.height);
+        }
       }
       return ok(canvasToDataUrl(canvas));
     }
@@ -578,7 +645,11 @@ export class PipelineManager {
         const canvas = warpResult.value;
         if (options.enableEnhancement) {
           const ctx = canvas.getContext("2d");
-          if (ctx) enhanceImage(ctx, canvas.width, canvas.height);
+          if (ctx) {
+            // Apply sharpening first, then contrast/brightness
+            sharpenImage(ctx, canvas.width, canvas.height);
+            enhanceImage(ctx, canvas.width, canvas.height);
+          }
         }
         return ok(canvasToDataUrl(canvas));
       }
@@ -594,7 +665,11 @@ export class PipelineManager {
     const canvas = cropResult.value;
     if (options.enableEnhancement) {
       const ctx = canvas.getContext("2d");
-      if (ctx) enhanceImage(ctx, canvas.width, canvas.height);
+      if (ctx) {
+        // Apply sharpening first, then contrast/brightness
+        sharpenImage(ctx, canvas.width, canvas.height);
+        enhanceImage(ctx, canvas.width, canvas.height);
+      }
     }
     return ok(canvasToDataUrl(canvas));
   }

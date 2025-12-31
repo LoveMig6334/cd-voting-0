@@ -83,6 +83,7 @@ export {
   processImage,
   processImageWithDiagnostics,
   scaleImage,
+  sharpenImage,
   simpleCrop,
   warpPerspective,
 } from "./pipeline";

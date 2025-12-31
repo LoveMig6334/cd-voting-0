@@ -67,6 +67,10 @@ export const ENHANCEMENT = {
   BRIGHTNESS: 5,
   /** Center value for contrast adjustment */
   CONTRAST_CENTER: 200,
+  /** Sharpening kernel size (must be odd, larger = more blur before sharpening) */
+  SHARPEN_KERNEL_SIZE: 5,
+  /** Sharpening intensity (0-1, higher = more aggressive sharpening) */
+  SHARPEN_INTENSITY: 0.5,
 } as const;
 
 /**
