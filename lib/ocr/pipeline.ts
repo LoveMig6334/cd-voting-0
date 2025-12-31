@@ -291,7 +291,8 @@ export function warpPerspective(
   srcImg: HTMLImageElement,
   srcCorners: readonly Point[],
   _dstCorners: readonly Point[],
-  _outputDimensions: ImageDimensions
+  _outputDimensions: ImageDimensions,
+  sourceImageData?: ImageData
 ): Result<HTMLCanvasElement, WarpFailedError | CanvasContextError> {
   const orderedCorners = robustSortCorners([...srcCorners]);
   const dimensions = getCardWarpDimensions(orderedCorners);
@@ -299,7 +300,7 @@ export function warpPerspective(
 
   if (isOpenCVReady() && typeof cv !== "undefined") {
     try {
-      return warpWithOpenCV(srcImg, orderedCorners, width, height);
+      return warpWithOpenCV(srcImg, orderedCorners, width, height, sourceImageData);
     } catch (error) {
       console.warn("OpenCV warp failed, using canvas fallback");
     }
@@ -312,7 +313,8 @@ function warpWithOpenCV(
   srcImg: HTMLImageElement,
   orderedCorners: readonly Point[],
   width: number,
-  height: number
+  height: number,
+  sourceImageData?: ImageData
 ): Result<HTMLCanvasElement, WarpFailedError | CanvasContextError> {
   const srcResult = createCanvas(srcImg.width, srcImg.height);
   if (!srcResult.ok) return srcResult;
