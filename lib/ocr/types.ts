@@ -50,11 +50,7 @@ export interface DetectionResult {
 /**
  * Detection method used (for diagnostics)
  */
-export type DetectionMethod =
-  | "quadrilateral"
-  | "edge_boundary"
-  | "connected_component"
-  | "color_region_fallback";
+export type DetectionMethod = "canny_edge_detection";
 
 /**
  * Connected component representing a contiguous region of pixels

@@ -130,7 +130,7 @@ export const CONNECTED_COMPONENT = {
   /** Minimum component area as fraction of image area */
   MIN_AREA_RATIO: 0.05,
   /** Maximum component area as fraction of image area */
-  MAX_AREA_RATIO: 0.90,
+  MAX_AREA_RATIO: 0.9,
   /** Minimum aspect ratio for card candidates */
   MIN_ASPECT_RATIO: 1.0,
   /** Maximum aspect ratio for card candidates */
@@ -189,4 +189,39 @@ export const OVERLAY = {
 export const MATRIX = {
   /** Near-zero tolerance for singular matrix detection */
   SINGULARITY_TOLERANCE: 1e-8,
+} as const;
+
+/**
+ * Canny edge detection configuration
+ * Based on document scanner algorithm using Hough lines and quadrilateral detection
+ */
+export const CANNY_EDGE_DETECTION = {
+  /** Target height for rescaling (smaller = faster processing) */
+  RESCALED_HEIGHT: 500,
+  /** Gaussian blur kernel size (must be odd) */
+  BLUR_KERNEL_SIZE: 13,
+  /** Morphological operation kernel size */
+  MORPH_KERNEL_SIZE: 13,
+  /** Canny edge detection lower threshold */
+  CANNY_THRESHOLD_LOW: 0,
+  /** Canny edge detection upper threshold */
+  CANNY_THRESHOLD_HIGH: 84,
+  /** Hough transform rho resolution in pixels */
+  HOUGH_RHO: 2,
+  /** Hough transform theta resolution in radians */
+  HOUGH_THETA: Math.PI / 180,
+  /** Hough transform threshold values to try (increasing order) */
+  HOUGH_THRESHOLDS: [100, 150, 200] as const,
+  /** Maximum lines to accept from Hough transform */
+  HOUGH_MAX_LINES: 16,
+  /** Minimum angle between intersecting lines (radians, 60 degrees) */
+  MIN_INTERSECTION_ANGLE: (60 * Math.PI) / 180,
+  /** Minimum contour area as ratio of image area */
+  MIN_CONTOUR_AREA_RATIO: 0.2,
+  /** Minimum distance between contour corners in pixels */
+  MIN_CORNER_DISTANCE: 50,
+  /** Confidence score for successful Canny detection */
+  SUCCESS_CONFIDENCE: 85,
+  /** Confidence score for fallback centered rectangle */
+  FALLBACK_CONFIDENCE: 25,
 } as const;
