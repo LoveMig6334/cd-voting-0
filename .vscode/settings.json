@@ -7,6 +7,7 @@
         "Glassmorphism",
         "Homography",
         "ksize",
+        "maxval",
         "nidx",
         "readback",
         "readbacks",
