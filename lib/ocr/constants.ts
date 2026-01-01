@@ -45,6 +45,14 @@ export const CANNY_EDGE_DETECTION = {
   HOUGH_THRESHOLDS: [100, 150, 200] as const,
   /** Maximum lines to accept from Hough transform */
   HOUGH_MAX_LINES: 16,
+  /** Lower thresholds for second pass targeting vertical edges */
+  HOUGH_THRESHOLDS_VERTICAL: [50, 75, 100] as const,
+  /** Angle tolerance for classifying lines as horizontal/vertical (radians, 15 degrees) */
+  LINE_CLASSIFICATION_TOLERANCE: (15 * Math.PI) / 180,
+  /** Maximum angle difference for merging lines (radians, 5 degrees) */
+  LINE_MERGE_ANGLE_THRESHOLD: (5 * Math.PI) / 180,
+  /** Maximum rho (distance) difference for merging lines (pixels) */
+  LINE_MERGE_DISTANCE_THRESHOLD: 15,
   /** Minimum angle between intersecting lines (radians, 60 degrees) */
   MIN_INTERSECTION_ANGLE: (60 * Math.PI) / 180,
   /** Minimum contour area as ratio of image area */

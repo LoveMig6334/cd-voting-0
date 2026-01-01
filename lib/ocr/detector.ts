@@ -298,6 +298,122 @@ interface QuadContour {
   readonly score: number;
 }
 
+type LineCategory = "horizontal" | "vertical" | "diagonal";
+
+interface MergedLine extends HoughLine {
+  readonly weight: number;
+  readonly category: LineCategory;
+}
+
+// ============================================================================
+// Line Classification & Merging
+// ============================================================================
+
+/**
+ * Classify a line as horizontal, vertical, or diagonal based on its theta angle.
+ * In Hough space:
+ * - theta ≈ 0 or π → horizontal line
+ * - theta ≈ π/2 → vertical line
+ */
+function classifyLine(theta: number): LineCategory {
+  const tolerance = CANNY_EDGE_DETECTION.LINE_CLASSIFICATION_TOLERANCE;
+
+  // Normalize theta to [0, π)
+  const normalizedTheta = ((theta % Math.PI) + Math.PI) % Math.PI;
+
+  // Horizontal: theta near 0 or π
+  if (normalizedTheta < tolerance || normalizedTheta > Math.PI - tolerance) {
+    return "horizontal";
+  }
+  // Vertical: theta near π/2
+  if (Math.abs(normalizedTheta - Math.PI / 2) < tolerance) {
+    return "vertical";
+  }
+  return "diagonal";
+}
+
+/**
+ * Compute the angular difference between two lines, accounting for wrap-around.
+ */
+function angleDifference(theta1: number, theta2: number): number {
+  const diff = Math.abs(theta1 - theta2);
+  return Math.min(diff, Math.PI - diff);
+}
+
+/**
+ * Compute the perpendicular distance between two parallel lines.
+ * For lines with similar theta, the distance is approximately |rho1 - rho2|.
+ */
+function lineDistance(line1: HoughLine, line2: HoughLine): number {
+  // If lines are nearly parallel, rho difference gives perpendicular distance
+  return Math.abs(line1.rho - line2.rho);
+}
+
+/**
+ * Merge nearby parallel lines into clusters and return representative lines.
+ * Uses a greedy clustering approach.
+ */
+function mergeLines(lines: HoughLine[]): MergedLine[] {
+  if (lines.length === 0) return [];
+
+  const angleThreshold = CANNY_EDGE_DETECTION.LINE_MERGE_ANGLE_THRESHOLD;
+  const distanceThreshold = CANNY_EDGE_DETECTION.LINE_MERGE_DISTANCE_THRESHOLD;
+
+  // Mark which lines have been assigned to a cluster
+  const assigned = new Array(lines.length).fill(false);
+  const merged: MergedLine[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    if (assigned[i]) continue;
+
+    // Start a new cluster with line i
+    const cluster: HoughLine[] = [lines[i]];
+    assigned[i] = true;
+
+    // Find all lines that belong to this cluster
+    for (let j = i + 1; j < lines.length; j++) {
+      if (assigned[j]) continue;
+
+      const angleDiff = angleDifference(lines[i].theta, lines[j].theta);
+      const dist = lineDistance(lines[i], lines[j]);
+
+      if (angleDiff < angleThreshold && dist < distanceThreshold) {
+        cluster.push(lines[j]);
+        assigned[j] = true;
+      }
+    }
+
+    // Compute weighted average of the cluster
+    let sumRho = 0;
+    let sumTheta = 0;
+
+    for (const line of cluster) {
+      sumRho += line.rho;
+      sumTheta += line.theta;
+    }
+
+    const avgRho = sumRho / cluster.length;
+    const avgTheta = sumTheta / cluster.length;
+    const category = classifyLine(avgTheta);
+
+    merged.push({
+      rho: avgRho,
+      theta: avgTheta,
+      weight: cluster.length,
+      category,
+    });
+  }
+
+  return merged;
+}
+
+/**
+ * Filter lines to keep only horizontal and vertical (discard diagonal).
+ */
+function filterCardEdgeLines(lines: MergedLine[]): MergedLine[] {
+  return lines.filter((line) => line.category !== "diagonal");
+}
+
 // ============================================================================
 // Main Detection Function
 // ============================================================================
