@@ -51,63 +51,7 @@ export interface HoughDebugResult {
 // ============================================================================
 // OpenCV Type Check
 // ============================================================================
-
-declare global {
-  var cv:
-    | {
-        Mat: new () => CVMat;
-        matFromImageData(imageData: ImageData): CVMat;
-        Size: new (width: number, height: number) => CVSize;
-        cvtColor(src: CVMat, dst: CVMat, code: number): void;
-        GaussianBlur(
-          src: CVMat,
-          dst: CVMat,
-          ksize: CVSize,
-          sigmaX: number
-        ): void;
-        morphologyEx(src: CVMat, dst: CVMat, op: number, kernel: CVMat): void;
-        getStructuringElement(shape: number, ksize: CVSize): CVMat;
-        Canny(
-          src: CVMat,
-          dst: CVMat,
-          threshold1: number,
-          threshold2: number
-        ): void;
-        HoughLines(
-          image: CVMat,
-          lines: CVMat,
-          rho: number,
-          theta: number,
-          threshold: number
-        ): void;
-        resize(
-          src: CVMat,
-          dst: CVMat,
-          dsize: CVSize,
-          fx?: number,
-          fy?: number,
-          interpolation?: number
-        ): void;
-        COLOR_RGBA2GRAY: number;
-        MORPH_RECT: number;
-        MORPH_CLOSE: number;
-        INTER_AREA: number;
-      }
-    | undefined;
-
-  interface CVMat {
-    delete(): void;
-    rows: number;
-    cols: number;
-    data: Uint8Array;
-    data32F: Float32Array;
-  }
-
-  interface CVSize {
-    width: number;
-    height: number;
-  }
-}
+// Note: CV types (cv, CVMat, CVSize, etc.) are declared globally in detector.ts
 
 function isOpenCVReady(): boolean {
   return typeof cv !== "undefined" && cv !== null;
