@@ -272,10 +272,14 @@ function runHoughExtraction(
   let src: CVMat | null = null;
   let scaled: CVMat | null = null;
   let gray: CVMat | null = null;
-  let blurred: CVMat | null = null;
-  let morphed: CVMat | null = null;
-  let edges: CVMat | null = null;
-  let kernel: CVMat | null = null;
+  // Horizontal path (heavy blur)
+  let blurredH: CVMat | null = null;
+  let morphedH: CVMat | null = null;
+  let edgesHorizontal: CVMat | null = null;
+  let kernelH: CVMat | null = null;
+  // Vertical path (light blur)
+  let blurredV: CVMat | null = null;
+  let edgesVertical: CVMat | null = null;
 
   try {
     src = cv!.matFromImageData(imageData);
@@ -295,37 +299,51 @@ function runHoughExtraction(
     gray = new cv!.Mat();
     cv!.cvtColor(scaled, gray, cv!.COLOR_RGBA2GRAY);
 
-    // Gaussian blur
-    blurred = new cv!.Mat();
-    const blurSize = CANNY_EDGE_DETECTION.BLUR_KERNEL_SIZE;
-    cv!.GaussianBlur(gray, blurred, new cv!.Size(blurSize, blurSize), 0);
+    // === HORIZONTAL PATH (heavy blur - good for text/stripes) ===
+    blurredH = new cv!.Mat();
+    const blurSizeH = CANNY_EDGE_DETECTION.BLUR_KERNEL_SIZE;
+    cv!.GaussianBlur(gray, blurredH, new cv!.Size(blurSizeH, blurSizeH), 0);
 
-    // Morphological close
-    morphed = new cv!.Mat();
-    const morphSize = CANNY_EDGE_DETECTION.MORPH_KERNEL_SIZE;
-    kernel = cv!.getStructuringElement(
+    morphedH = new cv!.Mat();
+    const morphSizeH = CANNY_EDGE_DETECTION.MORPH_KERNEL_SIZE;
+    kernelH = cv!.getStructuringElement(
       cv!.MORPH_RECT,
-      new cv!.Size(morphSize, morphSize)
+      new cv!.Size(morphSizeH, morphSizeH)
     );
-    cv!.morphologyEx(blurred, morphed, cv!.MORPH_CLOSE, kernel);
+    cv!.morphologyEx(blurredH, morphedH, cv!.MORPH_CLOSE, kernelH);
 
-    // Canny edge detection
-    edges = new cv!.Mat();
+    edgesHorizontal = new cv!.Mat();
     cv!.Canny(
-      morphed,
-      edges,
+      morphedH,
+      edgesHorizontal,
       CANNY_EDGE_DETECTION.CANNY_THRESHOLD_LOW,
       CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH
     );
 
-    // Hough line detection - Two-pass approach
+    // === VERTICAL PATH (light blur - preserves sharp card edges) ===
+    blurredV = new cv!.Mat();
+    const blurSizeV = CANNY_EDGE_DETECTION.BLUR_KERNEL_SIZE_VERTICAL;
+    cv!.GaussianBlur(gray, blurredV, new cv!.Size(blurSizeV, blurSizeV), 0);
+    // Skip morphology for vertical - we want sharp edges
+
+    edgesVertical = new cv!.Mat();
+    cv!.Canny(
+      blurredV,
+      edgesVertical,
+      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_LOW,
+      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH
+    );
+
+    // === HOUGH LINE DETECTION ===
     const maxLines = CANNY_EDGE_DETECTION.HOUGH_MAX_LINES;
     const rawLines: HoughLine[] = [];
 
     // Helper function to run a single Hough pass
-    const runHoughPass = (thresholds: readonly number[]): HoughLine[] => {
+    const runHoughPass = (
+      edges: CVMat,
+      thresholds: readonly number[]
+    ): HoughLine[] => {
       const passLines: HoughLine[] = [];
-      if (!edges) return passLines; // Guard against null
       for (const threshold of thresholds) {
         const localLinesMat = new cv!.Mat();
         cv!.HoughLines(
@@ -352,70 +370,30 @@ function runHoughExtraction(
       return passLines;
     };
 
-    // Pass 1: High threshold for strong edges
-    const pass1Lines = runHoughPass(CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS);
+    // Pass 1: High threshold on horizontal edges (captures text/stripes)
+    const pass1Lines = runHoughPass(
+      edgesHorizontal,
+      CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS
+    );
     rawLines.push(...pass1Lines);
 
-    // Pass 2: Apply vertical dilation to connect fragmented vertical edges
-    // Use a tall, thin kernel (1 wide, 7 tall) to emphasize vertical structures
-    let verticalKernel: CVMat | null = null;
-    let dilatedEdges: CVMat | null = null;
-    let pass2Lines: HoughLine[] = [];
+    // Pass 2: Lower threshold on vertical edges (captures sharp card boundaries)
+    const pass2Lines = runHoughPass(
+      edgesVertical,
+      CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS_VERTICAL
+    );
 
-    try {
-      verticalKernel = cv!.getStructuringElement(
-        cv!.MORPH_RECT,
-        new cv!.Size(1, 7) // Vertical kernel
-      );
-      dilatedEdges = new cv!.Mat();
-      cv!.morphologyEx(edges, dilatedEdges, cv!.MORPH_CLOSE, verticalKernel);
-
-      // Run Hough on dilated edges
-      const runDilatedHoughPass = (
-        thresholds: readonly number[]
-      ): HoughLine[] => {
-        const passLines: HoughLine[] = [];
-        if (!dilatedEdges) return passLines;
-        for (const threshold of thresholds) {
-          const localLinesMat = new cv!.Mat();
-          cv!.HoughLines(
-            dilatedEdges,
-            localLinesMat,
-            CANNY_EDGE_DETECTION.HOUGH_RHO,
-            CANNY_EDGE_DETECTION.HOUGH_THETA,
-            threshold
-          );
-
-          if (localLinesMat.rows > 0 && localLinesMat.rows <= maxLines) {
-            for (let i = 0; i < localLinesMat.rows; i++) {
-              passLines.push({
-                rho: localLinesMat.data32F[i * 2],
-                theta: localLinesMat.data32F[i * 2 + 1],
-              });
-            }
-            localLinesMat.delete();
-            break;
-          }
-
-          localLinesMat.delete();
-        }
-        return passLines;
-      };
-
-      pass2Lines = runDilatedHoughPass(
-        CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS_VERTICAL
-      );
-    } finally {
-      if (verticalKernel) verticalKernel.delete();
-      if (dilatedEdges) dilatedEdges.delete();
-    }
-
+    // Filter pass 2 to only keep vertical lines
     const verticalPass2 = pass2Lines.filter(
       (line) => classifyLine(line.theta) === "vertical"
     );
     rawLines.push(...verticalPass2);
 
     const rawLineCount = rawLines.length;
+
+    console.log(
+      `🔍 Debug: Pass1(H)=${pass1Lines.length}, Pass2(V)=${verticalPass2.length}, Raw=${rawLineCount}`
+    );
 
     // Merge nearby parallel lines
     const merged = mergeLines(rawLines);
@@ -424,7 +402,7 @@ function runHoughExtraction(
     const cardEdgeLines = filterCardEdgeLines(merged);
 
     console.log(
-      `🔍 Debug: Raw=${rawLineCount}, Merged=${merged.length}, CardEdges=${cardEdgeLines.length}`
+      `🔍 Debug: Merged=${merged.length}, CardEdges=${cardEdgeLines.length}`
     );
 
     // Convert lines to endpoints
@@ -467,10 +445,12 @@ function runHoughExtraction(
     if (src) src.delete();
     if (scaled) scaled.delete();
     if (gray) gray.delete();
-    if (blurred) blurred.delete();
-    if (morphed) morphed.delete();
-    if (edges) edges.delete();
-    if (kernel) kernel.delete();
+    if (blurredH) blurredH.delete();
+    if (morphedH) morphedH.delete();
+    if (edgesHorizontal) edgesHorizontal.delete();
+    if (kernelH) kernelH.delete();
+    if (blurredV) blurredV.delete();
+    if (edgesVertical) edgesVertical.delete();
   }
 }
 

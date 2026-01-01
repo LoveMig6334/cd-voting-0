@@ -470,10 +470,14 @@ function runCannyDetection(
 
   let scaled: CVMat | null = null;
   let gray: CVMat | null = null;
-  let blurred: CVMat | null = null;
-  let morphed: CVMat | null = null;
-  let edges: CVMat | null = null;
-  let kernel: CVMat | null = null;
+  // Horizontal path (heavy blur)
+  let blurredH: CVMat | null = null;
+  let morphedH: CVMat | null = null;
+  let edgesHorizontal: CVMat | null = null;
+  let kernelH: CVMat | null = null;
+  // Vertical path (light blur)
+  let blurredV: CVMat | null = null;
+  let edgesVertical: CVMat | null = null;
 
   try {
     scaled = new cv!.Mat();
@@ -491,30 +495,45 @@ function runCannyDetection(
     cv!.cvtColor(scaled, gray, cv!.COLOR_RGBA2GRAY);
     timer.markStep("grayscale");
 
-    blurred = new cv!.Mat();
-    const blurSize = CANNY_EDGE_DETECTION.BLUR_KERNEL_SIZE;
-    cv!.GaussianBlur(gray, blurred, new cv!.Size(blurSize, blurSize), 0);
-    timer.markStep("gaussian_blur");
+    // === HORIZONTAL PATH (heavy blur - good for text/stripes) ===
+    blurredH = new cv!.Mat();
+    const blurSizeH = CANNY_EDGE_DETECTION.BLUR_KERNEL_SIZE;
+    cv!.GaussianBlur(gray, blurredH, new cv!.Size(blurSizeH, blurSizeH), 0);
 
-    morphed = new cv!.Mat();
-    const morphSize = CANNY_EDGE_DETECTION.MORPH_KERNEL_SIZE;
-    kernel = cv!.getStructuringElement(
+    morphedH = new cv!.Mat();
+    const morphSizeH = CANNY_EDGE_DETECTION.MORPH_KERNEL_SIZE;
+    kernelH = cv!.getStructuringElement(
       cv!.MORPH_RECT,
-      new cv!.Size(morphSize, morphSize)
+      new cv!.Size(morphSizeH, morphSizeH)
     );
-    cv!.morphologyEx(blurred, morphed, cv!.MORPH_CLOSE, kernel);
-    timer.markStep("morphology_close");
+    cv!.morphologyEx(blurredH, morphedH, cv!.MORPH_CLOSE, kernelH);
 
-    edges = new cv!.Mat();
+    edgesHorizontal = new cv!.Mat();
     cv!.Canny(
-      morphed,
-      edges,
+      morphedH,
+      edgesHorizontal,
       CANNY_EDGE_DETECTION.CANNY_THRESHOLD_LOW,
       CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH
     );
-    timer.markStep("canny_edge");
+    timer.markStep("canny_horizontal");
 
-    const houghLines = findHoughLines(edges);
+    // === VERTICAL PATH (light blur - preserves sharp card edges) ===
+    blurredV = new cv!.Mat();
+    const blurSizeV = CANNY_EDGE_DETECTION.BLUR_KERNEL_SIZE_VERTICAL;
+    cv!.GaussianBlur(gray, blurredV, new cv!.Size(blurSizeV, blurSizeV), 0);
+    // Skip morphology for vertical - we want sharp edges
+
+    edgesVertical = new cv!.Mat();
+    cv!.Canny(
+      blurredV,
+      edgesVertical,
+      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_LOW,
+      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH
+    );
+    timer.markStep("canny_vertical");
+
+    // === HOUGH DETECTION ===
+    const houghLines = findHoughLines(edgesHorizontal, edgesVertical);
     if (!houghLines || houghLines.length === 0) {
       console.warn("🔍 Detection failed: No Hough lines found");
       timer.markStep("no_hough_lines");
@@ -595,10 +614,12 @@ function runCannyDetection(
   } finally {
     if (scaled) scaled.delete();
     if (gray) gray.delete();
-    if (blurred) blurred.delete();
-    if (morphed) morphed.delete();
-    if (edges) edges.delete();
-    if (kernel) kernel.delete();
+    if (blurredH) blurredH.delete();
+    if (morphedH) morphedH.delete();
+    if (edgesHorizontal) edgesHorizontal.delete();
+    if (kernelH) kernelH.delete();
+    if (blurredV) blurredV.delete();
+    if (edgesVertical) edgesVertical.delete();
   }
 }
 
@@ -649,41 +670,29 @@ function runHoughPass(
 }
 
 /**
- * Two-pass Hough line detection with line merging.
+ * Dual-path Hough line detection with line merging.
  *
- * Pass 1: Standard detection with high thresholds - captures strong edges
- * Pass 2: Lower thresholds on vertically-enhanced edges for vertical lines
+ * Pass 1: Run on edgesHorizontal (heavy blur) with high thresholds - captures horizontal text/stripes
+ * Pass 2: Run on edgesVertical (light blur) with lower thresholds - captures sharp vertical card edges
  *
  * Both passes are combined, merged to eliminate duplicates, and filtered
  * to remove diagonal noise.
  */
-function findHoughLines(edges: CVMat): MergedLine[] | null {
-  // Pass 1: High threshold for strong edges (captures horizontal text/stripes)
-  const pass1Lines = runHoughPass(edges, CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS);
+function findHoughLines(
+  edgesHorizontal: CVMat,
+  edgesVertical: CVMat
+): MergedLine[] | null {
+  // Pass 1: High threshold on horizontal edges (captures text/stripes)
+  const pass1Lines = runHoughPass(
+    edgesHorizontal,
+    CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS
+  );
 
-  // Pass 2: Apply vertical dilation to connect fragmented vertical edges
-  // Use a tall, thin kernel (1 wide, 7 tall) to emphasize vertical structures
-  let verticalKernel: CVMat | null = null;
-  let dilatedEdges: CVMat | null = null;
-  let pass2Lines: HoughLine[] = [];
-
-  try {
-    verticalKernel = cv!.getStructuringElement(
-      cv!.MORPH_RECT,
-      new cv!.Size(1, 7) // Vertical kernel: 1 pixel wide, 7 pixels tall
-    );
-    dilatedEdges = new cv!.Mat();
-    // Dilate edges to connect fragmented vertical lines
-    cv!.morphologyEx(edges, dilatedEdges, cv!.MORPH_CLOSE, verticalKernel);
-
-    pass2Lines = runHoughPass(
-      dilatedEdges,
-      CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS_VERTICAL
-    );
-  } finally {
-    if (verticalKernel) verticalKernel.delete();
-    if (dilatedEdges) dilatedEdges.delete();
-  }
+  // Pass 2: Lower threshold on vertical edges (captures sharp card boundaries)
+  const pass2Lines = runHoughPass(
+    edgesVertical,
+    CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS_VERTICAL
+  );
 
   // Filter pass 2 to only keep vertical lines (theta ≈ 0 or π)
   const verticalPass2 = pass2Lines.filter(
@@ -696,7 +705,7 @@ function findHoughLines(edges: CVMat): MergedLine[] | null {
   if (allLines.length === 0) return null;
 
   console.log(
-    `🔍 Raw lines: Pass1=${pass1Lines.length}, Pass2 Vertical=${verticalPass2.length}`
+    `🔍 Raw lines: Pass1(H)=${pass1Lines.length}, Pass2(V)=${verticalPass2.length}`
   );
 
   // Merge nearby parallel lines

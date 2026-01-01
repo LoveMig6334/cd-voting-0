@@ -33,6 +33,10 @@ export const CANNY_EDGE_DETECTION = {
   BLUR_KERNEL_SIZE: 13,
   /** Morphological operation kernel size */
   MORPH_KERNEL_SIZE: 13,
+  /** Gaussian blur kernel size for vertical edge detection (light blur preserves edges) */
+  BLUR_KERNEL_SIZE_VERTICAL: 3,
+  /** Morphological kernel height for vertical edge detection (tall/thin kernel) */
+  MORPH_KERNEL_HEIGHT_VERTICAL: 7,
   /** Canny edge detection lower threshold */
   CANNY_THRESHOLD_LOW: 0,
   /** Canny edge detection upper threshold */
