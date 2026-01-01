@@ -114,6 +114,93 @@ function isOpenCVReady(): boolean {
 }
 
 // ============================================================================
+// Line Classification & Merging
+// ============================================================================
+
+/**
+ * Classify a line as horizontal, vertical, or diagonal based on its theta angle.
+ */
+function classifyLine(theta: number): LineCategory {
+  const tolerance = CANNY_EDGE_DETECTION.LINE_CLASSIFICATION_TOLERANCE;
+  const normalizedTheta = ((theta % Math.PI) + Math.PI) % Math.PI;
+
+  if (normalizedTheta < tolerance || normalizedTheta > Math.PI - tolerance) {
+    return "horizontal";
+  }
+  if (Math.abs(normalizedTheta - Math.PI / 2) < tolerance) {
+    return "vertical";
+  }
+  return "diagonal";
+}
+
+/**
+ * Compute the angular difference between two lines.
+ */
+function angleDifference(theta1: number, theta2: number): number {
+  const diff = Math.abs(theta1 - theta2);
+  return Math.min(diff, Math.PI - diff);
+}
+
+/**
+ * Merge nearby parallel lines into clusters.
+ */
+function mergeLines(lines: HoughLine[]): MergedLine[] {
+  if (lines.length === 0) return [];
+
+  const angleThreshold = CANNY_EDGE_DETECTION.LINE_MERGE_ANGLE_THRESHOLD;
+  const distanceThreshold = CANNY_EDGE_DETECTION.LINE_MERGE_DISTANCE_THRESHOLD;
+
+  const assigned = new Array(lines.length).fill(false);
+  const merged: MergedLine[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    if (assigned[i]) continue;
+
+    const cluster: HoughLine[] = [lines[i]];
+    assigned[i] = true;
+
+    for (let j = i + 1; j < lines.length; j++) {
+      if (assigned[j]) continue;
+
+      const angleDiff = angleDifference(lines[i].theta, lines[j].theta);
+      const dist = Math.abs(lines[i].rho - lines[j].rho);
+
+      if (angleDiff < angleThreshold && dist < distanceThreshold) {
+        cluster.push(lines[j]);
+        assigned[j] = true;
+      }
+    }
+
+    let sumRho = 0;
+    let sumTheta = 0;
+    for (const line of cluster) {
+      sumRho += line.rho;
+      sumTheta += line.theta;
+    }
+
+    const avgRho = sumRho / cluster.length;
+    const avgTheta = sumTheta / cluster.length;
+    const category = classifyLine(avgTheta);
+
+    merged.push({
+      rho: avgRho,
+      theta: avgTheta,
+      weight: cluster.length,
+      category,
+    });
+  }
+
+  return merged;
+}
+
+/**
+ * Filter to keep only horizontal and vertical lines.
+ */
+function filterCardEdgeLines(lines: MergedLine[]): MergedLine[] {
+  return lines.filter((line) => line.category !== "diagonal");
+}
+
+// ============================================================================
 // Hough Line Extraction
 // ============================================================================
 
