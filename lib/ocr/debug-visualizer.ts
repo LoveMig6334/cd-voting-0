@@ -327,7 +327,6 @@ function runHoughExtraction(
   let morphed: CVMat | null = null;
   let edges: CVMat | null = null;
   let kernel: CVMat | null = null;
-  let linesMat: CVMat | null = null;
 
   try {
     src = cv!.matFromImageData(imageData);
@@ -378,29 +377,27 @@ function runHoughExtraction(
     const runHoughPass = (thresholds: readonly number[]): HoughLine[] => {
       const passLines: HoughLine[] = [];
       for (const threshold of thresholds) {
-        linesMat = new cv!.Mat();
+        const localLinesMat = new cv!.Mat();
         cv!.HoughLines(
           edges,
-          linesMat,
+          localLinesMat,
           CANNY_EDGE_DETECTION.HOUGH_RHO,
           CANNY_EDGE_DETECTION.HOUGH_THETA,
           threshold
         );
 
-        if (linesMat.rows > 0 && linesMat.rows <= maxLines) {
-          for (let i = 0; i < linesMat.rows; i++) {
+        if (localLinesMat.rows > 0 && localLinesMat.rows <= maxLines) {
+          for (let i = 0; i < localLinesMat.rows; i++) {
             passLines.push({
-              rho: linesMat.data32F[i * 2],
-              theta: linesMat.data32F[i * 2 + 1],
+              rho: localLinesMat.data32F[i * 2],
+              theta: localLinesMat.data32F[i * 2 + 1],
             });
           }
-          linesMat.delete();
-          linesMat = null;
+          localLinesMat.delete();
           break;
         }
 
-        linesMat.delete();
-        linesMat = null;
+        localLinesMat.delete();
       }
       return passLines;
     };
@@ -474,7 +471,6 @@ function runHoughExtraction(
     if (morphed) morphed.delete();
     if (edges) edges.delete();
     if (kernel) kernel.delete();
-    if (linesMat) linesMat.delete();
   }
 }
 
@@ -483,18 +479,27 @@ function runHoughExtraction(
 // ============================================================================
 
 /**
- * Draw Hough lines on a canvas context.
+ * Draw Hough lines on a canvas context with color-coding by category.
+ * Horizontal lines are red, vertical lines are blue.
  */
 export function drawHoughLines(
   ctx: CanvasRenderingContext2D,
   lineEndpoints: LineEndpoints[],
-  color: string = "#FF0000",
+  defaultColor: string = "#FF0000",
   lineWidth: number = 2
 ): void {
-  ctx.strokeStyle = color;
   ctx.lineWidth = lineWidth;
 
   for (const line of lineEndpoints) {
+    // Color-code by category: red for horizontal, blue for vertical
+    if (line.category === "horizontal") {
+      ctx.strokeStyle = "#FF4444"; // Red for horizontal
+    } else if (line.category === "vertical") {
+      ctx.strokeStyle = "#4444FF"; // Blue for vertical
+    } else {
+      ctx.strokeStyle = defaultColor;
+    }
+
     ctx.beginPath();
     ctx.moveTo(line.x1, line.y1);
     ctx.lineTo(line.x2, line.y2);
