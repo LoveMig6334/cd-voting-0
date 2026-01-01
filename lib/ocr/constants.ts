@@ -30,13 +30,13 @@ export const CANNY_EDGE_DETECTION = {
   /** Target height for rescaling (smaller = faster processing) */
   RESCALED_HEIGHT: 500,
   /** Gaussian blur kernel size (must be odd) */
-  BLUR_KERNEL_SIZE: 13,
+  BLUR_KERNEL_SIZE: 3,
   /** Morphological operation kernel size */
-  MORPH_KERNEL_SIZE: 13,
+  MORPH_KERNEL_SIZE: 10,
   /** Gaussian blur kernel size for vertical edge detection (light blur preserves edges) */
   BLUR_KERNEL_SIZE_VERTICAL: 3,
   /** Morphological kernel height for vertical edge detection (tall/thin kernel) */
-  MORPH_KERNEL_HEIGHT_VERTICAL: 7,
+  MORPH_KERNEL_HEIGHT_VERTICAL: 10,
   /** Canny edge detection lower threshold */
   CANNY_THRESHOLD_LOW: 0,
   /** Canny edge detection upper threshold */
@@ -50,13 +50,15 @@ export const CANNY_EDGE_DETECTION = {
   /** Maximum lines to accept from Hough transform */
   HOUGH_MAX_LINES: 16,
   /** Lower thresholds for second pass targeting vertical edges (more aggressive) */
-  HOUGH_THRESHOLDS_VERTICAL: [25, 35, 50] as const,
+  HOUGH_THRESHOLDS_VERTICAL: [25, 40, 60] as const,
   /** Angle tolerance for classifying lines as horizontal/vertical (radians, 15 degrees) */
   LINE_CLASSIFICATION_TOLERANCE: (15 * Math.PI) / 180,
   /** Maximum angle difference for merging lines (radians, 5 degrees) */
   LINE_MERGE_ANGLE_THRESHOLD: (5 * Math.PI) / 180,
   /** Maximum rho (distance) difference for merging lines (pixels) */
   LINE_MERGE_DISTANCE_THRESHOLD: 15,
+  /** Maximum rho (distance) difference for merging vertical lines (pixels, more aggressive) */
+  LINE_MERGE_DISTANCE_THRESHOLD_VERTICAL: 20,
   /** Minimum angle between intersecting lines (radians, 60 degrees) */
   MIN_INTERSECTION_ANGLE: (60 * Math.PI) / 180,
   /** Minimum contour area as ratio of image area */

@@ -46,6 +46,14 @@ export interface HoughDebugResult {
   readonly scale: number;
   readonly rawLineCount: number;
   readonly mergedLineCount: number;
+  /** Number of raw vertical lines before merging */
+  readonly rawVerticalCount: number;
+  /** Number of raw horizontal lines before merging */
+  readonly rawHorizontalCount: number;
+  /** Number of merged vertical lines */
+  readonly mergedVerticalCount: number;
+  /** Number of merged horizontal lines */
+  readonly mergedHorizontalCount: number;
 }
 
 // ============================================================================
@@ -92,18 +100,29 @@ function angleDifference(theta1: number, theta2: number): number {
 
 /**
  * Merge nearby parallel lines into clusters.
+ * Uses category-specific thresholds - vertical lines get more aggressive merging.
  */
 function mergeLines(lines: HoughLine[]): MergedLine[] {
   if (lines.length === 0) return [];
 
   const angleThreshold = CANNY_EDGE_DETECTION.LINE_MERGE_ANGLE_THRESHOLD;
-  const distanceThreshold = CANNY_EDGE_DETECTION.LINE_MERGE_DISTANCE_THRESHOLD;
+  const distanceThresholdDefault =
+    CANNY_EDGE_DETECTION.LINE_MERGE_DISTANCE_THRESHOLD;
+  const distanceThresholdVertical =
+    CANNY_EDGE_DETECTION.LINE_MERGE_DISTANCE_THRESHOLD_VERTICAL;
 
   const assigned = new Array(lines.length).fill(false);
   const merged: MergedLine[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     if (assigned[i]) continue;
+
+    // Determine category of the seed line to choose appropriate threshold
+    const seedCategory = classifyLine(lines[i].theta);
+    const distanceThreshold =
+      seedCategory === "vertical"
+        ? distanceThresholdVertical
+        : distanceThresholdDefault;
 
     const cluster: HoughLine[] = [lines[i]];
     assigned[i] = true;
@@ -428,6 +447,26 @@ function runHoughExtraction(
       }
     }
 
+    // Count raw lines by category
+    const rawVerticalCount = rawLines.filter(
+      (l) => classifyLine(l.theta) === "vertical"
+    ).length;
+    const rawHorizontalCount = rawLines.filter(
+      (l) => classifyLine(l.theta) === "horizontal"
+    ).length;
+
+    // Count merged lines by category
+    const mergedVerticalCount = cardEdgeLines.filter(
+      (l) => l.category === "vertical"
+    ).length;
+    const mergedHorizontalCount = cardEdgeLines.filter(
+      (l) => l.category === "horizontal"
+    ).length;
+
+    console.log(
+      `🔍 Debug: Raw V=${rawVerticalCount} H=${rawHorizontalCount}, Merged V=${mergedVerticalCount} H=${mergedHorizontalCount}`
+    );
+
     return {
       lines: cardEdgeLines,
       lineEndpoints,
@@ -437,6 +476,10 @@ function runHoughExtraction(
       scale,
       rawLineCount,
       mergedLineCount: cardEdgeLines.length,
+      rawVerticalCount,
+      rawHorizontalCount,
+      mergedVerticalCount,
+      mergedHorizontalCount,
     };
   } catch (error) {
     console.error("Hough extraction error:", error);

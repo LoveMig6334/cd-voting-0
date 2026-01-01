@@ -351,13 +351,18 @@ function lineDistance(line1: HoughLine, line2: HoughLine): number {
 
 /**
  * Merge nearby parallel lines into clusters and return representative lines.
- * Uses a greedy clustering approach.
+ * Uses a greedy clustering approach with category-specific thresholds.
+ * Vertical lines use a more aggressive distance threshold to better merge
+ * multiple detections of the same card edge.
  */
 function mergeLines(lines: HoughLine[]): MergedLine[] {
   if (lines.length === 0) return [];
 
   const angleThreshold = CANNY_EDGE_DETECTION.LINE_MERGE_ANGLE_THRESHOLD;
-  const distanceThreshold = CANNY_EDGE_DETECTION.LINE_MERGE_DISTANCE_THRESHOLD;
+  const distanceThresholdDefault =
+    CANNY_EDGE_DETECTION.LINE_MERGE_DISTANCE_THRESHOLD;
+  const distanceThresholdVertical =
+    CANNY_EDGE_DETECTION.LINE_MERGE_DISTANCE_THRESHOLD_VERTICAL;
 
   // Mark which lines have been assigned to a cluster
   const assigned = new Array(lines.length).fill(false);
@@ -365,6 +370,13 @@ function mergeLines(lines: HoughLine[]): MergedLine[] {
 
   for (let i = 0; i < lines.length; i++) {
     if (assigned[i]) continue;
+
+    // Determine category of the seed line to choose appropriate threshold
+    const seedCategory = classifyLine(lines[i].theta);
+    const distanceThreshold =
+      seedCategory === "vertical"
+        ? distanceThresholdVertical
+        : distanceThresholdDefault;
 
     // Start a new cluster with line i
     const cluster: HoughLine[] = [lines[i]];

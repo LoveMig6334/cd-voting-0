@@ -229,7 +229,7 @@ export default function HoughDebugPage() {
             Analysis Results
           </h2>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <StatCard
               label="Hough Lines"
               value={debugData.lines.length}
@@ -249,6 +249,30 @@ export default function HoughDebugPage() {
               label="Processed Height"
               value={`${debugData.imageHeight}px`}
               color="text-blue-400"
+            />
+          </div>
+
+          {/* Vertical/Horizontal Line Merge Statistics */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard
+              label="Raw Vertical"
+              value={debugData.rawVerticalCount}
+              color="text-blue-400"
+            />
+            <StatCard
+              label="Merged Vertical"
+              value={debugData.mergedVerticalCount}
+              color="text-blue-300"
+            />
+            <StatCard
+              label="Raw Horizontal"
+              value={debugData.rawHorizontalCount}
+              color="text-red-400"
+            />
+            <StatCard
+              label="Merged Horizontal"
+              value={debugData.mergedHorizontalCount}
+              color="text-red-300"
             />
           </div>
 
