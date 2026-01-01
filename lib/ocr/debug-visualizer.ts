@@ -63,16 +63,21 @@ function isOpenCVReady(): boolean {
 
 /**
  * Classify a line as horizontal, vertical, or diagonal based on its theta angle.
+ * In Hough (ρ,θ): θ is the angle of the NORMAL to the line.
+ * - θ ≈ 0 or π → normal is horizontal → LINE is VERTICAL
+ * - θ ≈ π/2 → normal is vertical → LINE is HORIZONTAL
  */
 function classifyLine(theta: number): LineCategory {
   const tolerance = CANNY_EDGE_DETECTION.LINE_CLASSIFICATION_TOLERANCE;
   const normalizedTheta = ((theta % Math.PI) + Math.PI) % Math.PI;
 
+  // Vertical lines: theta near 0 or π (normal points left/right)
   if (normalizedTheta < tolerance || normalizedTheta > Math.PI - tolerance) {
-    return "horizontal";
-  }
-  if (Math.abs(normalizedTheta - Math.PI / 2) < tolerance) {
     return "vertical";
+  }
+  // Horizontal lines: theta near π/2 (normal points up/down)
+  if (Math.abs(normalizedTheta - Math.PI / 2) < tolerance) {
+    return "horizontal";
   }
   return "diagonal";
 }
@@ -351,10 +356,60 @@ function runHoughExtraction(
     const pass1Lines = runHoughPass(CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS);
     rawLines.push(...pass1Lines);
 
-    // Pass 2: Lower threshold for vertical edges
-    const pass2Lines = runHoughPass(
-      CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS_VERTICAL
-    );
+    // Pass 2: Apply vertical dilation to connect fragmented vertical edges
+    // Use a tall, thin kernel (1 wide, 7 tall) to emphasize vertical structures
+    let verticalKernel: CVMat | null = null;
+    let dilatedEdges: CVMat | null = null;
+    let pass2Lines: HoughLine[] = [];
+
+    try {
+      verticalKernel = cv!.getStructuringElement(
+        cv!.MORPH_RECT,
+        new cv!.Size(1, 7) // Vertical kernel
+      );
+      dilatedEdges = new cv!.Mat();
+      cv!.morphologyEx(edges, dilatedEdges, cv!.MORPH_CLOSE, verticalKernel);
+
+      // Run Hough on dilated edges
+      const runDilatedHoughPass = (
+        thresholds: readonly number[]
+      ): HoughLine[] => {
+        const passLines: HoughLine[] = [];
+        if (!dilatedEdges) return passLines;
+        for (const threshold of thresholds) {
+          const localLinesMat = new cv!.Mat();
+          cv!.HoughLines(
+            dilatedEdges,
+            localLinesMat,
+            CANNY_EDGE_DETECTION.HOUGH_RHO,
+            CANNY_EDGE_DETECTION.HOUGH_THETA,
+            threshold
+          );
+
+          if (localLinesMat.rows > 0 && localLinesMat.rows <= maxLines) {
+            for (let i = 0; i < localLinesMat.rows; i++) {
+              passLines.push({
+                rho: localLinesMat.data32F[i * 2],
+                theta: localLinesMat.data32F[i * 2 + 1],
+              });
+            }
+            localLinesMat.delete();
+            break;
+          }
+
+          localLinesMat.delete();
+        }
+        return passLines;
+      };
+
+      pass2Lines = runDilatedHoughPass(
+        CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS_VERTICAL
+      );
+    } finally {
+      if (verticalKernel) verticalKernel.delete();
+      if (dilatedEdges) dilatedEdges.delete();
+    }
+
     const verticalPass2 = pass2Lines.filter(
       (line) => classifyLine(line.theta) === "vertical"
     );

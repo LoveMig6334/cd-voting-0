@@ -311,9 +311,9 @@ interface MergedLine extends HoughLine {
 
 /**
  * Classify a line as horizontal, vertical, or diagonal based on its theta angle.
- * In Hough space:
- * - theta ≈ 0 or π → horizontal line
- * - theta ≈ π/2 → vertical line
+ * In Hough (ρ,θ) parameterization, θ is the angle of the NORMAL to the line.
+ * - θ ≈ 0 or π → normal is horizontal → LINE is VERTICAL
+ * - θ ≈ π/2 → normal is vertical → LINE is HORIZONTAL
  */
 function classifyLine(theta: number): LineCategory {
   const tolerance = CANNY_EDGE_DETECTION.LINE_CLASSIFICATION_TOLERANCE;
@@ -321,13 +321,13 @@ function classifyLine(theta: number): LineCategory {
   // Normalize theta to [0, π)
   const normalizedTheta = ((theta % Math.PI) + Math.PI) % Math.PI;
 
-  // Horizontal: theta near 0 or π
+  // Vertical lines: theta near 0 or π (normal points left/right)
   if (normalizedTheta < tolerance || normalizedTheta > Math.PI - tolerance) {
-    return "horizontal";
-  }
-  // Vertical: theta near π/2
-  if (Math.abs(normalizedTheta - Math.PI / 2) < tolerance) {
     return "vertical";
+  }
+  // Horizontal lines: theta near π/2 (normal points up/down)
+  if (Math.abs(normalizedTheta - Math.PI / 2) < tolerance) {
+    return "horizontal";
   }
   return "diagonal";
 }
@@ -652,7 +652,7 @@ function runHoughPass(
  * Two-pass Hough line detection with line merging.
  *
  * Pass 1: Standard detection with high thresholds - captures strong edges
- * Pass 2: Lower thresholds, filtered to keep only vertical lines
+ * Pass 2: Lower thresholds on vertically-enhanced edges for vertical lines
  *
  * Both passes are combined, merged to eliminate duplicates, and filtered
  * to remove diagonal noise.
@@ -661,12 +661,31 @@ function findHoughLines(edges: CVMat): MergedLine[] | null {
   // Pass 1: High threshold for strong edges (captures horizontal text/stripes)
   const pass1Lines = runHoughPass(edges, CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS);
 
-  // Pass 2: Lower threshold specifically for vertical edges
-  const pass2Lines = runHoughPass(
-    edges,
-    CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS_VERTICAL
-  );
-  // Filter pass 2 to only keep vertical lines
+  // Pass 2: Apply vertical dilation to connect fragmented vertical edges
+  // Use a tall, thin kernel (1 wide, 7 tall) to emphasize vertical structures
+  let verticalKernel: CVMat | null = null;
+  let dilatedEdges: CVMat | null = null;
+  let pass2Lines: HoughLine[] = [];
+
+  try {
+    verticalKernel = cv!.getStructuringElement(
+      cv!.MORPH_RECT,
+      new cv!.Size(1, 7) // Vertical kernel: 1 pixel wide, 7 pixels tall
+    );
+    dilatedEdges = new cv!.Mat();
+    // Dilate edges to connect fragmented vertical lines
+    cv!.morphologyEx(edges, dilatedEdges, cv!.MORPH_CLOSE, verticalKernel);
+
+    pass2Lines = runHoughPass(
+      dilatedEdges,
+      CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS_VERTICAL
+    );
+  } finally {
+    if (verticalKernel) verticalKernel.delete();
+    if (dilatedEdges) dilatedEdges.delete();
+  }
+
+  // Filter pass 2 to only keep vertical lines (theta ≈ 0 or π)
   const verticalPass2 = pass2Lines.filter(
     (line) => classifyLine(line.theta) === "vertical"
   );
