@@ -376,6 +376,7 @@ function runHoughExtraction(
     // Helper function to run a single Hough pass
     const runHoughPass = (thresholds: readonly number[]): HoughLine[] => {
       const passLines: HoughLine[] = [];
+      if (!edges) return passLines; // Guard against null
       for (const threshold of thresholds) {
         const localLinesMat = new cv!.Mat();
         cv!.HoughLines(
