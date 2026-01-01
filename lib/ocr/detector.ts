@@ -606,10 +606,14 @@ function runCannyDetection(
 // Hough Line Detection
 // ============================================================================
 
-function findHoughLines(edges: CVMat): HoughLine[] | null {
-  const thresholds = CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS;
+/**
+ * Run a single Hough transform pass with given thresholds.
+ */
+function runHoughPass(
+  edges: CVMat,
+  thresholds: readonly number[]
+): HoughLine[] {
   const maxLines = CANNY_EDGE_DETECTION.HOUGH_MAX_LINES;
-
   let lines: CVMat | null = null;
 
   try {
@@ -629,7 +633,7 @@ function findHoughLines(edges: CVMat): HoughLine[] | null {
       lines = null;
     }
 
-    if (!lines || lines.rows === 0) return null;
+    if (!lines || lines.rows === 0) return [];
 
     const result: HoughLine[] = [];
     for (let i = 0; i < lines.rows; i++) {
@@ -642,6 +646,56 @@ function findHoughLines(edges: CVMat): HoughLine[] | null {
   } finally {
     if (lines) lines.delete();
   }
+}
+
+/**
+ * Two-pass Hough line detection with line merging.
+ *
+ * Pass 1: Standard detection with high thresholds - captures strong edges
+ * Pass 2: Lower thresholds, filtered to keep only vertical lines
+ *
+ * Both passes are combined, merged to eliminate duplicates, and filtered
+ * to remove diagonal noise.
+ */
+function findHoughLines(edges: CVMat): MergedLine[] | null {
+  // Pass 1: High threshold for strong edges (captures horizontal text/stripes)
+  const pass1Lines = runHoughPass(edges, CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS);
+
+  // Pass 2: Lower threshold specifically for vertical edges
+  const pass2Lines = runHoughPass(
+    edges,
+    CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS_VERTICAL
+  );
+  // Filter pass 2 to only keep vertical lines
+  const verticalPass2 = pass2Lines.filter(
+    (line) => classifyLine(line.theta) === "vertical"
+  );
+
+  // Combine all lines
+  const allLines = [...pass1Lines, ...verticalPass2];
+
+  if (allLines.length === 0) return null;
+
+  console.log(
+    `🔍 Raw lines: Pass1=${pass1Lines.length}, Pass2 Vertical=${verticalPass2.length}`
+  );
+
+  // Merge nearby parallel lines
+  const merged = mergeLines(allLines);
+
+  // Filter to keep only horizontal and vertical (card edges)
+  const cardEdges = filterCardEdgeLines(merged);
+
+  console.log(
+    `🔍 After merge: ${merged.length} clusters, After filter: ${cardEdges.length} card edge lines`
+  );
+
+  // Log category breakdown for debugging
+  const hCount = cardEdges.filter((l) => l.category === "horizontal").length;
+  const vCount = cardEdges.filter((l) => l.category === "vertical").length;
+  console.log(`🔍 Line breakdown: ${hCount} horizontal, ${vCount} vertical`);
+
+  return cardEdges.length > 0 ? cardEdges : null;
 }
 
 // ============================================================================
