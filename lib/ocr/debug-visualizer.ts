@@ -370,47 +370,78 @@ function runHoughExtraction(
       CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH
     );
 
-    // Hough line detection
-    const thresholds = CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS;
+    // Hough line detection - Two-pass approach
     const maxLines = CANNY_EDGE_DETECTION.HOUGH_MAX_LINES;
-    const lines: HoughLine[] = [];
+    const rawLines: HoughLine[] = [];
 
-    for (const threshold of thresholds) {
-      linesMat = new cv!.Mat();
-      cv!.HoughLines(
-        edges,
-        linesMat,
-        CANNY_EDGE_DETECTION.HOUGH_RHO,
-        CANNY_EDGE_DETECTION.HOUGH_THETA,
-        threshold
-      );
+    // Helper function to run a single Hough pass
+    const runHoughPass = (thresholds: readonly number[]): HoughLine[] => {
+      const passLines: HoughLine[] = [];
+      for (const threshold of thresholds) {
+        linesMat = new cv!.Mat();
+        cv!.HoughLines(
+          edges,
+          linesMat,
+          CANNY_EDGE_DETECTION.HOUGH_RHO,
+          CANNY_EDGE_DETECTION.HOUGH_THETA,
+          threshold
+        );
 
-      if (linesMat.rows > 0 && linesMat.rows <= maxLines) {
-        for (let i = 0; i < linesMat.rows; i++) {
-          lines.push({
-            rho: linesMat.data32F[i * 2],
-            theta: linesMat.data32F[i * 2 + 1],
-          });
+        if (linesMat.rows > 0 && linesMat.rows <= maxLines) {
+          for (let i = 0; i < linesMat.rows; i++) {
+            passLines.push({
+              rho: linesMat.data32F[i * 2],
+              theta: linesMat.data32F[i * 2 + 1],
+            });
+          }
+          linesMat.delete();
+          linesMat = null;
+          break;
         }
-        break;
-      }
 
-      linesMat.delete();
-      linesMat = null;
-    }
+        linesMat.delete();
+        linesMat = null;
+      }
+      return passLines;
+    };
+
+    // Pass 1: High threshold for strong edges
+    const pass1Lines = runHoughPass(CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS);
+    rawLines.push(...pass1Lines);
+
+    // Pass 2: Lower threshold for vertical edges
+    const pass2Lines = runHoughPass(
+      CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS_VERTICAL
+    );
+    const verticalPass2 = pass2Lines.filter(
+      (line) => classifyLine(line.theta) === "vertical"
+    );
+    rawLines.push(...verticalPass2);
+
+    const rawLineCount = rawLines.length;
+
+    // Merge nearby parallel lines
+    const merged = mergeLines(rawLines);
+
+    // Filter to keep only horizontal and vertical (card edges)
+    const cardEdgeLines = filterCardEdgeLines(merged);
+
+    console.log(
+      `🔍 Debug: Raw=${rawLineCount}, Merged=${merged.length}, CardEdges=${cardEdgeLines.length}`
+    );
 
     // Convert lines to endpoints
-    const lineEndpoints = lines.map((line) =>
+    const lineEndpoints = cardEdgeLines.map((line) =>
       houghLineToEndpoints(line, targetWidth, targetHeight)
     );
 
     // Find intersections
     const intersections: IntersectionPoint[] = [];
-    for (let i = 0; i < lines.length; i++) {
-      for (let j = i + 1; j < lines.length; j++) {
+    for (let i = 0; i < cardEdgeLines.length; i++) {
+      for (let j = i + 1; j < cardEdgeLines.length; j++) {
         const intersection = findIntersection(
-          lines[i],
-          lines[j],
+          cardEdgeLines[i],
+          cardEdgeLines[j],
           targetWidth,
           targetHeight,
           i,
@@ -423,12 +454,14 @@ function runHoughExtraction(
     }
 
     return {
-      lines,
+      lines: cardEdgeLines,
       lineEndpoints,
       intersections,
       imageWidth: targetWidth,
       imageHeight: targetHeight,
       scale,
+      rawLineCount,
+      mergedLineCount: cardEdgeLines.length,
     };
   } catch (error) {
     console.error("Hough extraction error:", error);
