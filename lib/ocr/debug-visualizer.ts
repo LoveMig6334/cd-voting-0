@@ -208,11 +208,11 @@ function filterCardEdgeLines(lines: MergedLine[]): MergedLine[] {
  * Convert Hough line parameters (rho, theta) to line endpoints for drawing.
  */
 function houghLineToEndpoints(
-  line: HoughLine,
+  line: MergedLine,
   imageWidth: number,
   imageHeight: number
 ): LineEndpoints {
-  const { rho, theta } = line;
+  const { rho, theta, category } = line;
   const cos = Math.cos(theta);
   const sin = Math.sin(theta);
   const x0 = cos * rho;
@@ -226,6 +226,7 @@ function houghLineToEndpoints(
     y1: Math.round(y0 + scale * cos),
     x2: Math.round(x0 + scale * sin),
     y2: Math.round(y0 - scale * cos),
+    category,
   };
 }
 
