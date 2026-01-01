@@ -499,7 +499,7 @@ function runCannyDetection(
       new cv!.Size(targetWidth, targetHeight),
       0,
       0,
-      cv!.INTER_AREA
+      cv!.INTER_LINEAR // ⚡ Optimization: INTER_LINEAR is faster than INTER_AREA for this use case
     );
     timer.markStep("rescale");
 
@@ -507,10 +507,30 @@ function runCannyDetection(
     cv!.cvtColor(scaled, gray, cv!.COLOR_RGBA2GRAY);
     timer.markStep("grayscale");
 
+    // === VERTICAL PATH (light blur - preserves sharp card edges) ===
+    blurredV = new cv!.Mat();
+    const blurSizeV = CANNY_EDGE_DETECTION.BLUR_KERNEL_SIZE_VERTICAL;
+    cv!.GaussianBlur(gray, blurredV, new cv!.Size(blurSizeV, blurSizeV), 0);
+    // Skip morphology for vertical - we want sharp edges
+
+    edgesVertical = new cv!.Mat();
+    cv!.Canny(
+      blurredV,
+      edgesVertical,
+      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_LOW,
+      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH
+    );
+    timer.markStep("canny_vertical");
+
     // === HORIZONTAL PATH (heavy blur - good for text/stripes) ===
-    blurredH = new cv!.Mat();
     const blurSizeH = CANNY_EDGE_DETECTION.BLUR_KERNEL_SIZE;
-    cv!.GaussianBlur(gray, blurredH, new cv!.Size(blurSizeH, blurSizeH), 0);
+    if (blurSizeH === blurSizeV) {
+      // ⚡ Optimization: Reuse blurred image if kernel sizes are identical
+      blurredH = blurredV;
+    } else {
+      blurredH = new cv!.Mat();
+      cv!.GaussianBlur(gray, blurredH, new cv!.Size(blurSizeH, blurSizeH), 0);
+    }
 
     morphedH = new cv!.Mat();
     const morphSizeH = CANNY_EDGE_DETECTION.MORPH_KERNEL_SIZE;
@@ -529,23 +549,8 @@ function runCannyDetection(
     );
     timer.markStep("canny_horizontal");
 
-    // === VERTICAL PATH (light blur - preserves sharp card edges) ===
-    blurredV = new cv!.Mat();
-    const blurSizeV = CANNY_EDGE_DETECTION.BLUR_KERNEL_SIZE_VERTICAL;
-    cv!.GaussianBlur(gray, blurredV, new cv!.Size(blurSizeV, blurSizeV), 0);
-    // Skip morphology for vertical - we want sharp edges
-
-    edgesVertical = new cv!.Mat();
-    cv!.Canny(
-      blurredV,
-      edgesVertical,
-      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_LOW,
-      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH
-    );
-    timer.markStep("canny_vertical");
-
     // === HOUGH DETECTION ===
-    const houghLines = findHoughLines(edgesHorizontal, edgesVertical);
+    const houghLines = findHoughLines(edgesHorizontal!, edgesVertical!);
     if (!houghLines || houghLines.length === 0) {
       console.warn("🔍 Detection failed: No Hough lines found");
       timer.markStep("no_hough_lines");
@@ -626,7 +631,7 @@ function runCannyDetection(
   } finally {
     if (scaled) scaled.delete();
     if (gray) gray.delete();
-    if (blurredH) blurredH.delete();
+    if (blurredH && blurredH !== blurredV) blurredH.delete(); // ⚡ Avoid double delete if shared
     if (morphedH) morphedH.delete();
     if (edgesHorizontal) edgesHorizontal.delete();
     if (kernelH) kernelH.delete();
@@ -650,26 +655,25 @@ function runHoughPass(
   let lines: CVMat | null = null;
 
   try {
-    for (const threshold of thresholds) {
-      lines = new cv!.Mat();
-      cv!.HoughLines(
-        edges,
-        lines,
-        CANNY_EDGE_DETECTION.HOUGH_RHO,
-        CANNY_EDGE_DETECTION.HOUGH_THETA,
-        threshold
-      );
-
-      if (lines.rows > 0 && lines.rows <= maxLines) break;
-
-      lines.delete();
-      lines = null;
-    }
+    // ⚡ Optimization: Standard Hough transform returns lines sorted by votes.
+    // Instead of iterating through thresholds, we can run once with the lowest
+    // threshold and simply take the top N results. This avoids up to 2 extra
+    // full Hough passes per call.
+    lines = new cv!.Mat();
+    cv!.HoughLines(
+      edges,
+      lines,
+      CANNY_EDGE_DETECTION.HOUGH_RHO,
+      CANNY_EDGE_DETECTION.HOUGH_THETA,
+      thresholds[0]
+    );
 
     if (!lines || lines.rows === 0) return [];
 
     const result: HoughLine[] = [];
-    for (let i = 0; i < lines.rows; i++) {
+    // Take at most maxLines
+    const numToTake = Math.min(lines.rows, maxLines);
+    for (let i = 0; i < numToTake; i++) {
       result.push({
         rho: lines.data32F[i * 2],
         theta: lines.data32F[i * 2 + 1],
