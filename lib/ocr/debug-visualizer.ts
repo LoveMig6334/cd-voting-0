@@ -16,11 +16,19 @@ export interface HoughLine {
   readonly theta: number;
 }
 
+export type LineCategory = "horizontal" | "vertical" | "diagonal";
+
+export interface MergedLine extends HoughLine {
+  readonly weight: number;
+  readonly category: LineCategory;
+}
+
 export interface LineEndpoints {
   readonly x1: number;
   readonly y1: number;
   readonly x2: number;
   readonly y2: number;
+  readonly category: LineCategory;
 }
 
 export interface IntersectionPoint {
@@ -30,12 +38,14 @@ export interface IntersectionPoint {
 }
 
 export interface HoughDebugResult {
-  readonly lines: HoughLine[];
+  readonly lines: MergedLine[];
   readonly lineEndpoints: LineEndpoints[];
   readonly intersections: IntersectionPoint[];
   readonly imageWidth: number;
   readonly imageHeight: number;
   readonly scale: number;
+  readonly rawLineCount: number;
+  readonly mergedLineCount: number;
 }
 
 // ============================================================================
