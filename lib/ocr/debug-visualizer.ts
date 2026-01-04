@@ -37,6 +37,24 @@ export interface IntersectionPoint {
   readonly lineIndices: readonly [number, number];
 }
 
+/**
+ * Accumulator data for Hough transform visualization
+ */
+export interface AccumulatorData {
+  /** 2D vote counts [thetaIndex][rhoIndex] */
+  readonly votes: number[][];
+  /** Maximum vote count for normalization */
+  readonly maxVotes: number;
+  /** Rho values for each column */
+  readonly rhoValues: number[];
+  /** Theta values in radians for each row */
+  readonly thetaValues: number[];
+  /** Number of rho bins */
+  readonly rhoSteps: number;
+  /** Number of theta bins */
+  readonly thetaSteps: number;
+}
+
 export interface HoughDebugResult {
   readonly lines: MergedLine[];
   readonly lineEndpoints: LineEndpoints[];
@@ -54,6 +72,10 @@ export interface HoughDebugResult {
   readonly mergedVerticalCount: number;
   /** Number of merged horizontal lines */
   readonly mergedHorizontalCount: number;
+  /** Accumulator data for heatmap visualization */
+  readonly accumulator: AccumulatorData | null;
+  /** Threshold used for this analysis */
+  readonly threshold: number;
 }
 
 // ============================================================================
