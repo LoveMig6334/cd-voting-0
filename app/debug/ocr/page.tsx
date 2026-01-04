@@ -201,7 +201,7 @@ export default function OCRDebugPage() {
       detectionFrameRef.current = requestAnimationFrame(runDetectionFrame);
       return;
     }
-    const { canvas: tempCanvas, ctx: tempCtx } = tempCanvasResult.value;
+    const { ctx: tempCtx } = tempCanvasResult.value;
 
     // Capture frame
     tempCtx.drawImage(video, 0, 0, width, height);
@@ -210,6 +210,13 @@ export default function OCRDebugPage() {
     // Run detection
     const detection = detectCard(imageData, width, height);
     setLastDetection(detection);
+
+    // Update status based on detection
+    if (detection.success) {
+      setCameraStatus("found");
+    } else {
+      setCameraStatus("scanning");
+    }
 
     // Size overlay canvas to match video display size
     const displayWidth = video.offsetWidth;
@@ -243,43 +250,14 @@ export default function OCRDebugPage() {
       drawDetectionOverlay(overlayCtx, scaledDetection);
     }
 
-    // Check if detection succeeded
-    if (detection.success) {
-      console.log("✓ Card detected with confidence:", detection.confidence);
-      setCameraStatus("found");
-
-      // Capture the image as data URL
-      const capturedImage = tempCanvas.toDataURL("image/png");
-
-      // Stop camera and set image for pipeline
-      isDetectingRef.current = false;
-      stopCamera();
-      setOriginalImage(capturedImage);
-      setPipelineResult(null);
-      setRawText("");
-      setParsedData({
-        confidence: {
-          id: 0,
-          name: 0,
-          surname: 0,
-          classroom: 0,
-          no: 0,
-          nationalId: 0,
-        },
-      });
-      setValidation(null);
-      setPipelineStage("idle");
-
-      return; // Exit detection loop
-    }
-
     // Continue detection loop with throttling (~10 FPS)
+    // No auto-capture - user must manually capture
     setTimeout(() => {
       if (isDetectingRef.current) {
         detectionFrameRef.current = requestAnimationFrame(runDetectionFrame);
       }
     }, 100);
-  }, [stopCamera]);
+  }, []);
 
   const startCamera = useCallback(async () => {
     setCameraStatus("initializing");
@@ -322,6 +300,50 @@ export default function OCRDebugPage() {
       startCamera();
     }
   }, [cameraActive, startCamera, stopCamera]);
+
+  // Manual capture function - captures current frame regardless of detection status
+  const captureFrame = useCallback(() => {
+    if (!videoRef.current || !cameraActive) return;
+
+    const video = videoRef.current;
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+
+    // Create canvas for capture
+    const tempCanvasResult = createCanvas(width, height);
+    if (!tempCanvasResult.ok) {
+      console.error("Failed to create capture canvas");
+      return;
+    }
+    const { canvas, ctx } = tempCanvasResult.value;
+
+    // Draw current frame
+    ctx.drawImage(video, 0, 0, width, height);
+    const capturedImage = canvas.toDataURL("image/png");
+
+    console.log(
+      "📸 Manual capture",
+      lastDetection?.success ? "(card detected)" : "(no card detected)"
+    );
+
+    // Stop camera and set image for pipeline
+    stopCamera();
+    setOriginalImage(capturedImage);
+    setPipelineResult(null);
+    setRawText("");
+    setParsedData({
+      confidence: {
+        id: 0,
+        name: 0,
+        surname: 0,
+        classroom: 0,
+        no: 0,
+        nationalId: 0,
+      },
+    });
+    setValidation(null);
+    setPipelineStage("idle");
+  }, [cameraActive, lastDetection, stopCamera]);
 
   // Cleanup camera on unmount
   useEffect(() => {
@@ -558,6 +580,35 @@ export default function OCRDebugPage() {
                   ref={overlayCanvasRef}
                   className="absolute inset-0 pointer-events-none"
                 />
+                {/* Capture Button Overlay */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
+                  <button
+                    onClick={captureFrame}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold text-white shadow-lg transition-all transform hover:scale-105 active:scale-95 ${
+                      lastDetection?.success
+                        ? "bg-emerald-600 hover:bg-emerald-500"
+                        : "bg-blue-600 hover:bg-blue-500"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-xl">
+                      photo_camera
+                    </span>
+                    {lastDetection?.success ? "Capture Card" : "Capture Frame"}
+                  </button>
+                  <span
+                    className={`text-xs px-2 py-1 rounded ${
+                      lastDetection?.success
+                        ? "bg-emerald-900/80 text-emerald-300"
+                        : "bg-slate-900/80 text-slate-400"
+                    }`}
+                  >
+                    {lastDetection?.success
+                      ? `✓ Card detected (${lastDetection.confidence.toFixed(
+                          0
+                        )}%)`
+                      : "Position card in frame"}
+                  </span>
+                </div>
               </>
             ) : processedImages?.originalWithOverlay ? (
               <img
