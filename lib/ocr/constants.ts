@@ -10,10 +10,10 @@
 export const CARD_DIMENSIONS = {
   /** Standard ID card aspect ratio (width / height) */
   ASPECT_RATIO: 1.6,
-  /** Minimum acceptable aspect ratio for detected cards */
-  MIN_ASPECT_RATIO: 1.0,
-  /** Maximum acceptable aspect ratio for detected cards */
-  MAX_ASPECT_RATIO: 2.8,
+  /** Minimum acceptable aspect ratio for detected cards (1.6 - 20% = 1.28) */
+  MIN_ASPECT_RATIO: 1.28,
+  /** Maximum acceptable aspect ratio for detected cards (1.6 + 20% = 1.92) */
+  MAX_ASPECT_RATIO: 1.92,
   /** Output width in pixels for warped card */
   OUTPUT_WIDTH: 600,
   /** Output height calculated from aspect ratio */
@@ -46,7 +46,7 @@ export const CANNY_EDGE_DETECTION = {
   /** Hough transform theta resolution in radians */
   HOUGH_THETA: Math.PI / 180,
   /** Hough transform threshold values to try (increasing order) */
-  HOUGH_THRESHOLDS: [100, 150, 200] as const,
+  HOUGH_THRESHOLDS: [60, 70, 75, 80, 90, 100, 110, 120] as const,
   /** Maximum lines to accept from Hough transform */
   HOUGH_MAX_LINES: 16,
   /** Lower thresholds for second pass targeting vertical edges (more aggressive) */

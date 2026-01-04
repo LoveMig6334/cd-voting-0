@@ -890,10 +890,37 @@ function findQuadrilateralContours(
   for (const cycle of cycles) {
     const corners = cycle.map((idx) => intersections[idx].point);
     const area = computePolygonArea(corners);
-    if (area >= minArea) {
-      contours.push({ corners, area, score: 0 });
+
+    // Filter by minimum area
+    if (area < minArea) continue;
+
+    // Filter by aspect ratio - only accept shapes matching card dimensions (1:1.6)
+    const orderedCorners = orderContour(corners);
+    const boundingRect = getBoundingRect(orderedCorners);
+    const aspectRatio = boundingRect.width / boundingRect.height;
+
+    // Check if aspect ratio is within acceptable range for a card
+    if (
+      aspectRatio < CARD_DIMENSIONS.MIN_ASPECT_RATIO ||
+      aspectRatio > CARD_DIMENSIONS.MAX_ASPECT_RATIO
+    ) {
+      console.log(
+        `🔍 Rejected quad: aspect ratio ${aspectRatio.toFixed(
+          2
+        )} outside valid range [${CARD_DIMENSIONS.MIN_ASPECT_RATIO}, ${
+          CARD_DIMENSIONS.MAX_ASPECT_RATIO
+        }]`
+      );
+      continue;
     }
+
+    contours.push({ corners, area, score: 0 });
   }
+
+  console.log(
+    `🔍 Quadrilateral filter: ${cycles.length} cycles → ${contours.length} valid candidates (aspect ratio 1.28-1.92)`
+  );
+
   return contours;
 }
 
