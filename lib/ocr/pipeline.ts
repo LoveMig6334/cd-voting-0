@@ -633,7 +633,7 @@ function warpWithOpenCV(
     M = cv!.getPerspectiveTransform(srcTri, dstTri);
     timings.getPerspectiveTransform = performance.now() - t0;
 
-    // ⚡ Bolt: Time warpPerspective (heavy Wasm computation)
+    // ✨ Time warpPerspective (heavy Wasm computation)
     t0 = performance.now();
     dstMat = new cv!.Mat();
     cv!.warpPerspective(
@@ -641,7 +641,7 @@ function warpWithOpenCV(
       dstMat,
       M,
       new cv!.Size(width, height),
-      cv!.INTER_LINEAR,
+      cv!.INTER_LANCZOS4, // ✨ 8x8 neighborhood interpolation for best quality
       cv!.BORDER_CONSTANT,
       new cv!.Scalar(0, 0, 0, 255)
     );
@@ -846,11 +846,7 @@ export class PipelineManager {
     });
     if (isErr(detectionResult))
       return this.createPipelineResult(detectionResult);
-    const {
-      scaled: detection,
-      unscaled: unscaledDetection,
-      imageData: detectionImageData,
-    } = detectionResult.value;
+    const { scaled: detection } = detectionResult.value;
 
     const overlayResult = await this.runStage("draw_overlay", async () =>
       this.drawOverlay(img, detection)
@@ -858,9 +854,9 @@ export class PipelineManager {
     if (isErr(overlayResult)) return this.createPipelineResult(overlayResult);
 
     const cropResult = await this.runStage("crop_and_warp", async () =>
-      // ⚡ Bolt: Use unscaled detection (at 1024px) with its matching ImageData
-      // This eliminates the expensive full-res canvas readback (~173ms → ~5ms)
-      this.cropAndWarp(img, unscaledDetection, options, detectionImageData)
+      // ✨ Use scaled detection (original-resolution corners) for high-quality output
+      // The warp will read from the original full-res image for maximum sharpness
+      this.cropAndWarp(img, detection, options)
     );
     if (isErr(cropResult)) return this.createPipelineResult(cropResult);
     let cardCanvas = cropResult.value;

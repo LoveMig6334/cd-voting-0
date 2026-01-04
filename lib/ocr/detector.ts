@@ -132,6 +132,7 @@ declare global {
     INTER_AREA: number;
     INTER_LINEAR: number;
     INTER_CUBIC: number;
+    INTER_LANCZOS4: number; // ✨ 8x8 neighborhood for highest quality
     BORDER_CONSTANT: number;
     CV_32FC2: number;
     CV_8UC4: number;
