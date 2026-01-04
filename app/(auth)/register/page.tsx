@@ -11,11 +11,11 @@ function RegisterContent() {
 
   const id = searchParams.get("studentId");
   const scannedName = searchParams.get("name");
-  // const scannedClass = searchParams.get("classRoom"); // Removed as we use Surname now
+  const scannedSurname = searchParams.get("surname");
 
   const [studentId, setStudentId] = useState(id || "");
   const [name, setName] = useState(scannedName || "");
-  const [surname, setSurname] = useState("");
+  const [surname, setSurname] = useState(scannedSurname || "");
   const [isManual, setIsManual] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -24,8 +24,10 @@ function RegisterContent() {
     // Sync if search params change after initial load
     if (id && id !== studentId) setStudentId(id);
     if (scannedName && scannedName !== name) setName(scannedName);
+    if (scannedSurname && scannedSurname !== surname)
+      setSurname(scannedSurname);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, scannedName]);
+  }, [id, scannedName, scannedSurname]);
 
   interface Student {
     classroom: string;
