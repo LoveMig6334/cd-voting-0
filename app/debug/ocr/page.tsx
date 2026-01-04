@@ -1,8 +1,12 @@
 "use client";
 
 import {
+  ExtendedDetectionResult,
   PipelineResult,
   ProcessingOptions,
+  createCanvas,
+  detectCard,
+  drawDetectionOverlay,
   getMethodDescription,
   loadOpenCV,
   processImageWithDiagnostics,
@@ -13,8 +17,10 @@ import {
   validateParsedData,
 } from "@/lib/ocr/parser";
 import { StudentData } from "@/lib/student-data";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Tesseract from "tesseract.js";
+
+type CameraStatus = "idle" | "initializing" | "scanning" | "found" | "error";
 
 interface ValidationResult {
   isValid: boolean;
@@ -47,6 +53,17 @@ export default function OCRDebugPage() {
   const [showThreshold, setShowThreshold] = useState(false);
   const [worker, setWorker] = useState<Tesseract.Worker | null>(null);
   const [workerReady, setWorkerReady] = useState(false);
+
+  // Camera state
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraStatus, setCameraStatus] = useState<CameraStatus>("idle");
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [lastDetection, setLastDetection] =
+    useState<ExtendedDetectionResult | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
+  const detectionFrameRef = useRef<number | null>(null);
+  const isDetectingRef = useRef(false);
 
   // Use a ref for the logger to avoid worker re-init
   const loggerRef = useRef<(m: Tesseract.LoggerMessage) => void>(null);
@@ -106,6 +123,10 @@ export default function OCRDebugPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Stop camera if active
+      if (cameraActive) {
+        stopCamera();
+      }
       const reader = new FileReader();
       reader.onload = (event) => {
         const imageData = event.target?.result as string;
@@ -128,6 +149,191 @@ export default function OCRDebugPage() {
       reader.readAsDataURL(file);
     }
   };
+
+  // ============================================================================
+  // Camera Functions
+  // ============================================================================
+
+  const stopCamera = useCallback(() => {
+    // Stop animation frame
+    if (detectionFrameRef.current) {
+      cancelAnimationFrame(detectionFrameRef.current);
+      detectionFrameRef.current = null;
+    }
+
+    // Stop media stream
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+      setCameraStream(null);
+    }
+
+    // Reset state
+    isDetectingRef.current = false;
+    setCameraActive(false);
+    setCameraStatus("idle");
+    setLastDetection(null);
+  }, [cameraStream]);
+
+  const runDetectionFrame = useCallback(async () => {
+    if (
+      !videoRef.current ||
+      !overlayCanvasRef.current ||
+      !isDetectingRef.current
+    ) {
+      return;
+    }
+
+    const video = videoRef.current;
+    const overlayCanvas = overlayCanvasRef.current;
+
+    // Skip if video not ready
+    if (video.readyState < 2) {
+      detectionFrameRef.current = requestAnimationFrame(runDetectionFrame);
+      return;
+    }
+
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+
+    // Create temp canvas for frame capture
+    const tempCanvasResult = createCanvas(width, height);
+    if (!tempCanvasResult.ok) {
+      detectionFrameRef.current = requestAnimationFrame(runDetectionFrame);
+      return;
+    }
+    const { canvas: tempCanvas, ctx: tempCtx } = tempCanvasResult.value;
+
+    // Capture frame
+    tempCtx.drawImage(video, 0, 0, width, height);
+    const imageData = tempCtx.getImageData(0, 0, width, height);
+
+    // Run detection
+    const detection = detectCard(imageData, width, height);
+    setLastDetection(detection);
+
+    // Size overlay canvas to match video display size
+    const displayWidth = video.offsetWidth;
+    const displayHeight = video.offsetHeight;
+
+    if (
+      overlayCanvas.width !== displayWidth ||
+      overlayCanvas.height !== displayHeight
+    ) {
+      overlayCanvas.width = displayWidth;
+      overlayCanvas.height = displayHeight;
+    }
+
+    // Draw overlay at display scale
+    const overlayCtx = overlayCanvas.getContext("2d");
+    if (overlayCtx) {
+      overlayCtx.clearRect(0, 0, displayWidth, displayHeight);
+
+      // Scale detection coordinates to display size
+      const scaleX = displayWidth / width;
+      const scaleY = displayHeight / height;
+
+      const scaledDetection = {
+        ...detection,
+        corners: detection.corners.map((p) => ({
+          x: p.x * scaleX,
+          y: p.y * scaleY,
+        })),
+      };
+
+      drawDetectionOverlay(overlayCtx, scaledDetection);
+    }
+
+    // Check if detection succeeded
+    if (detection.success) {
+      console.log("✓ Card detected with confidence:", detection.confidence);
+      setCameraStatus("found");
+
+      // Capture the image as data URL
+      const capturedImage = tempCanvas.toDataURL("image/png");
+
+      // Stop camera and set image for pipeline
+      isDetectingRef.current = false;
+      stopCamera();
+      setOriginalImage(capturedImage);
+      setPipelineResult(null);
+      setRawText("");
+      setParsedData({
+        confidence: {
+          id: 0,
+          name: 0,
+          surname: 0,
+          classroom: 0,
+          no: 0,
+          nationalId: 0,
+        },
+      });
+      setValidation(null);
+      setPipelineStage("idle");
+
+      return; // Exit detection loop
+    }
+
+    // Continue detection loop with throttling (~10 FPS)
+    setTimeout(() => {
+      if (isDetectingRef.current) {
+        detectionFrameRef.current = requestAnimationFrame(runDetectionFrame);
+      }
+    }, 100);
+  }, [stopCamera]);
+
+  const startCamera = useCallback(async () => {
+    setCameraStatus("initializing");
+    setCameraActive(true);
+    setOriginalImage(null);
+    setPipelineResult(null);
+    setLastDetection(null);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      });
+
+      setCameraStream(stream);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play();
+          setCameraStatus("scanning");
+          isDetectingRef.current = true;
+          detectionFrameRef.current = requestAnimationFrame(runDetectionFrame);
+        };
+      }
+    } catch (err) {
+      console.error("Camera access error:", err);
+      setCameraStatus("error");
+      setCameraActive(false);
+    }
+  }, [runDetectionFrame]);
+
+  const toggleCamera = useCallback(() => {
+    if (cameraActive) {
+      stopCamera();
+    } else {
+      startCamera();
+    }
+  }, [cameraActive, startCamera, stopCamera]);
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      if (detectionFrameRef.current) {
+        cancelAnimationFrame(detectionFrameRef.current);
+      }
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [cameraStream]);
 
   const runPipeline = async () => {
     if (!originalImage) return;
@@ -276,20 +482,84 @@ export default function OCRDebugPage() {
             Detection & Outline
           </h2>
 
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="block w-full text-sm text-slate-400 mb-4
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-full file:border-0
-              file:text-sm file:font-semibold
-              file:bg-blue-600 file:text-white
-              hover:file:bg-blue-700 transition-all cursor-pointer"
-          />
+          {/* Input Row: File Upload + Camera Button */}
+          <div className="flex items-center gap-2 mb-4">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              disabled={cameraActive}
+              className="flex-1 text-sm text-slate-400
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-full file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-600 file:text-white
+                hover:file:bg-blue-700 transition-all cursor-pointer
+                disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            <button
+              onClick={toggleCamera}
+              title={cameraActive ? "Stop Camera" : "Use Camera"}
+              className={`flex items-center justify-center gap-2 py-2 px-4 rounded-full text-sm font-semibold transition-all ${
+                cameraActive
+                  ? "bg-red-600 hover:bg-red-500 text-white"
+                  : "bg-purple-600 hover:bg-purple-500 text-white"
+              }`}
+            >
+              <span className="material-symbols-outlined text-lg">
+                {cameraActive ? "videocam_off" : "videocam"}
+              </span>
+              {cameraActive ? "Stop" : "Camera"}
+            </button>
+          </div>
 
-          <div className="aspect-4/3 bg-slate-900 rounded-xl border-2 border-dashed border-slate-600 overflow-hidden flex items-center justify-center">
-            {processedImages?.originalWithOverlay ? (
+          {/* Camera Status */}
+          {cameraActive && (
+            <div className="mb-3 flex items-center gap-2 text-sm">
+              <span
+                className={`inline-block w-2 h-2 rounded-full ${
+                  cameraStatus === "scanning"
+                    ? "bg-green-500 animate-pulse"
+                    : cameraStatus === "initializing"
+                    ? "bg-yellow-500 animate-pulse"
+                    : cameraStatus === "found"
+                    ? "bg-emerald-500"
+                    : cameraStatus === "error"
+                    ? "bg-red-500"
+                    : "bg-slate-500"
+                }`}
+              />
+              <span className="text-slate-400">
+                {cameraStatus === "initializing" && "Initializing camera..."}
+                {cameraStatus === "scanning" && "Scanning for card..."}
+                {cameraStatus === "found" && "Card detected!"}
+                {cameraStatus === "error" && "Camera access denied"}
+              </span>
+              {lastDetection && cameraStatus === "scanning" && (
+                <span className="ml-auto text-xs text-slate-500">
+                  Confidence: {lastDetection.confidence.toFixed(0)}%
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Preview Area: Video or Image */}
+          <div className="aspect-4/3 bg-slate-900 rounded-xl border-2 border-dashed border-slate-600 overflow-hidden flex items-center justify-center relative">
+            {cameraActive ? (
+              <>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-contain"
+                />
+                <canvas
+                  ref={overlayCanvasRef}
+                  className="absolute inset-0 pointer-events-none"
+                />
+              </>
+            ) : processedImages?.originalWithOverlay ? (
               <img
                 src={processedImages.originalWithOverlay}
                 alt="Detected Card"
@@ -302,7 +572,12 @@ export default function OCRDebugPage() {
                 className="w-full h-full object-contain opacity-60"
               />
             ) : (
-              <span className="text-slate-600 text-sm">Upload an image</span>
+              <div className="text-center text-slate-600">
+                <span className="material-symbols-outlined text-4xl mb-2 block opacity-50">
+                  photo_camera
+                </span>
+                <span className="text-sm">Upload an image or use camera</span>
+              </div>
             )}
           </div>
 
