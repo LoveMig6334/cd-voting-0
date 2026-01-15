@@ -7,6 +7,7 @@ export interface Student {
   id: number;
   name: string;
   surname: string;
+  nationalId: string;
 }
 
 export function useAuth() {
@@ -29,14 +30,19 @@ export function useAuth() {
   }, []);
 
   const login = async (
-    studentId: string
+    studentId: string,
+    nationalId: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       const res = await fetch("/data.json");
       if (!res.ok) throw new Error("Failed to load student data");
       const students: Student[] = await res.json();
 
-      const found = students.find((s) => String(s.id) === studentId.trim());
+      const found = students.find(
+        (s) =>
+          String(s.id) === studentId.trim() &&
+          s.nationalId === nationalId.trim()
+      );
 
       if (found) {
         localStorage.setItem("currentUser", JSON.stringify(found));
@@ -44,7 +50,7 @@ export function useAuth() {
         router.push("/");
         return { success: true };
       } else {
-        return { success: false, error: "Student ID not found." };
+        return { success: false, error: "Invalid Student ID or National ID." };
       }
     } catch (err) {
       console.error(err);
