@@ -66,7 +66,7 @@ export default function Analytics() {
                   <span className="material-symbols-outlined mr-1 text-[14px]">
                     event_available
                   </span>
-                  Completed
+                  เสร็จสิ้น
                 </div>
               </div>
               <h3 className="text-base font-bold leading-tight text-slate-900">
@@ -84,7 +84,7 @@ export default function Analytics() {
             ></div>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-primary text-sm font-medium">
-            <span>View Results</span>
+            <span>ดูผลลัพธ์</span>
             <span className="material-symbols-outlined text-[18px]">
               chevron_right
             </span>
@@ -99,9 +99,9 @@ export default function Analytics() {
       <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-primary mb-6">
         <span className="material-symbols-outlined text-3xl">lock</span>
       </div>
-      <h3 className="text-xl font-bold text-slate-900 mb-2">Verify Access</h3>
+      <h3 className="text-xl font-bold text-slate-900 mb-2">ยืนยันตัวตน</h3>
       <p className="text-slate-500 text-center text-sm mb-8">
-        Please enter your voting token to access the election results.
+        กรุณากรอก Token การลงคะแนนของคุณเพื่อดูผลการเลือกตั้ง
       </p>
 
       <form onSubmit={handleVerify} className="w-full max-w-xs space-y-4">
@@ -114,7 +114,7 @@ export default function Analytics() {
             value={token}
             onChange={(e) => setToken(e.target.value)}
             className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all font-mono text-center tracking-widest uppercase placeholder:normal-case placeholder:tracking-normal"
-            placeholder="e.g. VOTE-XXXX"
+            placeholder="เช่น VOTE-XXXX"
             autoFocus
           />
         </div>
@@ -123,7 +123,7 @@ export default function Analytics() {
           className="w-full bg-primary hover:bg-accent-yellow hover:text-slate-900 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-primary/20 hover:shadow-accent-yellow/20 disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={!token.trim()}
         >
-          Verify Token
+          ยืนยัน Token
         </button>
       </form>
     </div>
@@ -136,13 +136,13 @@ export default function Analytics() {
         {/* Stats Section - Replaced Circle Chart */}
         <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <h3 className="text-lg font-bold text-slate-900 mb-6">
-            Participation Stats
+            สถิติการมีส่วนร่วม
           </h3>
           <div className="flex flex-col gap-6">
             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
               <div className="flex flex-col">
                 <span className="text-sm text-slate-500 font-medium">
-                  Votes Cast
+                  คะแนนที่ลง
                 </span>
                 <span className="text-3xl font-bold text-primary">
                   {selectedElection.stats.votesCast}
@@ -151,7 +151,7 @@ export default function Analytics() {
               <div className="h-10 w-px bg-slate-200"></div>
               <div className="flex flex-col items-end">
                 <span className="text-sm text-slate-500 font-medium">
-                  Total Voters
+                  ผู้มีสิทธิ์ทั้งหมด
                 </span>
                 <span className="text-3xl font-bold text-slate-900">
                   {selectedElection.stats.totalVoters}
@@ -162,7 +162,7 @@ export default function Analytics() {
             {/* Simple Bar to show ratio visually without percentage circle */}
             <div className="space-y-2">
               <div className="flex justify-between text-xs font-medium text-slate-500 opacity-80">
-                <span>Turnout</span>
+                <span>อัตราการลงคะแนน</span>
                 <span>
                   {Math.round(
                     (selectedElection.stats.votesCast /
@@ -191,7 +191,7 @@ export default function Analytics() {
         {/* Winners Section */}
         <section>
           <h3 className="text-lg font-bold text-slate-900 mb-4">
-            Elected Representatives
+            ตัวแทนที่ได้รับเลือก
           </h3>
           <div className="grid grid-cols-2 gap-4">
             {selectedElection.winners.map((winner, idx) => (
@@ -205,7 +205,7 @@ export default function Analytics() {
                     style={{ backgroundImage: `url("${winner.img}")` }}
                   ></div>
                   <div className="absolute -bottom-2 right-0 bg-yellow-400 text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded-full border border-white shadow-sm">
-                    WINNER
+                    ผู้ชนะ
                   </div>
                 </div>
                 <div>
@@ -226,7 +226,7 @@ export default function Analytics() {
             <span className="material-symbols-outlined text-[14px]">
               verified
             </span>
-            Official Results Verified
+            ผลลัพธ์อย่างเป็นทางการ ยืนยันแล้ว
           </p>
         </div>
       </div>
@@ -250,15 +250,15 @@ export default function Analytics() {
               arrow_back_ios_new
             </span>
             <span className="text-primary text-base ml-1 font-medium group-hover:underline decoration-primary/50">
-              {view === "list" ? "Back" : "All Results"}
+              {view === "list" ? "กลับ" : "ผลลัพธ์ทั้งหมด"}
             </span>
           </button>
           <h2 className="text-lg font-bold leading-tight tracking-[-0.015em] absolute left-1/2 -translate-x-1/2">
             {view === "list"
-              ? "Election Results"
+              ? "ผลการเลือกตั้ง"
               : view === "verify"
-              ? "Security Check"
-              : "Results"}
+              ? "ตรวจสอบความปลอดภัย"
+              : "ผลลัพธ์"}
           </h2>
           <div className="w-10"></div>
         </header>

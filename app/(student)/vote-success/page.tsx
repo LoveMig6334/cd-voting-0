@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { generateVoteToken } from "@/lib/token";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function VoteSuccess() {
   const router = useRouter();
@@ -38,11 +38,10 @@ export default function VoteSuccess() {
 
           <div className="text-center mb-10 space-y-2">
             <h1 className="text-3xl font-bold tracking-tight text-dark-slate">
-              Thank you for voting!
+              ขอบคุณที่ลงคะแนน!
             </h1>
             <p className="text-cool-gray text-base leading-relaxed max-w-[280px] mx-auto">
-              Your ballot has been securely recorded on the student council
-              ledger.
+              คะแนนเสียงของคุณถูกบันทึกอย่างปลอดภัยแล้ว
             </p>
           </div>
 
@@ -52,7 +51,7 @@ export default function VoteSuccess() {
               <div className="p-6 flex flex-col items-center gap-4">
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-xs font-bold text-cool-gray tracking-widest uppercase">
-                    Vote Token ID
+                    รหัส Token
                   </span>
                   <div className="flex items-center gap-2 group/token cursor-pointer active:scale-95 transition-transform">
                     <span className="font-mono text-2xl font-bold tracking-wider select-all text-dark-slate">
@@ -75,11 +74,11 @@ export default function VoteSuccess() {
 
                 <div className="text-center space-y-2 pt-1">
                   <p className="text-xs text-cool-gray leading-relaxed">
-                    A confirmation email has been sent to{" "}
+                    อีเมลยืนยันถูกส่งไปยัง{" "}
                     <span className="text-dark-slate font-medium">
                       student@school.edu
-                    </span>
-                    .
+                    </span>{" "}
+                    แล้ว
                   </p>
                   <div className="flex items-center justify-center gap-1.5 text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2.5 py-1 rounded-full w-fit mx-auto border border-emerald-100 backdrop-blur-sm">
                     <span className="material-symbols-outlined text-[12px]">
@@ -94,8 +93,8 @@ export default function VoteSuccess() {
           </div>
 
           <p className="mt-8 text-center text-xs text-cool-gray font-medium max-w-xs">
-            Please save this token. It is the only way to verify your vote was
-            counted correctly without revealing your identity.
+            กรุณาบันทึก Token นี้ไว้
+            เพราะเป็นวิธีเดียวที่ใช้ตรวจสอบว่าคะแนนของคุณถูกนับถูกต้อง
           </p>
         </main>
 
@@ -104,13 +103,13 @@ export default function VoteSuccess() {
             onClick={() => router.push("/")}
             className="w-full h-12 flex items-center justify-center gap-2 bg-royal-blue hover:bg-royal-blue/90 text-white font-bold rounded-xl shadow-lg shadow-royal-blue/20 transition-all active:scale-[0.98]"
           >
-            <span>Back to Home</span>
+            <span>กลับหน้าหลัก</span>
           </button>
           <button className="w-full h-12 flex items-center justify-center gap-2 bg-white/80 border border-gray-200 hover:bg-gray-50 text-dark-slate font-bold rounded-xl transition-all active:scale-[0.98] shadow-sm">
             <span className="material-symbols-outlined text-lg">
               screenshot_monitor
             </span>
-            <span>Save Screenshot</span>
+            <span>บันทึกภาพหน้าจอ</span>
           </button>
         </footer>
       </div>
