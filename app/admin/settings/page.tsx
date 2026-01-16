@@ -3,10 +3,8 @@ export default function AdminSettings() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Settings</h2>
-        <p className="text-slate-500 text-sm mt-1">
-          Configure admin panel settings
-        </p>
+        <h2 className="text-2xl font-bold text-slate-900">ตั้งค่า</h2>
+        <p className="text-slate-500 text-sm mt-1">กำหนดค่าหน้าผู้ดูแลระบบ</p>
       </div>
 
       {/* Settings Sections */}
@@ -14,14 +12,12 @@ export default function AdminSettings() {
         {/* General Settings */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-6 border-b border-slate-200">
-            <h3 className="text-lg font-bold text-slate-900">
-              General Settings
-            </h3>
+            <h3 className="text-lg font-bold text-slate-900">ตั้งค่าทั่วไป</h3>
           </div>
           <div className="p-6 space-y-6">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                School Name
+                ชื่อโรงเรียน
               </label>
               <input
                 type="text"
@@ -31,7 +27,7 @@ export default function AdminSettings() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Admin Email
+                อีเมลผู้ดูแล
               </label>
               <input
                 type="email"
@@ -45,31 +41,31 @@ export default function AdminSettings() {
         {/* Security Settings */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-6 border-b border-slate-200">
-            <h3 className="text-lg font-bold text-slate-900">Security</h3>
+            <h3 className="text-lg font-bold text-slate-900">ความปลอดภัย</h3>
           </div>
           <div className="p-6 space-y-4">
             <div className="flex items-center justify-between py-2">
               <div>
                 <p className="font-medium text-slate-900">
-                  Two-Factor Authentication
+                  การยืนยันตัวตนสองขั้นตอน
                 </p>
                 <p className="text-sm text-slate-500">
-                  Add an extra layer of security
+                  เพิ่มชั้นความปลอดภัยเพิ่มเติม
                 </p>
               </div>
               <button className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                Enable
+                เปิดใช้งาน
               </button>
             </div>
             <div className="flex items-center justify-between py-2 border-t border-slate-100">
               <div>
-                <p className="font-medium text-slate-900">Change Password</p>
+                <p className="font-medium text-slate-900">เปลี่ยนรหัสผ่าน</p>
                 <p className="text-sm text-slate-500">
-                  Update your admin password
+                  อัปเดตรหัสผ่านผู้ดูแลของคุณ
                 </p>
               </div>
               <button className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                Change
+                เปลี่ยน
               </button>
             </div>
           </div>
@@ -79,17 +75,17 @@ export default function AdminSettings() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-6 border-b border-slate-200">
             <h3 className="text-lg font-bold text-slate-900">
-              Election Defaults
+              ค่าเริ่มต้นการเลือกตั้ง
             </h3>
           </div>
           <div className="p-6 space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium text-slate-900">
-                  Allow Anonymous Voting
+                  อนุญาตการลงคะแนนแบบไม่ระบุตัวตน
                 </p>
                 <p className="text-sm text-slate-500">
-                  Students can vote without identification
+                  นักเรียนสามารถลงคะแนนโดยไม่ต้องยืนยันตัวตน
                 </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -100,10 +96,10 @@ export default function AdminSettings() {
             <div className="flex items-center justify-between border-t border-slate-100 pt-4">
               <div>
                 <p className="font-medium text-slate-900">
-                  Require OCR Registration
+                  กำหนดให้ลงทะเบียนผ่าน OCR
                 </p>
                 <p className="text-sm text-slate-500">
-                  Students must scan ID card to register
+                  นักเรียนต้องสแกนบัตรนักเรียนเพื่อลงทะเบียน
                 </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -121,7 +117,7 @@ export default function AdminSettings() {
         {/* Save Button */}
         <div className="flex justify-end">
           <button className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm">
-            Save Changes
+            บันทึกการเปลี่ยนแปลง
           </button>
         </div>
       </div>

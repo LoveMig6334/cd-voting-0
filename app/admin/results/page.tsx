@@ -44,9 +44,9 @@ export default function ResultSummary() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Result Summary</h2>
+        <h2 className="text-2xl font-bold text-slate-900">สรุปผลลัพธ์</h2>
         <p className="text-slate-500 text-sm mt-1">
-          Overview of all election results
+          ภาพรวมผลการเลือกตั้งทั้งหมด
         </p>
       </div>
 
@@ -72,14 +72,16 @@ export default function ResultSummary() {
                         : "bg-slate-100 text-slate-600"
                     }`}
                   >
-                    {result.status}
+                    {result.status === "ongoing"
+                      ? "กำลังดำเนินการ"
+                      : "เสร็จสิ้น"}
                   </span>
                 </div>
 
                 {/* Turnout Progress */}
                 <div className="mb-4">
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-slate-500">Voter Turnout</span>
+                    <span className="text-slate-500">อัตราการลงคะแนน</span>
                     <span className="font-medium text-slate-900">
                       {turnout}%
                     </span>
@@ -91,8 +93,8 @@ export default function ResultSummary() {
                     ></div>
                   </div>
                   <div className="flex justify-between text-xs text-slate-400 mt-1">
-                    <span>{result.votedCount.toLocaleString()} voted</span>
-                    <span>{result.totalVoters.toLocaleString()} eligible</span>
+                    <span>{result.votedCount.toLocaleString()} ลงคะแนน</span>
+                    <span>{result.totalVoters.toLocaleString()} มีสิทธิ์</span>
                   </div>
                 </div>
 
@@ -103,7 +105,7 @@ export default function ResultSummary() {
                       emoji_events
                     </span>
                     <div>
-                      <p className="text-xs text-slate-500">Winner</p>
+                      <p className="text-xs text-slate-500">ผู้ชนะ</p>
                       <p className="font-medium text-slate-900">
                         {result.winner}
                       </p>
@@ -114,7 +116,7 @@ export default function ResultSummary() {
                     <span className="material-symbols-outlined text-slate-400">
                       schedule
                     </span>
-                    <span>Ends: {result.endDate}</span>
+                    <span>สิ้นสุด: {result.endDate}</span>
                   </div>
                 )}
               </div>
@@ -124,7 +126,7 @@ export default function ResultSummary() {
                   href={`/admin/elections/${result.id}/results`}
                   className="text-primary hover:text-primary-dark text-sm font-medium flex items-center justify-center gap-1"
                 >
-                  View Details
+                  ดูรายละเอียด
                   <span className="material-symbols-outlined text-sm">
                     arrow_forward
                   </span>

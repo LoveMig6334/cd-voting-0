@@ -62,11 +62,17 @@ function StatusBadge({ status }: { status: Election["status"] }) {
     closed: "bg-red-100 text-red-700",
   };
 
+  const statusLabels: Record<Election["status"], string> = {
+    open: "เปิด",
+    draft: "ร่าง",
+    closed: "ปิด",
+  };
+
   return (
     <span
       className={`${styles[status]} px-2.5 py-1 rounded-full text-xs font-semibold uppercase`}
     >
-      {status}
+      {statusLabels[status]}
     </span>
   );
 }
@@ -93,10 +99,10 @@ export default function ElectionManagement() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">
-            Election Management
+            จัดการการเลือกตั้ง
           </h2>
           <p className="text-slate-500 text-sm mt-1">
-            Create, edit, and manage all school elections
+            สร้าง, แก้ไข และจัดการการเลือกตั้งทั้งหมดของโรงเรียน
           </p>
         </div>
         <button
@@ -104,7 +110,7 @@ export default function ElectionManagement() {
           className="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2 self-start sm:self-auto"
         >
           <span className="material-symbols-outlined text-xl">add</span>
-          Create New Election
+          สร้างการเลือกตั้งใหม่
         </button>
       </div>
 
@@ -118,7 +124,7 @@ export default function ElectionManagement() {
             </span>
             <input
               type="text"
-              placeholder="Search elections..."
+              placeholder="ค้นหาการเลือกตั้ง..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
@@ -127,19 +133,27 @@ export default function ElectionManagement() {
 
           {/* Status Filter */}
           <div className="flex gap-2">
-            {(["all", "draft", "open", "closed"] as const).map((status) => (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  statusFilter === status
-                    ? "bg-primary text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </button>
-            ))}
+            {(["all", "draft", "open", "closed"] as const).map((status) => {
+              const labels = {
+                all: "ทั้งหมด",
+                draft: "ร่าง",
+                open: "เปิด",
+                closed: "ปิด",
+              };
+              return (
+                <button
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    statusFilter === status
+                      ? "bg-primary text-white"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  {labels[status]}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -151,22 +165,22 @@ export default function ElectionManagement() {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
                 <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Title
+                  ชื่อ
                 </th>
                 <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Status
+                  สถานะ
                 </th>
                 <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Candidates
+                  ผู้สมัคร
                 </th>
                 <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Date Range
+                  ช่วงเวลา
                 </th>
                 <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Votes
+                  คะแนน
                 </th>
                 <th className="text-right px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Actions
+                  การดำเนินการ
                 </th>
               </tr>
             </thead>
@@ -185,7 +199,7 @@ export default function ElectionManagement() {
                     <StatusBadge status={election.status} />
                   </td>
                   <td className="px-6 py-4 text-slate-600">
-                    {election.candidates} Candidates
+                    {election.candidates} ผู้สมัคร
                   </td>
                   <td className="px-6 py-4 text-slate-600 text-sm">
                     {election.startDate} - {election.endDate}
@@ -233,7 +247,7 @@ export default function ElectionManagement() {
             <span className="material-symbols-outlined text-5xl text-slate-300 mb-4">
               inbox
             </span>
-            <p className="text-slate-500">No elections found</p>
+            <p className="text-slate-500">ไม่พบการเลือกตั้ง</p>
           </div>
         )}
       </div>
@@ -244,7 +258,7 @@ export default function ElectionManagement() {
           <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-slide-up">
             <div className="p-6 border-b border-slate-200 flex items-center justify-between">
               <h3 className="text-xl font-bold text-slate-900">
-                Create New Election
+                สร้างการเลือกตั้งใหม่
               </h3>
               <button
                 onClick={() => setShowModal(false)}
@@ -258,11 +272,11 @@ export default function ElectionManagement() {
               {/* Title */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Election Title
+                  ชื่อการเลือกตั้ง
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., Student Council 2025"
+                  placeholder="เช่น สภานักเรียน 2568"
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
@@ -270,11 +284,11 @@ export default function ElectionManagement() {
               {/* Description */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Description
+                  รายละเอียด
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="Describe this election..."
+                  placeholder="อธิบายการเลือกตั้งนี้..."
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
                 />
               </div>
@@ -283,7 +297,7 @@ export default function ElectionManagement() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Start Date
+                    วันเริ่มต้น
                   </label>
                   <input
                     type="datetime-local"
@@ -292,7 +306,7 @@ export default function ElectionManagement() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    End Date
+                    วันสิ้นสุด
                   </label>
                   <input
                     type="datetime-local"
@@ -304,17 +318,17 @@ export default function ElectionManagement() {
               {/* Candidates Section */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Candidates
+                  ผู้สมัคร
                 </label>
                 <div className="border border-dashed border-slate-300 rounded-lg p-6 text-center">
                   <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">
                     person_add
                   </span>
                   <p className="text-sm text-slate-500 mb-3">
-                    No candidates added yet
+                    ยังไม่มีผู้สมัคร
                   </p>
                   <button className="text-primary hover:text-primary-dark text-sm font-medium">
-                    + Add Candidate
+                    + เพิ่มผู้สมัคร
                   </button>
                 </div>
               </div>
@@ -325,10 +339,10 @@ export default function ElectionManagement() {
                 onClick={() => setShowModal(false)}
                 className="px-4 py-2.5 border border-slate-200 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
               >
-                Cancel
+                ยกเลิก
               </button>
               <button className="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
-                Create Election
+                สร้างการเลือกตั้ง
               </button>
             </div>
           </div>

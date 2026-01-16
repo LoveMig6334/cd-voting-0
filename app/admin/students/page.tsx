@@ -92,8 +92,8 @@ function RegistrationBadge({
   };
 
   const labels = {
-    registered: "Registered",
-    not_registered: "Not Registered",
+    registered: "ลงทะเบียนแล้ว",
+    not_registered: "ยังไม่ลงทะเบียน",
   };
 
   return (
@@ -122,10 +122,10 @@ export default function StudentManagement() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">
-            Student Database
+            ฐานข้อมูลนักเรียน
           </h2>
           <p className="text-slate-500 text-sm mt-1">
-            Manage student registrations and view voting history
+            จัดการการลงทะเบียนนักเรียนและดูประวัติการลงคะแนน
           </p>
         </div>
         <div className="flex gap-3 self-start sm:self-auto">
@@ -133,13 +133,13 @@ export default function StudentManagement() {
             <span className="material-symbols-outlined text-xl">
               upload_file
             </span>
-            Import CSV
+            นำเข้า CSV
           </button>
           <button className="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
             <span className="material-symbols-outlined text-xl">
               person_add
             </span>
-            Add Student
+            เพิ่มนักเรียน
           </button>
         </div>
       </div>
@@ -152,7 +152,7 @@ export default function StudentManagement() {
           </span>
           <input
             type="text"
-            placeholder="Search by name, ID, or class..."
+            placeholder="ค้นหาตามชื่อ, รหัส, หรือห้อง..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
@@ -167,22 +167,22 @@ export default function StudentManagement() {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
                 <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Student ID
+                  รหัสนักเรียน
                 </th>
                 <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Full Name
+                  ชื่อ-นามสกุล
                 </th>
                 <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Class
+                  ห้อง
                 </th>
                 <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Status
+                  สถานะ
                 </th>
                 <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Last Active
+                  ใช้งานล่าสุด
                 </th>
                 <th className="text-right px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Actions
+                  การดำเนินการ
                 </th>
               </tr>
             </thead>
@@ -215,7 +215,7 @@ export default function StudentManagement() {
                         onClick={() => setSelectedStudent(student)}
                         className="px-3 py-1.5 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors font-medium"
                       >
-                        View History
+                        ดูประวัติ
                       </button>
                     </div>
                   </td>
@@ -230,7 +230,7 @@ export default function StudentManagement() {
             <span className="material-symbols-outlined text-5xl text-slate-300 mb-4">
               person_search
             </span>
-            <p className="text-slate-500">No students found</p>
+            <p className="text-slate-500">ไม่พบนักเรียน</p>
           </div>
         )}
       </div>
@@ -241,7 +241,7 @@ export default function StudentManagement() {
           <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full animate-slide-up">
             <div className="p-6 border-b border-slate-200 flex items-center justify-between">
               <h3 className="text-xl font-bold text-slate-900">
-                Student Profile
+                โปรไฟล์นักเรียน
               </h3>
               <button
                 onClick={() => setSelectedStudent(null)}
@@ -264,7 +264,7 @@ export default function StudentManagement() {
                     {selectedStudent.name}
                   </h4>
                   <p className="text-slate-500 font-mono">
-                    ID: {selectedStudent.id}
+                    รหัส: {selectedStudent.id}
                   </p>
                 </div>
               </div>
@@ -273,7 +273,7 @@ export default function StudentManagement() {
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-slate-50 rounded-lg p-4">
                   <p className="text-xs text-slate-500 uppercase font-semibold mb-1">
-                    Class
+                    ห้อง
                   </p>
                   <p className="text-sm font-medium text-slate-900">
                     {selectedStudent.class}
@@ -281,7 +281,7 @@ export default function StudentManagement() {
                 </div>
                 <div className="bg-slate-50 rounded-lg p-4">
                   <p className="text-xs text-slate-500 uppercase font-semibold mb-1">
-                    Status
+                    สถานะ
                   </p>
                   <RegistrationBadge
                     status={selectedStudent.registrationStatus}
@@ -289,7 +289,7 @@ export default function StudentManagement() {
                 </div>
                 <div className="bg-slate-50 rounded-lg p-4">
                   <p className="text-xs text-slate-500 uppercase font-semibold mb-1">
-                    Last Active
+                    ใช้งานล่าสุด
                   </p>
                   <p className="text-sm font-medium text-slate-900">
                     {selectedStudent.lastActive}
@@ -297,7 +297,7 @@ export default function StudentManagement() {
                 </div>
                 <div className="bg-slate-50 rounded-lg p-4">
                   <p className="text-xs text-slate-500 uppercase font-semibold mb-1">
-                    Elections Voted
+                    ลงคะแนนแล้ว
                   </p>
                   <p className="text-sm font-medium text-slate-900">
                     {selectedStudent.votedIn}
@@ -308,34 +308,34 @@ export default function StudentManagement() {
               {/* Voting History */}
               <div>
                 <h5 className="text-sm font-semibold text-slate-700 mb-3">
-                  Voting History
+                  ประวัติการลงคะแนน
                 </h5>
                 {selectedStudent.votedIn > 0 ? (
                   <ul className="space-y-3">
                     <li className="flex items-center gap-3 text-sm">
                       <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                       <span className="text-slate-600">
-                        Voted in Student Council 2025
+                        ลงคะแนนในสภานักเรียน 2568
                       </span>
                       <span className="text-slate-400 ml-auto">
-                        Oct 21, 10:30 AM
+                        21 ต.ค. 10:30
                       </span>
                     </li>
                     {selectedStudent.votedIn >= 2 && (
                       <li className="flex items-center gap-3 text-sm">
                         <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                         <span className="text-slate-600">
-                          Voted in Club Leadership Elections
+                          ลงคะแนนในการเลือกหัวหน้าชมรม
                         </span>
                         <span className="text-slate-400 ml-auto">
-                          Oct 23, 2:15 PM
+                          23 ต.ค. 14:15
                         </span>
                       </li>
                     )}
                   </ul>
                 ) : (
                   <p className="text-sm text-slate-400 italic">
-                    No voting history yet
+                    ยังไม่มีประวัติการลงคะแนน
                   </p>
                 )}
               </div>
@@ -346,7 +346,7 @@ export default function StudentManagement() {
                 onClick={() => setSelectedStudent(null)}
                 className="w-full px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
               >
-                Close
+                ปิด
               </button>
             </div>
           </div>
