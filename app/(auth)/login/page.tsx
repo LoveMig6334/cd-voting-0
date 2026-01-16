@@ -272,7 +272,7 @@ export default function Login() {
             เข้าสู่ระบบผู้ดูแล
           </button>
         </div>
-        <p className="text-slate-400 text-xs font-normal">CD Voting 0 © 2024</p>
+        <p className="text-slate-400 text-xs font-normal">CD Voting 0 © 2026</p>
       </footer>
     </div>
   );

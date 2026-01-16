@@ -44,7 +44,7 @@ export const AdminNavbar: React.FC = () => {
               href="/admin"
               className="shrink-0 flex items-center gap-3 group"
             >
-              <div className="relative flex items-center justify-center w-10 h-10 bg-gradient-to-br from-royal-blue to-primary rounded-xl transform group-hover:scale-105 transition-transform duration-200 shadow-lg">
+              <div className="relative flex items-center justify-center w-10 h-10 bg-linear-to-br from-royal-blue to-primary rounded-xl transform group-hover:scale-105 transition-transform duration-200 shadow-lg">
                 <span className="material-symbols-outlined text-white text-xl">
                   how_to_vote
                 </span>
@@ -96,7 +96,7 @@ export const AdminNavbar: React.FC = () => {
                   }
                   className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium text-dark-slate hover:bg-slate-100 focus:outline-none transition-colors"
                 >
-                  <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-royal-blue to-cyan-500 flex items-center justify-center shadow-sm">
+                  <div className="h-8 w-8 rounded-xl bg-linear-to-br from-royal-blue to-cyan-500 flex items-center justify-center shadow-sm">
                     <span className="material-symbols-outlined text-white text-sm">
                       person
                     </span>
@@ -185,7 +185,7 @@ export const AdminNavbar: React.FC = () => {
             </div>
             <div className="pt-4 pb-3 border-t border-slate-100">
               <div className="flex items-center px-4">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-royal-blue to-cyan-500 flex items-center justify-center shadow-sm">
+                <div className="h-10 w-10 rounded-xl bg-linear-to-br from-royal-blue to-cyan-500 flex items-center justify-center shadow-sm">
                   <span className="material-symbols-outlined text-white">
                     person
                   </span>

@@ -2,6 +2,7 @@
 
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
@@ -19,10 +20,13 @@ export default function Dashboard() {
               onClick={() => router.push("/me")}
             >
               <div className="size-10 rounded-full bg-slate-200 overflow-hidden ring-2 ring-transparent group-hover:ring-primary transition-all">
-                <img
+                <Image
                   alt="Profile"
                   className="w-full h-full object-cover"
                   src="https://picsum.photos/seed/alex/200/200"
+                  width={40}
+                  height={40}
+                  priority
                 />
               </div>
               <div className="absolute bottom-0 right-0 size-2.5 bg-green-500 border-2 border-white rounded-full"></div>
@@ -109,7 +113,7 @@ export default function Dashboard() {
             <div className="mt-auto">
               <button
                 onClick={() => router.push("/elections/student-council")}
-                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-[#ffb800] hover:text-slate-900 active:bg-[#ffb800] text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98] shadow-sm shadow-primary/20 hover:shadow-[#ffb800]/20"
+                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-accent-yellow hover:text-slate-900 active:bg-accent-yellow text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98] shadow-sm shadow-primary/20 hover:shadow-accent-yellow/20"
               >
                 <span>ลงคะแนนเลย</span>
                 <span className="material-symbols-outlined text-[18px]">
