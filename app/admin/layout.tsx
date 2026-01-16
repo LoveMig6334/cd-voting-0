@@ -26,17 +26,17 @@ export default function AdminLayout({
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="glass-panel rounded-2xl px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-cool-gray">
             <p className="text-dark-slate/70">
-              © 2024 CD Voting 0. All rights reserved.
+              © 2024 CD Voting 0. สงวนลิขสิทธิ์
             </p>
             <div className="flex gap-6">
               <a href="#" className="hover:text-royal-blue transition-colors">
-                Help Center
+                ศูนย์ช่วยเหลือ
               </a>
               <a href="#" className="hover:text-royal-blue transition-colors">
-                Privacy Policy
+                นโยบายความเป็นส่วนตัว
               </a>
               <a href="#" className="hover:text-royal-blue transition-colors">
-                Terms of Service
+                ข้อกำหนดการใช้งาน
               </a>
             </div>
           </div>

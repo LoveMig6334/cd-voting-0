@@ -11,11 +11,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { name: "Dashboard", href: "/admin", icon: "dashboard" },
-  { name: "Elections", href: "/admin/elections", icon: "how_to_vote" },
-  { name: "Students", href: "/admin/students", icon: "school" },
-  { name: "Results", href: "/admin/results", icon: "bar_chart" },
-  { name: "Settings", href: "/admin/settings", icon: "settings" },
+  { name: "แดชบอร์ด", href: "/admin", icon: "dashboard" },
+  { name: "การเลือกตั้ง", href: "/admin/elections", icon: "how_to_vote" },
+  { name: "นักเรียน", href: "/admin/students", icon: "school" },
+  { name: "ผลลัพธ์", href: "/admin/results", icon: "bar_chart" },
+  { name: "ตั้งค่า", href: "/admin/settings", icon: "settings" },
 ];
 
 export const AdminNavbar: React.FC = () => {
@@ -102,7 +102,7 @@ export const AdminNavbar: React.FC = () => {
                     </span>
                   </div>
                   <span className="hidden lg:inline-block text-cool-gray">
-                    Admin
+                    ผู้ดูแลระบบ
                   </span>
                   <span className="material-symbols-outlined text-sm text-cool-gray">
                     expand_more
@@ -119,7 +119,7 @@ export const AdminNavbar: React.FC = () => {
                         <span className="material-symbols-outlined text-lg text-cool-gray">
                           account_circle
                         </span>
-                        Profile
+                        โปรไฟล์
                       </Link>
                       <Link
                         href="/admin/settings"
@@ -128,7 +128,7 @@ export const AdminNavbar: React.FC = () => {
                         <span className="material-symbols-outlined text-lg text-cool-gray">
                           settings
                         </span>
-                        Settings
+                        ตั้งค่า
                       </Link>
                       <hr className="my-1 border-slate-100" />
                       <button
@@ -138,7 +138,7 @@ export const AdminNavbar: React.FC = () => {
                         <span className="material-symbols-outlined text-lg">
                           logout
                         </span>
-                        Logout
+                        ออกจากระบบ
                       </button>
                     </div>
                   </div>
@@ -152,7 +152,7 @@ export const AdminNavbar: React.FC = () => {
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="inline-flex items-center justify-center p-2 rounded-xl text-cool-gray hover:text-dark-slate hover:bg-slate-100 focus:outline-none transition-colors"
               >
-                <span className="sr-only">Open main menu</span>
+                <span className="sr-only">เปิดเมนูหลัก</span>
                 <span className="material-symbols-outlined">
                   {mobileMenuOpen ? "close" : "menu"}
                 </span>
@@ -192,7 +192,7 @@ export const AdminNavbar: React.FC = () => {
                 </div>
                 <div className="ml-3">
                   <div className="text-base font-medium text-dark-slate">
-                    Admin
+                    ผู้ดูแลระบบ
                   </div>
                   <div className="text-sm font-medium text-cool-gray">
                     admin@school.edu
@@ -207,7 +207,7 @@ export const AdminNavbar: React.FC = () => {
                   <span className="material-symbols-outlined text-xl">
                     logout
                   </span>
-                  Logout
+                  ออกจากระบบ
                 </button>
               </div>
             </div>

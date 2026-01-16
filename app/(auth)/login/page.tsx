@@ -30,7 +30,7 @@ export default function Login() {
 
     try {
       const res = await fetch("/data.json");
-      if (!res.ok) throw new Error("Failed to load student data");
+      if (!res.ok) throw new Error("ไม่สามารถโหลดข้อมูลนักเรียนได้");
       const students: Student[] = await res.json();
 
       const found = students.find(
@@ -45,13 +45,11 @@ export default function Login() {
         // Success -> Login
         loginWithData(found);
       } else {
-        setError(
-          "Student not found or details mismatch. Please check your inputs."
-        );
+        setError("ไม่พบนักเรียนหรือข้อมูลไม่ตรงกัน กรุณาตรวจสอบข้อมูลอีกครั้ง");
       }
     } catch (err) {
       console.error(err);
-      setError("An error occurred during login.");
+      setError("เกิดข้อผิดพลาดระหว่างการเข้าสู่ระบบ");
     } finally {
       setLoading(false);
     }
@@ -122,7 +120,7 @@ export default function Login() {
             </h1>
           </div>
           <p className="text-lg font-medium text-slate-500 tracking-wide">
-            Next Gen School Election
+            ระบบเลือกตั้งโรงเรียนยุคใหม่
           </p>
         </div>
 
@@ -152,12 +150,12 @@ export default function Login() {
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-500">
-                  Student ID
+                  รหัสนักเรียน
                 </label>
                 <div className="relative">
                   <input
                     className="block w-full rounded-lg border-slate-200 bg-white/70 p-3.5 pr-10 text-base focus:bg-white focus:border-primary focus:ring-primary transition-colors"
-                    placeholder="Enter your student ID"
+                    placeholder="กรอกรหัสนักเรียน"
                     value={studentId}
                     onChange={(e) => setStudentId(e.target.value)}
                   />
@@ -169,12 +167,12 @@ export default function Login() {
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-500">
-                  National ID
+                  เลขประจำตัวประชาชน
                 </label>
                 <div className="relative">
                   <input
                     className="block w-full rounded-lg border-slate-200 bg-white/70 p-3.5 pr-10 text-base focus:bg-white focus:border-primary focus:ring-primary transition-colors"
-                    placeholder="13-digit National ID"
+                    placeholder="เลขประจำตัวประชาชน 13 หลัก"
                     value={nationalId}
                     maxLength={13}
                     onChange={(e) =>
@@ -187,19 +185,19 @@ export default function Login() {
                 </div>
                 {nationalId.length > 0 && nationalId.length < 13 && (
                   <p className="text-xs text-amber-500">
-                    {13 - nationalId.length} more digits required
+                    ต้องการอีก {13 - nationalId.length} หลัก
                   </p>
                 )}
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-500">
-                  First Name
+                  ชื่อ
                 </label>
                 <div className="relative">
                   <input
                     className="block w-full rounded-lg border-slate-200 bg-white/70 p-3.5 pr-10 text-base focus:bg-white focus:border-primary focus:ring-primary transition-colors"
-                    placeholder="Enter your first name"
+                    placeholder="กรอกชื่อของคุณ"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                   />
@@ -211,12 +209,12 @@ export default function Login() {
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-500">
-                  Surname
+                  นามสกุล
                 </label>
                 <div className="relative">
                   <input
                     className="block w-full rounded-lg border-slate-200 bg-white/70 p-3.5 pr-10 text-base focus:bg-white focus:border-primary focus:ring-primary transition-colors"
-                    placeholder="Enter your surname"
+                    placeholder="กรอกนามสกุลของคุณ"
                     value={surname}
                     onChange={(e) => setSurname(e.target.value)}
                   />
@@ -241,7 +239,7 @@ export default function Login() {
                   }}
                 ></div>
                 <span className="text-base font-bold tracking-tight">
-                  {loading ? "Signing in..." : "Sign In"}
+                  {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
                 </span>
                 {!loading && (
                   <span className="material-symbols-outlined text-[20px]">
@@ -253,7 +251,7 @@ export default function Login() {
           </div>
 
           <p className="text-center text-xs text-slate-400 mt-4 px-4">
-            Your account is pre-configured by the school administration.
+            บัญชีของคุณถูกตั้งค่าไว้ล่วงหน้าโดยฝ่ายบริหารโรงเรียน
           </p>
         </div>
       </main>
@@ -264,14 +262,14 @@ export default function Login() {
       >
         <div className="flex items-center justify-center gap-6">
           <button className="text-slate-500 hover:text-primary text-sm font-medium transition-colors">
-            Help Center
+            ศูนย์ช่วยเหลือ
           </button>
           <span className="text-slate-300">•</span>
           <button
             onClick={() => router.push("/admin/login")}
             className="text-slate-500 hover:text-primary text-sm font-medium transition-colors"
           >
-            Admin Login
+            เข้าสู่ระบบผู้ดูแล
           </button>
         </div>
         <p className="text-slate-400 text-xs font-normal">CD Voting 0 © 2024</p>

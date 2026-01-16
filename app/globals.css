@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Mitr:wght@200;300;400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @theme {
@@ -19,7 +20,8 @@
   --color-glass-border: rgba(255, 255, 255, 0.6);
   --color-glass-shadow: rgba(26, 86, 219, 0.08);
 
-  --font-display: var(--font-inter), sans-serif;
+  /* Fonts - Mitr for both Thai and English */
+  --font-display: "Mitr", sans-serif;
   --font-mono: var(--font-space-mono), monospace;
 
   --radius-xl: 0.75rem;

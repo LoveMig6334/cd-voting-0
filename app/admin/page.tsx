@@ -205,36 +205,36 @@ const mockActivities: ActivityItem[] = [
     icon: "how_to_reg",
     iconBg: "bg-royal-blue",
     iconColor: "text-white",
-    title: "New Vote Cast",
-    description: "Student ID #4829 voted in Student Council.",
-    time: "Just now",
+    title: "มีการลงคะแนนใหม่",
+    description: "รหัสนักเรียน #4829 ลงคะแนนในสภานักเรียน",
+    time: "เมื่อสักครู่",
   },
   {
     id: 2,
     icon: "check_circle",
     iconBg: "bg-emerald-500",
     iconColor: "text-white",
-    title: "System Check",
-    description: "Automated integrity check passed.",
-    time: "14 mins ago",
+    title: "ตรวจสอบระบบ",
+    description: "ตรวจสอบความถูกต้องอัตโนมัติเสร็จสมบูรณ์",
+    time: "14 นาทีที่แล้ว",
   },
   {
     id: 3,
     icon: "edit",
     iconBg: "bg-vivid-yellow",
     iconColor: "text-dark-slate",
-    title: "Election Edited",
-    description: 'Admin updated "Clubs" description.',
-    time: "1 hour ago",
+    title: "แก้ไขการเลือกตั้ง",
+    description: 'ผู้ดูแลแก้ไขคำอธิบาย "ชมรม"',
+    time: "1 ชั่วโมงที่แล้ว",
   },
   {
     id: 4,
     icon: "person_add",
     iconBg: "bg-slate-500",
     iconColor: "text-white",
-    title: "New Registration",
-    description: "Student batch import completed.",
-    time: "3 hours ago",
+    title: "ลงทะเบียนใหม่",
+    description: "นำเข้าข้อมูลนักเรียนเป็นชุดเสร็จสมบูรณ์",
+    time: "3 ชั่วโมงที่แล้ว",
   },
 ];
 
@@ -251,19 +251,19 @@ export default function AdminDashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold text-dark-slate">
-            Welcome back, Admin
+            ยินดีต้อนรับกลับ, ผู้ดูแลระบบ
           </h2>
           <p className="text-cool-gray mt-1">
-            Here is the latest overview of the school elections.
+            นี่คือภาพรวมล่าสุดของการเลือกตั้งโรงเรียน
           </p>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm text-cool-gray bg-white/50 px-3 py-1.5 rounded-lg backdrop-blur-sm">
-            Last login: Today, 8:30 AM
+            เข้าสู่ระบบล่าสุด: วันนี้, 8:30 น.
           </span>
           <button className="glass-card px-4 py-2 rounded-xl text-sm font-medium text-dark-slate hover:bg-white/90 transition-colors flex items-center gap-2">
             <span className="material-symbols-outlined text-lg">analytics</span>
-            View Reports
+            ดูรายงาน
           </button>
         </div>
       </div>
@@ -271,7 +271,7 @@ export default function AdminDashboard() {
       {/* Stats Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
-          title="Total Students"
+          title="นักเรียนทั้งหมด"
           value="1,452"
           icon="school"
           iconColor="text-royal-blue"
@@ -279,15 +279,15 @@ export default function AdminDashboard() {
           href="/admin/students"
         />
         <StatsCard
-          title="Active Elections"
+          title="การเลือกตั้งที่เปิด"
           value="2"
           icon="how_to_vote"
           iconColor="text-emerald-600"
-          badge={{ text: "Active", color: "bg-emerald-100 text-emerald-700" }}
+          badge={{ text: "เปิด", color: "bg-emerald-100 text-emerald-700" }}
           href="/admin/elections"
         />
         <StatsCard
-          title="Total Votes Cast"
+          title="คะแนนทั้งหมด"
           value="843"
           icon="ballot"
           iconColor="text-violet-600"
@@ -295,11 +295,11 @@ export default function AdminDashboard() {
           href="/admin/results"
         />
         <StatsCard
-          title="System Status"
+          title="สถานะระบบ"
           value="12%"
           icon="dns"
           iconColor="text-orange-600"
-          indicator={{ text: "Online", pulse: true }}
+          indicator={{ text: "ออนไลน์", pulse: true }}
           href="/admin/settings"
         />
       </div>
@@ -314,14 +314,14 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                   <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
-                    Live Election
+                    การเลือกตั้งสด
                   </span>
                 </div>
                 <h3 className="text-xl font-bold text-dark-slate">
-                  Student Council 2025
+                  สภานักเรียน 2568
                 </h3>
                 <p className="text-sm text-cool-gray mt-1">
-                  Cast your vote for the next student body representatives.
+                  ลงคะแนนเสียงของคุณเพื่อเลือกตัวแทนสภานักเรียนชุดใหม่
                 </p>
               </div>
               <div className="flex gap-3">
@@ -332,10 +332,10 @@ export default function AdminDashboard() {
                   <span className="material-symbols-outlined text-sm">
                     analytics
                   </span>
-                  Live Results
+                  ผลลัพธ์สด
                 </Link>
                 <button className="glass-card border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 rounded-xl text-sm font-medium transition-colors">
-                  Close
+                  ปิด
                 </button>
               </div>
             </div>
@@ -351,10 +351,10 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <p className="text-xs text-cool-gray uppercase font-semibold">
-                      Start Date
+                      วันเริ่ม
                     </p>
                     <p className="text-sm font-bold text-dark-slate">
-                      Oct 20, 8:00 AM
+                      20 ต.ค. 08:00 น.
                     </p>
                   </div>
                 </div>
@@ -366,10 +366,10 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <p className="text-xs text-cool-gray uppercase font-semibold">
-                      End Date
+                      วันสิ้นสุด
                     </p>
                     <p className="text-sm font-bold text-dark-slate">
-                      Oct 24, 5:00 PM
+                      24 ต.ค. 17:00 น.
                     </p>
                   </div>
                 </div>
@@ -381,10 +381,10 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <p className="text-xs text-cool-gray uppercase font-semibold">
-                      Participation
+                      การมีส่วนร่วม
                     </p>
                     <p className="text-sm font-bold text-dark-slate">
-                      58% Voted
+                      58% ลงคะแนนแล้ว
                     </p>
                   </div>
                 </div>
@@ -396,7 +396,7 @@ export default function AdminDashboard() {
                   <span className="material-symbols-outlined text-lg text-royal-blue">
                     trending_up
                   </span>
-                  Leading Candidates Trend
+                  แนวโน้มผู้สมัครนำ
                 </h4>
                 <CandidateProgress candidates={mockCandidates} />
               </div>
@@ -407,7 +407,7 @@ export default function AdminDashboard() {
                 href="/admin/elections/1/results"
                 className="text-royal-blue hover:text-cyan-600 text-sm font-semibold flex items-center gap-1 transition-colors"
               >
-                View Detailed Analytics
+                ดูวิเคราะห์ละเอียด
                 <span className="material-symbols-outlined text-sm">
                   arrow_forward
                 </span>
@@ -425,7 +425,7 @@ export default function AdminDashboard() {
                   history
                 </span>
                 <h3 className="text-lg font-bold text-dark-slate">
-                  Recent Activity
+                  กิจกรรมล่าสุด
                 </h3>
               </div>
             </div>
@@ -434,7 +434,7 @@ export default function AdminDashboard() {
             </div>
             <div className="p-4 border-t border-slate-100/50 text-center">
               <button className="text-sm font-semibold text-royal-blue hover:text-cyan-600 transition-colors flex items-center gap-1 mx-auto">
-                View All Activity
+                ดูกิจกรรมทั้งหมด
                 <span className="material-symbols-outlined text-sm">
                   chevron_right
                 </span>

@@ -29,10 +29,10 @@ export default function Dashboard() {
             </div>
             <div className="flex flex-col">
               <p className="text-xs font-medium text-slate-500">
-                Welcome back,
+                ยินดีต้อนรับกลับ,
               </p>
               <p className="text-sm font-bold leading-tight">
-                {user ? `${user.name} ${user.surname}` : "Guest"}
+                {user ? `${user.name} ${user.surname}` : "ผู้เยี่ยมชม"}
               </p>
             </div>
           </div>
@@ -45,22 +45,22 @@ export default function Dashboard() {
       <main className="px-4 pt-6 max-w-md mx-auto w-full animate-fade-in">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold tracking-tight">
-            Active Elections
+            การเลือกตั้งที่เปิดอยู่
           </h1>
           <div className="text-xs font-medium px-2 py-1 rounded bg-primary/10 text-primary border border-primary/20">
-            1 Active
+            1 รายการ
           </div>
         </div>
 
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
           <button className="px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium whitespace-nowrap shadow-sm shadow-primary/20">
-            All
+            ทั้งหมด
           </button>
           <button className="px-4 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 text-sm font-medium whitespace-nowrap hover:bg-slate-50">
-            Student Council
+            สภานักเรียน
           </button>
           <button className="px-4 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 text-sm font-medium whitespace-nowrap hover:bg-slate-50">
-            Clubs
+            ชมรม
           </button>
         </div>
 
@@ -73,14 +73,14 @@ export default function Dashboard() {
               </div>
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold uppercase tracking-wider border border-emerald-200">
                 <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Open
+                เปิด
               </span>
             </div>
             <h2 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-primary transition-colors">
-              Student Council 2025
+              สภานักเรียน 2568
             </h2>
             <p className="text-sm text-slate-600 line-clamp-2 mb-4">
-              Cast your vote for the next student body representatives.
+              ลงคะแนนเสียงของคุณเพื่อเลือกตัวแทนสภานักเรียนชุดใหม่
             </p>
             <div className="space-y-2 mb-5">
               <div className="flex items-center gap-2.5 text-xs text-slate-500">
@@ -88,9 +88,9 @@ export default function Dashboard() {
                   calendar_today
                 </span>
                 <span>
-                  Starts:{" "}
+                  เริ่ม:{" "}
                   <span className="font-medium text-slate-700">
-                    Oct 20, 8:00 AM
+                    20 ต.ค. 08:00 น.
                   </span>
                 </span>
               </div>
@@ -99,9 +99,9 @@ export default function Dashboard() {
                   event_busy
                 </span>
                 <span>
-                  Ends:{" "}
+                  สิ้นสุด:{" "}
                   <span className="font-medium text-slate-700">
-                    Oct 24, 5:00 PM
+                    24 ต.ค. 17:00 น.
                   </span>
                 </span>
               </div>
@@ -111,7 +111,7 @@ export default function Dashboard() {
                 onClick={() => router.push("/elections/student-council")}
                 className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-[#ffb800] hover:text-slate-900 active:bg-[#ffb800] text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98] shadow-sm shadow-primary/20 hover:shadow-[#ffb800]/20"
               >
-                <span>Vote Now</span>
+                <span>ลงคะแนนเลย</span>
                 <span className="material-symbols-outlined text-[18px]">
                   arrow_forward
                 </span>
