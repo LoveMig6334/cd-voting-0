@@ -34,7 +34,7 @@ export default function AdminLoginPage() {
       router.push("/admin");
     } else {
       // Invalid credentials
-      setError("Invalid username or password. Please try again.");
+      setError("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
       setIsSubmitting(false);
     }
   };
@@ -82,7 +82,7 @@ export default function AdminLoginPage() {
               </h1>
             </div>
             <p className="text-sm font-semibold text-cool-gray uppercase tracking-[0.2em]">
-              Management Portal
+              พอร์ทัลผู้ดูแลระบบ
             </p>
           </div>
 
@@ -94,7 +94,7 @@ export default function AdminLoginPage() {
               </span>
               <div>
                 <p className="text-sm font-semibold text-red-600">
-                  Authentication Failed
+                  การยืนยันตัวตนล้มเหลว
                 </p>
                 <p className="text-xs text-red-500 mt-0.5">{error}</p>
               </div>
@@ -105,7 +105,7 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-cool-gray uppercase ml-1 tracking-wider">
-                Username
+                ชื่อผู้ใช้
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-cool-gray group-focus-within:text-royal-blue transition-colors">
@@ -121,7 +121,7 @@ export default function AdminLoginPage() {
                     setUsername(e.target.value);
                     if (error) setError(null);
                   }}
-                  placeholder="Enter admin username"
+                  placeholder="กรอกชื่อผู้ใช้ผู้ดูแล"
                   className="w-full h-14 pl-12 pr-4 bg-white/50 border border-white/60 rounded-2xl outline-none focus:ring-2 focus:ring-royal-blue/20 focus:border-royal-blue/50 focus:bg-white/70 transition-all text-dark-slate placeholder:text-cool-gray font-medium backdrop-blur-sm"
                 />
               </div>
@@ -130,13 +130,13 @@ export default function AdminLoginPage() {
             <div className="space-y-1.5">
               <div className="flex justify-between items-center px-1">
                 <label className="text-xs font-bold text-cool-gray uppercase tracking-wider">
-                  Password
+                  รหัสผ่าน
                 </label>
                 <button
                   type="button"
                   className="text-xs font-semibold text-royal-blue hover:text-cyan-600 transition-colors"
                 >
-                  Forgot?
+                  ลืมรหัสผ่าน?
                 </button>
               </div>
               <div className="relative group">
@@ -168,7 +168,7 @@ export default function AdminLoginPage() {
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
                 <>
-                  <span>Sign In</span>
+                  <span>เข้าสู่ระบบ</span>
                   <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">
                     arrow_forward
                   </span>
@@ -186,7 +186,7 @@ export default function AdminLoginPage() {
               <span className="material-symbols-outlined text-base">
                 arrow_back
               </span>
-              Back to Student Portal
+              กลับสู่พอร์ทัลนักเรียน
             </Link>
           </div>
         </div>
@@ -194,7 +194,7 @@ export default function AdminLoginPage() {
         {/* System copyright */}
         <div className="mt-8 text-center">
           <p className="glass-panel inline-block px-4 py-2 rounded-xl text-xs font-medium text-cool-gray">
-            SECURE ADMINISTRATIVE ACCESS ONLY
+            สำหรับผู้ดูแลระบบเท่านั้น
           </p>
           <p className="mt-3 text-xs text-dark-slate/50">
             CD Voting 0 &copy; 2024
