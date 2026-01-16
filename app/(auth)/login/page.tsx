@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface Student {
   classroom: string;
@@ -19,10 +19,52 @@ export default function Login() {
 
   const [studentId, setStudentId] = useState("");
   const [nationalId, setNationalId] = useState("");
+  const [prefix, setPrefix] = useState("นาย");
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [isMatched, setIsMatched] = useState<boolean | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Auto-matching logic
+  useEffect(() => {
+    const matchStudent = async () => {
+      if (studentId.trim().length === 4 && nationalId.trim().length === 13) {
+        setIsSearching(true);
+        setError("");
+        try {
+          const res = await fetch("/data.json");
+          if (!res.ok) throw new Error("ไม่สามารถโหลดข้อมูลนักเรียนได้");
+          const students: Student[] = await res.json();
+
+          const found = students.find(
+            (s) =>
+              String(s.id) === studentId.trim() &&
+              s.nationalId === nationalId.trim()
+          );
+
+          if (found) {
+            setName(found.name);
+            setSurname(found.surname);
+            setIsMatched(true);
+          } else {
+            setIsMatched(false);
+            // Don't clear names if they were already typed, but we'll highlight red
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setIsMatched(null);
+      }
+    };
+
+    matchStudent();
+  }, [studentId, nationalId]);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -171,7 +213,11 @@ export default function Login() {
                 </label>
                 <div className="relative">
                   <input
-                    className="block w-full rounded-lg border-slate-200 bg-white/70 p-3.5 pr-10 text-base focus:bg-white focus:border-primary focus:ring-primary transition-colors"
+                    className={`block w-full rounded-lg border-slate-200 bg-white/70 p-3.5 pr-10 text-base focus:bg-white focus:border-primary focus:ring-primary transition-colors ${
+                      isMatched === false
+                        ? "border-red-500 ring-1 ring-red-500"
+                        : ""
+                    }`}
                     placeholder="เลขประจำตัวประชาชน 13 หลัก"
                     value={nationalId}
                     maxLength={13}
@@ -183,6 +229,11 @@ export default function Login() {
                     id_card
                   </span>
                 </div>
+                {isMatched === false && (
+                  <p className="text-xs text-red-500">
+                    เลขบัตรประจำตัวประชาชนไม่ตรงกับรหัสนักเรียน
+                  </p>
+                )}
                 {nationalId.length > 0 && nationalId.length < 13 && (
                   <p className="text-xs text-amber-500">
                     ต้องการอีก {13 - nationalId.length} หลัก
@@ -192,29 +243,48 @@ export default function Login() {
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-500">
-                  ชื่อ
+                  ชื่อ-นามสกุล
                 </label>
-                <div className="relative">
-                  <input
-                    className="block w-full rounded-lg border-slate-200 bg-white/70 p-3.5 pr-10 text-base focus:bg-white focus:border-primary focus:ring-primary transition-colors"
-                    placeholder="กรอกชื่อของคุณ"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                  <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">
-                    person
-                  </span>
+                <div className="flex gap-2">
+                  <div className="w-1/3">
+                    <select
+                      value={prefix}
+                      onChange={(e) => setPrefix(e.target.value)}
+                      className="block w-full rounded-lg border-slate-200 bg-white/70 p-3.5 text-base focus:bg-white focus:border-primary focus:ring-primary transition-colors appearance-none cursor-pointer"
+                    >
+                      <option value="นาย">นาย</option>
+                      <option value="นางสาว">นางสาว</option>
+                      <option value="เด็กชาย">เด็กชาย</option>
+                      <option value="เด็กหญิง">เด็กหญิง</option>
+                    </select>
+                  </div>
+                  <div className="relative flex-1">
+                    <input
+                      className={`block w-full rounded-lg border-slate-200 bg-white/70 p-3.5 pr-10 text-base focus:bg-white focus:border-primary focus:ring-primary transition-colors ${
+                        isMatched === true
+                          ? "border-green-500 ring-1 ring-green-500 text-green-700 font-medium"
+                          : ""
+                      }`}
+                      placeholder="ชื่อ"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                    <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">
+                      person
+                    </span>
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-500">
-                  นามสกุล
-                </label>
                 <div className="relative">
                   <input
-                    className="block w-full rounded-lg border-slate-200 bg-white/70 p-3.5 pr-10 text-base focus:bg-white focus:border-primary focus:ring-primary transition-colors"
-                    placeholder="กรอกนามสกุลของคุณ"
+                    className={`block w-full rounded-lg border-slate-200 bg-white/70 p-3.5 pr-10 text-base focus:bg-white focus:border-primary focus:ring-primary transition-colors ${
+                      isMatched === true
+                        ? "border-green-500 ring-1 ring-green-500 text-green-700 font-medium"
+                        : ""
+                    }`}
+                    placeholder="นามสกุล"
                     value={surname}
                     onChange={(e) => setSurname(e.target.value)}
                   />
