@@ -66,11 +66,11 @@ export default function CandidateSelection() {
   }
 
   const title =
-    electionId === "student-council" ? "Student President" : "Music President";
+    electionId === "student-council" ? "ประธานนักเรียน" : "ประธานชมรมดนตรี";
   const subtitle =
     electionId === "student-council"
-      ? "Select one candidate"
-      : "Select one candidate to continue";
+      ? "เลือกผู้สมัคร 1 คน"
+      : "เลือกผู้สมัคร 1 คนเพื่อดำเนินการต่อ";
 
   const handleVoteClick = (id: string) => {
     setSelectedId(id);
@@ -91,7 +91,7 @@ export default function CandidateSelection() {
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
         <h2 className="text-lg font-bold leading-tight flex-1 text-center">
-          Student Council
+          สภานักเรียน
         </h2>
         <div className="flex size-12 shrink-0 items-center justify-end">
           <span className="material-symbols-outlined">more_vert</span>
@@ -101,7 +101,7 @@ export default function CandidateSelection() {
       {/* Countdown Timer (Visual Only) */}
       <div className="flex flex-col items-center justify-center pt-6 pb-2 px-4">
         <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">
-          Voting closes in
+          ปิดรับคะแนนในอีก
         </p>
         <div className="flex gap-3 w-full max-w-sm justify-center">
           {["02", "14", "32", "15"].map((val, i) => (
@@ -125,7 +125,7 @@ export default function CandidateSelection() {
                     : "text-slate-500 dark:text-slate-400"
                 } text-xs`}
               >
-                {["Days", "Hours", "Mins", "Secs"][i]}
+                {["วัน", "ชม.", "นาที", "วินาที"][i]}
               </p>
             </div>
           ))}
@@ -193,7 +193,7 @@ export default function CandidateSelection() {
                   </div>
                   <div className="flex flex-col gap-3 mt-auto pt-2 z-20">
                     <button className="flex w-full items-center justify-center rounded-full h-11 px-4 bg-transparent border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                      View Policy
+                      ดูนโยบาย
                     </button>
                     <button
                       onClick={() => handleVoteClick(candidate.id)}
@@ -203,7 +203,7 @@ export default function CandidateSelection() {
                           : "bg-primary hover:bg-blue-600"
                       }`}
                     >
-                      Vote
+                      ลงคะแนน
                     </button>
                   </div>
                 </article>
@@ -220,7 +220,7 @@ export default function CandidateSelection() {
               onClick={() => router.push("/election/music-president")}
               className="flex w-full items-center justify-center rounded-xl h-14 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-lg font-bold shadow-lg shadow-slate-900/10 hover:shadow-xl transition-all active:scale-[0.98] gap-2"
             >
-              Next Position
+              ตำแหน่งถัดไป
               <span className="material-symbols-outlined">arrow_forward</span>
             </button>
           </div>
@@ -240,28 +240,28 @@ export default function CandidateSelection() {
             </div>
             <div className="px-6 pb-2">
               <h2 className="text-[#111418] dark:text-white tracking-tight text-2xl font-bold leading-tight text-center pb-3 pt-2">
-                Confirm Your Vote
+                ยืนยันการลงคะแนน
               </h2>
               <p className="text-[#617589] dark:text-gray-400 text-sm font-normal leading-normal text-center">
-                You are about to vote for{" "}
+                คุณกำลังจะลงคะแนนให้{" "}
                 <strong className="text-[#111418] dark:text-white font-semibold">
                   {candidates
                     ? candidates.find((c) => c.id === selectedId)?.name
                     : ""}
-                </strong>
-                . This action cannot be undone once submitted.
+                </strong>{" "}
+                การดำเนินการนี้ไม่สามารถยกเลิกได้หลังจากส่งแล้ว
               </p>
             </div>
             <div className="px-6 py-4">
               <label className="flex flex-col w-full">
                 <p className="text-[#111418] dark:text-white text-sm font-medium leading-normal pb-2">
-                  Student ID Verification
+                  ยืนยันรหัสนักเรียน
                 </p>
                 <div className="flex w-full items-stretch rounded-xl shadow-sm">
                   <input
                     autoFocus
                     className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl border border-[#dbe0e6] dark:border-gray-600 bg-white dark:bg-gray-800 text-[#111418] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/20 focus:border-primary h-12 placeholder:text-[#9aabb8] p-[15px] text-base font-normal leading-normal transition-all"
-                    placeholder="Enter your Student ID"
+                    placeholder="กรอกรหัสนักเรียน"
                     type="text"
                   />
                 </div>
@@ -272,13 +272,13 @@ export default function CandidateSelection() {
                 onClick={handleConfirmVote}
                 className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-5 bg-primary hover:bg-primary-dark transition-colors text-white text-base font-bold leading-normal shadow-md shadow-primary/20"
               >
-                <span className="truncate">Confirm & Submit Vote</span>
+                <span className="truncate">ยืนยันและส่งคะแนน</span>
               </button>
               <button
                 onClick={() => setShowConfirm(false)}
                 className="flex w-full cursor-pointer items-center justify-center rounded-xl h-10 px-5 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700/50 text-[#617589] dark:text-gray-400 text-sm font-semibold leading-normal transition-colors"
               >
-                Cancel
+                ยกเลิก
               </button>
             </div>
           </div>

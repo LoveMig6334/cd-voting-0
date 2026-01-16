@@ -9,29 +9,29 @@ import { useState } from "react";
 const positions = [
   {
     id: "student-council-president",
-    title: "Student Council President",
+    title: "ประธานสภานักเรียน",
     icon: "person",
   },
   {
     id: "vice-student-president",
-    title: "Vice Student President",
+    title: "รองประธานสภานักเรียน",
     icon: "supervisor_account",
   },
-  { id: "secretary", title: "Secretary", icon: "edit_note" },
-  { id: "treasurer", title: "Treasurer", icon: "payments" },
+  { id: "secretary", title: "เลขานุการ", icon: "edit_note" },
+  { id: "treasurer", title: "เหรัญญิก", icon: "payments" },
   {
     id: "public-relations-officer",
-    title: "Public Relations Officer",
+    title: "ประชาสัมพันธ์",
     icon: "campaign",
   },
-  { id: "music-president", title: "Music President", icon: "music_note" },
-  { id: "sports-president", title: "Sports President", icon: "sports_soccer" },
+  { id: "music-president", title: "ประธานชมรมดนตรี", icon: "music_note" },
+  { id: "sports-president", title: "ประธานชมรมกีฬา", icon: "sports_soccer" },
   {
     id: "cheerleading-president",
-    title: "Cheerleading President",
+    title: "ประธานเชียร์",
     icon: "celebration",
   },
-  { id: "discipline-president", title: "Discipline President", icon: "gavel" },
+  { id: "discipline-president", title: "ประธานระเบียบ", icon: "gavel" },
 ];
 
 // Sample candidates for each position
@@ -265,7 +265,7 @@ export default function CandidateSelection() {
           </span>
         </button>
         <h2 className="text-lg font-bold leading-tight flex-1 text-center text-slate-900">
-          Student Council
+          สภานักเรียน
         </h2>
         <div className="flex size-12 shrink-0 items-center justify-end">
           <span className="material-symbols-outlined text-slate-700">
@@ -278,14 +278,14 @@ export default function CandidateSelection() {
       <div className="px-4 pt-4">
         <div className="flex items-center justify-between text-sm text-slate-500 mb-2">
           <span>
-            Position {currentPositionIndex + 1} of {positions.length}
+            ตำแหน่งที่ {currentPositionIndex + 1} จาก {positions.length}
           </span>
           <span>
             {Math.round(
               ((currentPositionIndex + (hasVoted ? 1 : 0)) / positions.length) *
                 100
             )}
-            % Complete
+            % เสร็จสิ้น
           </span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -305,7 +305,7 @@ export default function CandidateSelection() {
       {/* Countdown Timer (Visual Only) */}
       <div className="flex flex-col items-center justify-center pt-6 pb-2 px-4">
         <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-4">
-          Voting closes in
+          ปิดรับคะแนนในอีก
         </p>
         <div className="flex gap-3 w-full max-w-sm justify-center">
           {["02", "14", "32", "15"].map((val, i) => (
@@ -327,7 +327,7 @@ export default function CandidateSelection() {
                   i === 2 ? "text-primary" : "text-slate-500"
                 } text-xs`}
               >
-                {["Days", "Hours", "Mins", "Secs"][i]}
+                {["วัน", "ชม.", "นาที", "วินาที"][i]}
               </p>
             </div>
           ))}
@@ -346,7 +346,7 @@ export default function CandidateSelection() {
             {currentPosition.title}
           </h3>
           <p className="text-sm text-slate-500 mt-1">
-            Select one candidate to vote
+            เลือกผู้สมัคร 1 คนเพื่อลงคะแนน
           </p>
         </div>
 
@@ -398,7 +398,7 @@ export default function CandidateSelection() {
                 </div>
                 <div className="flex flex-col gap-3 mt-auto pt-2 z-20">
                   <button className="flex w-full items-center justify-center rounded-full h-11 px-4 bg-transparent border border-slate-300 text-slate-700 text-sm font-bold hover:bg-slate-50 transition-colors">
-                    View Policy
+                    ดูนโยบาย
                   </button>
                   <button
                     onClick={() => handleVoteToggle(candidate.id)}
@@ -408,7 +408,7 @@ export default function CandidateSelection() {
                         : "bg-primary hover:bg-blue-600 text-white shadow-blue-500/20"
                     }`}
                   >
-                    {isSelected ? "Voted." : "Vote"}
+                    {isSelected ? "ลงคะแนนแล้ว" : "ลงคะแนน"}
                   </button>
                 </div>
               </article>
@@ -444,8 +444,8 @@ export default function CandidateSelection() {
             }`}
           >
             {currentPositionIndex === positions.length - 1
-              ? "Submit All Votes"
-              : "Next Position"}
+              ? "ส่งคะแนนทั้งหมด"
+              : "ตำแหน่งถัดไป"}
             <span className="material-symbols-outlined">
               {currentPositionIndex === positions.length - 1
                 ? "check_circle"
