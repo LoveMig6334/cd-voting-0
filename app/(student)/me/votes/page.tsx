@@ -17,7 +17,7 @@ export default function MyVotes() {
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
           <h2 className="text-slate-900 text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12">
-            My Votes
+            การลงคะแนนของฉัน
           </h2>
         </div>
 
@@ -25,17 +25,17 @@ export default function MyVotes() {
         <div className="flex gap-3 p-4 overflow-x-auto no-scrollbar bg-background-light sticky top-[60px] z-10">
           <button className="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full bg-primary px-5 shadow-sm transition-transform active:scale-95">
             <p className="text-white text-sm font-medium leading-normal">
-              All Votes
+              ทั้งหมด
             </p>
           </button>
           <button className="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full bg-white border border-gray-200 px-5 shadow-sm transition-transform active:scale-95">
             <p className="text-slate-900 text-sm font-medium leading-normal">
-              Verified
+              ยืนยันแล้ว
             </p>
           </button>
           <button className="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full bg-white border border-gray-200 px-5 shadow-sm transition-transform active:scale-95">
             <p className="text-slate-900 text-sm font-medium leading-normal">
-              Pending
+              รอดำเนินการ
             </p>
           </button>
         </div>
@@ -53,14 +53,14 @@ export default function MyVotes() {
                     >
                       check_circle
                     </span>
-                    Verified
+                    ยืนยันแล้ว
                   </div>
                 </div>
                 <h3 className="text-base font-bold leading-tight">
-                  Student Council 2025
+                  สภานักเรียน 2568
                 </h3>
                 <p className="text-slate-500 text-xs font-normal leading-normal">
-                  Dec 24, 2025 • 2:45 PM
+                  24 ธ.ค. 2568 • 14:45 น.
                 </p>
               </div>
               <div
@@ -103,14 +103,14 @@ export default function MyVotes() {
                     >
                       check_circle
                     </span>
-                    Verified
+                    ยืนยันแล้ว
                   </div>
                 </div>
                 <h3 className="text-base font-bold leading-tight">
-                  Annual Board Election
+                  การเลือกตั้งคณะกรรมการประจำปี
                 </h3>
                 <p className="text-slate-500 text-xs font-normal leading-normal">
-                  Nov 12, 2023 • 09:30 AM
+                  12 พ.ย. 2566 • 09:30 น.
                 </p>
               </div>
               <div
@@ -153,14 +153,14 @@ export default function MyVotes() {
                     >
                       check_circle
                     </span>
-                    Verified
+                    ยืนยันแล้ว
                   </div>
                 </div>
                 <h3 className="text-base font-bold leading-tight">
-                  Class Representative 2024
+                  หัวหน้าห้อง 2567
                 </h3>
                 <p className="text-slate-500 text-xs font-normal leading-normal">
-                  Sep 05, 2023 • 11:15 AM
+                  5 ก.ย. 2566 • 11:15 น.
                 </p>
               </div>
               <div

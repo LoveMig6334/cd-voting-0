@@ -18,7 +18,7 @@ export default function Profile() {
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
           <h2 className="text-slate-900 text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12">
-            Profile
+            โปรไฟล์
           </h2>
         </div>
 
@@ -36,10 +36,10 @@ export default function Profile() {
               </div>
               <div className="flex flex-col items-center justify-center">
                 <p className="text-slate-900 text-xl font-bold leading-tight tracking-[-0.015em] text-center">
-                  {user ? `${user.name} ${user.surname}` : "Guest user"}
+                  {user ? `${user.name} ${user.surname}` : "ผู้เยี่ยมชม"}
                 </p>
                 <p className="text-slate-500 text-sm font-medium leading-normal text-center mt-1">
-                  Student ID: {user?.id}
+                  รหัสนักเรียน: {user?.id}
                 </p>
               </div>
             </div>
@@ -55,7 +55,7 @@ export default function Profile() {
                     </span>
                   </div>
                   <p className="text-slate-900 text-base font-medium leading-normal flex-1 truncate text-left">
-                    Notification Settings
+                    ตั้งค่าการแจ้งเตือน
                   </p>
                 </div>
                 <div className="shrink-0 text-gray-400">
@@ -70,7 +70,7 @@ export default function Profile() {
                     <span className="material-symbols-outlined">help</span>
                   </div>
                   <p className="text-slate-900 text-base font-medium leading-normal flex-1 truncate text-left">
-                    Help & Support
+                    ศูนย์ช่วยเหลือ
                   </p>
                 </div>
                 <div className="shrink-0 text-gray-400">
@@ -86,10 +86,10 @@ export default function Profile() {
               className="bg-white w-full py-4 rounded-xl shadow-sm border border-gray-100 text-red-600 font-bold text-base hover:bg-red-50 transition-colors flex items-center justify-center gap-2 mt-4"
             >
               <span className="material-symbols-outlined">logout</span>
-              Log Out
+              ออกจากระบบ
             </button>
             <p className="text-center text-xs text-gray-400 mt-2">
-              App Version 1.0.4 (Build 202)
+              เวอร์ชัน 1.0.4 (Build 202)
             </p>
           </div>
         </div>
