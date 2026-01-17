@@ -3,8 +3,264 @@
 import { useElection } from "@/components/ElectionContext";
 import { ElectionCandidate, Position } from "@/lib/election-types";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useState } from "react";
+
+// Edit Election Details Modal (Title, Description, Dates)
+function EditElectionModal({
+  election,
+  onClose,
+  onSave,
+}: {
+  election: {
+    title: string;
+    description: string;
+    startDate: string;
+    endDate: string;
+  };
+  onClose: () => void;
+  onSave: (data: {
+    title: string;
+    description: string;
+    startDate: string;
+    endDate: string;
+  }) => void;
+}) {
+  const [title, setTitle] = useState(election.title);
+  const [description, setDescription] = useState(election.description);
+  const [startDate, setStartDate] = useState(
+    new Date(election.startDate).toISOString().slice(0, 16),
+  );
+  const [endDate, setEndDate] = useState(
+    new Date(election.endDate).toISOString().slice(0, 16),
+  );
+  const [error, setError] = useState("");
+
+  const handleSave = () => {
+    if (!title.trim()) {
+      setError("กรุณากรอกชื่อการเลือกตั้ง");
+      return;
+    }
+    if (new Date(startDate) >= new Date(endDate)) {
+      setError("วันสิ้นสุดต้องมากกว่าวันเริ่มต้น");
+      return;
+    }
+    onSave({
+      title: title.trim(),
+      description: description.trim(),
+      startDate: new Date(startDate).toISOString(),
+      endDate: new Date(endDate).toISOString(),
+    });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full animate-slide-up">
+        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+          <h3 className="text-lg font-bold text-slate-900">
+            แก้ไขข้อมูลการเลือกตั้ง
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              ชื่อการเลือกตั้ง <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              รายละเอียด
+            </label>
+            <textarea
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                วันเริ่มต้น <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="datetime-local"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                วันสิ้นสุด <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="datetime-local"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-slate-200 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2.5 border border-slate-200 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+          >
+            ยกเลิก
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+          >
+            บันทึก
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Edit Candidate Modal
+function EditCandidateModal({
+  candidate,
+  onClose,
+  onSave,
+}: {
+  candidate: ElectionCandidate;
+  onClose: () => void;
+  onSave: (data: Partial<ElectionCandidate>) => void;
+}) {
+  const [name, setName] = useState(candidate.name);
+  const [slogan, setSlogan] = useState(candidate.slogan);
+  const [imageUrl, setImageUrl] = useState(candidate.imageUrl);
+  const [rank, setRank] = useState(candidate.rank);
+
+  const handleSave = () => {
+    if (!name.trim()) return;
+    onSave({
+      name: name.trim(),
+      slogan: slogan.trim(),
+      imageUrl: imageUrl.trim(),
+      rank,
+    });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full animate-slide-up">
+        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+          <h3 className="text-lg font-bold text-slate-900">แก้ไขผู้สมัคร</h3>
+          <button
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="flex justify-center mb-4">
+            <div
+              className="w-20 h-20 rounded-full bg-cover bg-center border-4 border-slate-100"
+              style={{ backgroundImage: `url(${imageUrl})` }}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              ชื่อ-นามสกุล <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              คำขวัญ/นโยบาย
+            </label>
+            <textarea
+              rows={2}
+              value={slogan}
+              onChange={(e) => setSlogan(e.target.value)}
+              className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              URL รูปโปรไฟล์
+            </label>
+            <input
+              type="text"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              หมายเลขผู้สมัคร
+            </label>
+            <input
+              type="number"
+              min={1}
+              value={rank}
+              onChange={(e) => setRank(parseInt(e.target.value) || 1)}
+              className="w-24 px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-slate-200 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2.5 border border-slate-200 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+          >
+            ยกเลิก
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!name.trim()}
+            className="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors shadow-sm disabled:bg-slate-300"
+          >
+            บันทึก
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Add Candidate Modal
 function AddCandidateModal({
@@ -25,7 +281,6 @@ function AddCandidateModal({
 
   const handleSubmit = () => {
     if (!name.trim()) return;
-
     onAdd({
       positionId,
       name: name.trim(),
@@ -227,12 +482,14 @@ function PositionCard({
   candidates,
   onToggle,
   onAddCandidate,
+  onEditCandidate,
   onDeleteCandidate,
 }: {
   position: Position;
   candidates: ElectionCandidate[];
   onToggle: () => void;
   onAddCandidate: () => void;
+  onEditCandidate: (candidate: ElectionCandidate) => void;
   onDeleteCandidate: (candidateId: string) => void;
 }) {
   return (
@@ -308,14 +565,26 @@ function PositionCard({
                       </p>
                     )}
                   </div>
-                  <button
-                    onClick={() => onDeleteCandidate(candidate.id)}
-                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-lg">
-                      delete
-                    </span>
-                  </button>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => onEditCandidate(candidate)}
+                      className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                      title="แก้ไข"
+                    >
+                      <span className="material-symbols-outlined text-lg">
+                        edit
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => onDeleteCandidate(candidate.id)}
+                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="ลบ"
+                    >
+                      <span className="material-symbols-outlined text-lg">
+                        delete
+                      </span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -338,16 +607,29 @@ function PositionCard({
   );
 }
 
+// Format date for display
+function formatDate(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function CandidateManagement() {
   const params = useParams();
-  const router = useRouter();
   const electionId = params.id as string;
 
   const {
     election,
+    updateElection,
     togglePosition,
     addCustomPosition,
     addCandidate,
+    updateCandidate,
     deleteCandidate,
   } = useElection(electionId);
 
@@ -356,6 +638,9 @@ export default function CandidateManagement() {
     positionTitle: string;
   } | null>(null);
   const [showAddPosition, setShowAddPosition] = useState(false);
+  const [showEditElection, setShowEditElection] = useState(false);
+  const [editingCandidate, setEditingCandidate] =
+    useState<ElectionCandidate | null>(null);
 
   if (!election) {
     return (
@@ -387,6 +672,13 @@ export default function CandidateManagement() {
     addCandidate(electionId, candidate);
   };
 
+  const handleEditCandidate = (
+    candidateId: string,
+    data: Partial<ElectionCandidate>,
+  ) => {
+    updateCandidate(electionId, candidateId, data);
+  };
+
   const handleDeleteCandidate = (candidateId: string) => {
     if (confirm("ต้องการลบผู้สมัครนี้หรือไม่?")) {
       deleteCandidate(electionId, candidateId);
@@ -397,33 +689,77 @@ export default function CandidateManagement() {
     addCustomPosition(electionId, title, icon);
   };
 
+  const handleUpdateElection = (data: {
+    title: string;
+    description: string;
+    startDate: string;
+    endDate: string;
+  }) => {
+    updateElection(electionId, data);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/admin/elections"
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-          >
-            <span className="material-symbols-outlined">arrow_back</span>
-          </Link>
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">
-              {election.title}
-            </h2>
-            <p className="text-slate-500 text-sm mt-1">
-              จัดการตำแหน่งและผู้สมัคร • {election.candidates.length} ผู้สมัคร
-            </p>
+      {/* Header with Edit Button */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <Link
+              href="/admin/elections"
+              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors mt-1"
+            >
+              <span className="material-symbols-outlined">arrow_back</span>
+            </Link>
+            <div className="flex-1">
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-slate-900">
+                  {election.title}
+                </h2>
+                <button
+                  onClick={() => setShowEditElection(true)}
+                  className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                  title="แก้ไขข้อมูล"
+                >
+                  <span className="material-symbols-outlined text-xl">
+                    edit
+                  </span>
+                </button>
+              </div>
+              {election.description && (
+                <p className="text-slate-600 text-sm mt-1">
+                  {election.description}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-500">
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-lg">
+                    calendar_today
+                  </span>
+                  <span>เริ่ม: {formatDate(election.startDate)}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-lg">
+                    event_busy
+                  </span>
+                  <span>สิ้นสุด: {formatDate(election.endDate)}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-lg">
+                    groups
+                  </span>
+                  <span>{election.candidates.length} ผู้สมัคร</span>
+                </div>
+              </div>
+            </div>
           </div>
+          <button
+            onClick={() => setShowAddPosition(true)}
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 self-start"
+          >
+            <span className="material-symbols-outlined text-xl">add</span>
+            เพิ่มตำแหน่งใหม่
+          </button>
         </div>
-        <button
-          onClick={() => setShowAddPosition(true)}
-          className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 self-start sm:self-auto"
-        >
-          <span className="material-symbols-outlined text-xl">add</span>
-          เพิ่มตำแหน่งใหม่
-        </button>
       </div>
 
       {/* Positions Grid */}
@@ -440,6 +776,7 @@ export default function CandidateManagement() {
                 positionTitle: position.title,
               })
             }
+            onEditCandidate={(candidate) => setEditingCandidate(candidate)}
             onDeleteCandidate={handleDeleteCandidate}
           />
         ))}
@@ -452,7 +789,7 @@ export default function CandidateManagement() {
           </span>
           <p className="text-slate-500">ยังไม่มีตำแหน่ง</p>
           <p className="text-slate-400 text-sm mt-1">
-            คลิก "เพิ่มตำแหน่งใหม่" เพื่อเริ่มต้น
+            คลิก &quot;เพิ่มตำแหน่งใหม่&quot; เพื่อเริ่มต้น
           </p>
         </div>
       )}
@@ -468,7 +805,7 @@ export default function CandidateManagement() {
         </Link>
       </div>
 
-      {/* Add Candidate Modal */}
+      {/* Modals */}
       {showAddCandidate && (
         <AddCandidateModal
           positionId={showAddCandidate.positionId}
@@ -478,11 +815,34 @@ export default function CandidateManagement() {
         />
       )}
 
-      {/* Add Position Modal */}
       {showAddPosition && (
         <AddPositionModal
           onClose={() => setShowAddPosition(false)}
           onAdd={handleAddPosition}
+        />
+      )}
+
+      {showEditElection && (
+        <EditElectionModal
+          election={{
+            title: election.title,
+            description: election.description,
+            startDate: election.startDate,
+            endDate: election.endDate,
+          }}
+          onClose={() => setShowEditElection(false)}
+          onSave={handleUpdateElection}
+        />
+      )}
+
+      {editingCandidate && (
+        <EditCandidateModal
+          candidate={editingCandidate}
+          onClose={() => setEditingCandidate(null)}
+          onSave={(data) => {
+            handleEditCandidate(editingCandidate.id, data);
+            setEditingCandidate(null);
+          }}
         />
       )}
     </div>

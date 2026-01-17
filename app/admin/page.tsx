@@ -314,7 +314,7 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                   <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
-                    การเลือกตั้งสด
+                    Live
                   </span>
                 </div>
                 <h3 className="text-xl font-bold text-dark-slate">
