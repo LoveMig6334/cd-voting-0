@@ -90,7 +90,10 @@ export function loadOpenCV(): Promise<void> {
 
     const script = document.createElement("script");
     script.id = "opencv-script";
-    script.src = "/lib/opencv.js";
+    // Load from CDN instead of local file to avoid large file in project
+    // Using jsDelivr CDN for @techstark/opencv-js package
+    script.src =
+      "https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.12.0-release.1/dist/opencv.js";
     script.async = true;
 
     script.onload = () => {
