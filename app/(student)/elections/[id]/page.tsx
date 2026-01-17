@@ -352,8 +352,10 @@ export default function CandidateSelection() {
 
         {/* Candidates Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {candidates.map((candidate) => {
+          {candidates.map((candidate, index) => {
             const isSelected = selectedCandidateId === candidate.id;
+            const isLastAndOdd =
+              index === candidates.length - 1 && candidates.length % 2 === 1;
             return (
               <article
                 key={candidate.id}
@@ -361,6 +363,10 @@ export default function CandidateSelection() {
                   isSelected
                     ? "border-2 border-primary ring-2 ring-primary/20"
                     : "border border-slate-200"
+                } ${
+                  isLastAndOdd
+                    ? "sm:col-span-2 sm:max-w-[50%] sm:justify-self-center"
+                    : ""
                 }`}
               >
                 {isSelected && (
@@ -414,6 +420,48 @@ export default function CandidateSelection() {
               </article>
             );
           })}
+
+          {/* Abstain Option */}
+          <article
+            className={`relative flex flex-col rounded-xl bg-white p-5 gap-4 shadow-sm transition-all sm:col-span-2 sm:max-w-[280px] sm:justify-self-center ${
+              selectedCandidateId === "abstain"
+                ? "border-2 border-slate-500 ring-2 ring-slate-500/20"
+                : "border border-slate-200"
+            }`}
+          >
+            {selectedCandidateId === "abstain" && (
+              <div className="absolute top-4 right-4 z-20">
+                <div className="bg-slate-500 text-white rounded-full p-1 shadow-sm animate-fade-in">
+                  <span className="material-symbols-outlined text-sm font-bold block">
+                    check
+                  </span>
+                </div>
+              </div>
+            )}
+            <div className="flex flex-col items-center gap-3 py-4">
+              <div className="h-20 w-20 rounded-full bg-slate-100 flex items-center justify-center">
+                <span className="material-symbols-outlined text-[40px] text-slate-400">
+                  do_not_disturb
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-700">
+                ไม่ลงคะแนนเสียง
+              </h3>
+              <p className="text-slate-500 text-sm text-center">
+                เลือกหากไม่ต้องการลงคะแนนให้ผู้สมัครคนใด
+              </p>
+            </div>
+            <button
+              onClick={() => handleVoteToggle("abstain")}
+              className={`flex w-full items-center justify-center rounded-full h-11 px-4 text-sm font-bold shadow-md transition-all active:scale-[0.98] ${
+                selectedCandidateId === "abstain"
+                  ? "bg-slate-600 text-white shadow-slate-500/20"
+                  : "bg-slate-200 hover:bg-slate-300 text-slate-700"
+              }`}
+            >
+              {selectedCandidateId === "abstain" ? "เลือกแล้ว" : "เลือก"}
+            </button>
+          </article>
         </div>
       </main>
 
