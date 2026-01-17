@@ -1,6 +1,10 @@
 "use client";
 
 import { useElection } from "@/components/ElectionContext";
+import {
+  DEFAULT_AVATAR_URL,
+  isCandidateNameDuplicate,
+} from "@/lib/election-store";
 import { ElectionCandidate, Position } from "@/lib/election-types";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -264,11 +268,13 @@ function EditCandidateModal({
 
 // Add Candidate Modal
 function AddCandidateModal({
+  electionId,
   positionId,
   positionTitle,
   onClose,
   onAdd,
 }: {
+  electionId: string;
   positionId: string;
   positionTitle: string;
   onClose: () => void;
@@ -278,15 +284,25 @@ function AddCandidateModal({
   const [slogan, setSlogan] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [rank, setRank] = useState(1);
+  const [error, setError] = useState("");
 
   const handleSubmit = () => {
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      setError("กรุณากรอกชื่อผู้สมัคร");
+      return;
+    }
+
+    // Check for duplicate name in same position
+    if (isCandidateNameDuplicate(electionId, positionId, name.trim())) {
+      setError("ผู้สมัครชื่อนี้มีอยู่แล้วในตำแหน่งนี้");
+      return;
+    }
+
     onAdd({
       positionId,
       name: name.trim(),
       slogan: slogan.trim(),
-      imageUrl:
-        imageUrl.trim() || `https://picsum.photos/seed/${Date.now()}/200/200`,
+      imageUrl: imageUrl.trim() || DEFAULT_AVATAR_URL,
       rank,
     });
     onClose();
@@ -309,6 +325,12 @@ function AddCandidateModal({
         </div>
 
         <div className="p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               ชื่อ-นามสกุล <span className="text-red-500">*</span>
@@ -808,6 +830,7 @@ export default function CandidateManagement() {
       {/* Modals */}
       {showAddCandidate && (
         <AddCandidateModal
+          electionId={electionId}
           positionId={showAddCandidate.positionId}
           positionTitle={showAddCandidate.positionTitle}
           onClose={() => setShowAddCandidate(null)}

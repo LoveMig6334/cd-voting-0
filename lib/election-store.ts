@@ -198,6 +198,72 @@ export function togglePosition(
 // Candidate Operations
 // ============================================
 
+/** Default avatar URL for candidates without a profile image */
+export const DEFAULT_AVATAR_URL = "/default-avatar.svg";
+
+/**
+ * Check if a candidate name already exists in the same position
+ * @param electionId - Election ID to check
+ * @param positionId - Position ID to check within
+ * @param name - Candidate name to check
+ * @param excludeCandidateId - Optional candidate ID to exclude (for editing)
+ * @returns true if duplicate found, false otherwise
+ */
+export function isCandidateNameDuplicate(
+  electionId: string,
+  positionId: string,
+  name: string,
+  excludeCandidateId?: string,
+): boolean {
+  const election = getElectionById(electionId);
+  if (!election) return false;
+
+  const normalizedName = name.trim().toLowerCase();
+
+  return election.candidates.some(
+    (c) =>
+      c.positionId === positionId &&
+      c.name.trim().toLowerCase() === normalizedName &&
+      c.id !== excludeCandidateId,
+  );
+}
+
+/**
+ * Validation result type for addCandidateWithValidation
+ */
+export type AddCandidateResult =
+  | { success: true; election: ElectionEvent }
+  | { success: false; error: string };
+
+/**
+ * Add a candidate with duplicate validation
+ * @returns Result object with success status and election/error
+ */
+export function addCandidateWithValidation(
+  electionId: string,
+  candidate: Omit<ElectionCandidate, "id">,
+): AddCandidateResult {
+  // Check for duplicate name
+  if (
+    isCandidateNameDuplicate(electionId, candidate.positionId, candidate.name)
+  ) {
+    return {
+      success: false,
+      error: "ผู้สมัครชื่อนี้มีอยู่แล้วในตำแหน่งนี้",
+    };
+  }
+
+  const result = addCandidate(electionId, candidate);
+  if (!result) {
+    return {
+      success: false,
+      error: "ไม่พบการเลือกตั้งที่ระบุ",
+    };
+  }
+
+  return { success: true, election: result };
+}
+
 /**
  * Add a candidate to an election
  */
