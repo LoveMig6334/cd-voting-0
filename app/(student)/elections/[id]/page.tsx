@@ -3,6 +3,7 @@
 import { BottomNav } from "@/components/BottomNav";
 import { useElection } from "@/components/ElectionContext";
 import { useAuth } from "@/hooks/useAuth";
+import { recordVote } from "@/lib/vote-store";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -98,6 +99,7 @@ export default function VotingPage() {
       const currentVote = prev[currentPosition.id];
       if (currentVote === candidateId) {
         // Unvote
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { [currentPosition.id]: _, ...rest } = prev;
         return rest;
       } else {
@@ -134,6 +136,12 @@ export default function VotingPage() {
 
     setShowConfirmModal(false);
     setIsSubmitting(true);
+
+    // Record the vote to vote-store
+    const voteResult = recordVote(electionId, user.id, votes);
+    if (!voteResult) {
+      console.warn("Vote already recorded or failed to save");
+    }
 
     setTimeout(() => {
       router.push("/vote-success");
