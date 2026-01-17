@@ -1,68 +1,20 @@
 "use client";
 
+import { useElections } from "@/components/ElectionContext";
+import { ElectionEvent, ElectionType } from "@/lib/election-types";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-// Types
-interface Election {
-  id: number;
-  title: string;
-  status: "draft" | "open" | "closed";
-  candidates: number;
-  startDate: string;
-  endDate: string;
-  votes: number;
-}
-
-// Mock Data
-const mockElections: Election[] = [
-  {
-    id: 1,
-    title: "Student Council 2025",
-    status: "open",
-    candidates: 4,
-    startDate: "Oct 20, 2024",
-    endDate: "Oct 24, 2024",
-    votes: 843,
-  },
-  {
-    id: 2,
-    title: "Club Leadership Elections",
-    status: "open",
-    candidates: 12,
-    startDate: "Oct 22, 2024",
-    endDate: "Oct 28, 2024",
-    votes: 156,
-  },
-  {
-    id: 3,
-    title: "Sports Captain Selection",
-    status: "closed",
-    candidates: 8,
-    startDate: "Sep 15, 2024",
-    endDate: "Sep 20, 2024",
-    votes: 1204,
-  },
-  {
-    id: 4,
-    title: "Music President 2025",
-    status: "draft",
-    candidates: 3,
-    startDate: "Nov 01, 2024",
-    endDate: "Nov 05, 2024",
-    votes: 0,
-  },
-];
-
 // Status Badge Component
-function StatusBadge({ status }: { status: Election["status"] }) {
+function StatusBadge({ status }: { status: ElectionEvent["status"] }) {
   const styles = {
     open: "bg-green-100 text-green-700",
     draft: "bg-slate-100 text-slate-600",
     closed: "bg-red-100 text-red-700",
   };
 
-  const statusLabels: Record<Election["status"], string> = {
+  const statusLabels: Record<ElectionEvent["status"], string> = {
     open: "เปิด",
     draft: "ร่าง",
     closed: "ปิด",
@@ -77,14 +29,39 @@ function StatusBadge({ status }: { status: Election["status"] }) {
   );
 }
 
+// Format date for display
+function formatDate(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function ElectionManagement() {
+  const router = useRouter();
+  const { elections, createElection, deleteElection } = useElections();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "draft" | "open" | "closed"
   >("all");
   const [showModal, setShowModal] = useState(false);
 
-  const filteredElections = mockElections.filter((election) => {
+  // Form state
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    type: "student-committee" as ElectionType,
+    startDate: "",
+    endDate: "",
+  });
+  const [formError, setFormError] = useState("");
+
+  const filteredElections = elections.filter((election) => {
     const matchesSearch = election.title
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -92,6 +69,51 @@ export default function ElectionManagement() {
       statusFilter === "all" || election.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleCreateElection = () => {
+    // Validate form
+    if (!formData.title.trim()) {
+      setFormError("กรุณากรอกชื่อการเลือกตั้ง");
+      return;
+    }
+    if (!formData.startDate || !formData.endDate) {
+      setFormError("กรุณาระบุวันเริ่มต้นและวันสิ้นสุด");
+      return;
+    }
+    if (new Date(formData.startDate) >= new Date(formData.endDate)) {
+      setFormError("วันสิ้นสุดต้องมากกว่าวันเริ่มต้น");
+      return;
+    }
+
+    // Create election
+    const newElection = createElection({
+      title: formData.title,
+      description: formData.description,
+      type: formData.type,
+      startDate: new Date(formData.startDate).toISOString(),
+      endDate: new Date(formData.endDate).toISOString(),
+    });
+
+    // Reset form
+    setFormData({
+      title: "",
+      description: "",
+      type: "student-committee",
+      startDate: "",
+      endDate: "",
+    });
+    setFormError("");
+    setShowModal(false);
+
+    // Redirect to candidate management
+    router.push(`/admin/elections/${newElection.id}/candidates`);
+  };
+
+  const handleDeleteElection = (id: string) => {
+    if (confirm("คุณต้องการลบการเลือกตั้งนี้หรือไม่?")) {
+      deleteElection(id);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -199,36 +221,39 @@ export default function ElectionManagement() {
                     <StatusBadge status={election.status} />
                   </td>
                   <td className="px-6 py-4 text-slate-600">
-                    {election.candidates} ผู้สมัคร
+                    {election.candidates.length} ผู้สมัคร
                   </td>
                   <td className="px-6 py-4 text-slate-600 text-sm">
-                    {election.startDate} - {election.endDate}
+                    {formatDate(election.startDate)} -{" "}
+                    {formatDate(election.endDate)}
                   </td>
                   <td className="px-6 py-4 text-slate-600">
-                    {election.votes.toLocaleString()}
+                    {election.totalVotes.toLocaleString()}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      <button
+                      <Link
+                        href={`/admin/elections/${election.id}/candidates`}
                         className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                        title="Edit"
+                        title="จัดการผู้สมัคร"
                       >
                         <span className="material-symbols-outlined text-xl">
-                          edit
+                          group
                         </span>
-                      </button>
+                      </Link>
                       <Link
                         href={`/admin/elections/${election.id}/results`}
                         className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                        title="View Results"
+                        title="ดูผลลัพธ์"
                       >
                         <span className="material-symbols-outlined text-xl">
                           bar_chart
                         </span>
                       </Link>
                       <button
+                        onClick={() => handleDeleteElection(election.id)}
                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete"
+                        title="ลบ"
                       >
                         <span className="material-symbols-outlined text-xl">
                           delete
@@ -244,15 +269,18 @@ export default function ElectionManagement() {
 
         {filteredElections.length === 0 && (
           <div className="text-center py-12">
-            <span className="material-symbols-outlined text-5xl text-slate-300 mb-4">
+            <span className="material-symbols-outlined text-5xl text-slate-300 mb-4 block">
               inbox
             </span>
             <p className="text-slate-500">ไม่พบการเลือกตั้ง</p>
+            <p className="text-slate-400 text-sm mt-1">
+              คลิก "สร้างการเลือกตั้งใหม่" เพื่อเริ่มต้น
+            </p>
           </div>
         )}
       </div>
 
-      {/* Create/Edit Modal */}
+      {/* Create Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-slide-up">
@@ -261,7 +289,10 @@ export default function ElectionManagement() {
                 สร้างการเลือกตั้งใหม่
               </h3>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setFormError("");
+                }}
                 className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
               >
                 <span className="material-symbols-outlined">close</span>
@@ -269,14 +300,25 @@ export default function ElectionManagement() {
             </div>
 
             <div className="p-6 space-y-6">
+              {/* Error Message */}
+              {formError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {formError}
+                </div>
+              )}
+
               {/* Title */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  ชื่อการเลือกตั้ง
+                  ชื่อการเลือกตั้ง <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="เช่น สภานักเรียน 2568"
+                  placeholder="เช่น คณะกรรมการนักเรียน 2568"
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
@@ -289,60 +331,88 @@ export default function ElectionManagement() {
                 <textarea
                   rows={3}
                   placeholder="อธิบายการเลือกตั้งนี้..."
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
                 />
+              </div>
+
+              {/* Election Type */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  ประเภทการเลือกตั้ง <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.type}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      type: e.target.value as ElectionType,
+                    })
+                  }
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+                >
+                  <option value="student-committee">คณะกรรมการนักเรียน</option>
+                  <option value="custom">อื่นๆ (กำหนดเอง)</option>
+                </select>
+                <p className="text-xs text-slate-500 mt-1.5">
+                  {formData.type === "student-committee"
+                    ? "จะสร้างตำแหน่งเริ่มต้น: ประธาน, รองประธาน, เลขานุการ, เหรัญญิก ฯลฯ"
+                    : "คุณจะต้องเพิ่มตำแหน่งเองในหน้าจัดการผู้สมัคร"}
+                </p>
               </div>
 
               {/* Date Range */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    วันเริ่มต้น
+                    วันเริ่มต้น <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="datetime-local"
+                    value={formData.startDate}
+                    onChange={(e) =>
+                      setFormData({ ...formData, startDate: e.target.value })
+                    }
                     className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    วันสิ้นสุด
+                    วันสิ้นสุด <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="datetime-local"
+                    value={formData.endDate}
+                    onChange={(e) =>
+                      setFormData({ ...formData, endDate: e.target.value })
+                    }
                     className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
-                </div>
-              </div>
-
-              {/* Candidates Section */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  ผู้สมัคร
-                </label>
-                <div className="border border-dashed border-slate-300 rounded-lg p-6 text-center">
-                  <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">
-                    person_add
-                  </span>
-                  <p className="text-sm text-slate-500 mb-3">
-                    ยังไม่มีผู้สมัคร
-                  </p>
-                  <button className="text-primary hover:text-primary-dark text-sm font-medium">
-                    + เพิ่มผู้สมัคร
-                  </button>
                 </div>
               </div>
             </div>
 
             <div className="p-6 border-t border-slate-200 flex justify-end gap-3">
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setFormError("");
+                }}
                 className="px-4 py-2.5 border border-slate-200 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
               >
                 ยกเลิก
               </button>
-              <button className="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
-                สร้างการเลือกตั้ง
+              <button
+                onClick={handleCreateElection}
+                className="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
+              >
+                สร้างและจัดการผู้สมัคร
+                <span className="material-symbols-outlined text-lg">
+                  arrow_forward
+                </span>
               </button>
             </div>
           </div>

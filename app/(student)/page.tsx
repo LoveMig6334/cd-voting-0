@@ -1,13 +1,106 @@
 "use client";
 
 import { BottomNav } from "@/components/BottomNav";
+import { useOpenElections } from "@/components/ElectionContext";
 import { useAuth } from "@/hooks/useAuth";
+import { ElectionEvent } from "@/lib/election-types";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+
+// Format date for display
+function formatDate(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+// Election Card Component
+function ElectionCard({ election }: { election: ElectionEvent }) {
+  const router = useRouter();
+
+  const enabledPositions = election.positions.filter((p) => p.enabled);
+  const hasCandidates = election.candidates.length > 0;
+
+  return (
+    <article className="group relative flex flex-col bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-all duration-300">
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex items-center justify-center size-12 rounded-xl bg-blue-50 text-primary shrink-0">
+          <span className="material-symbols-outlined filled">gavel</span>
+        </div>
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold uppercase tracking-wider border border-emerald-200">
+          <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          เปิด
+        </span>
+      </div>
+      <h2 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-primary transition-colors">
+        {election.title}
+      </h2>
+      <p className="text-sm text-slate-600 line-clamp-2 mb-4">
+        {election.description || "ลงคะแนนเสียงของคุณเพื่อเลือกตัวแทน"}
+      </p>
+      <div className="space-y-2 mb-5">
+        <div className="flex items-center gap-2.5 text-xs text-slate-500">
+          <span className="material-symbols-outlined text-[16px] opacity-70">
+            calendar_today
+          </span>
+          <span>
+            เริ่ม:{" "}
+            <span className="font-medium text-slate-700">
+              {formatDate(election.startDate)}
+            </span>
+          </span>
+        </div>
+        <div className="flex items-center gap-2.5 text-xs text-slate-500">
+          <span className="material-symbols-outlined text-[16px] opacity-70">
+            event_busy
+          </span>
+          <span>
+            สิ้นสุด:{" "}
+            <span className="font-medium text-slate-700">
+              {formatDate(election.endDate)}
+            </span>
+          </span>
+        </div>
+        <div className="flex items-center gap-2.5 text-xs text-slate-500">
+          <span className="material-symbols-outlined text-[16px] opacity-70">
+            groups
+          </span>
+          <span>
+            {enabledPositions.length} ตำแหน่ง • {election.candidates.length}{" "}
+            ผู้สมัคร
+          </span>
+        </div>
+      </div>
+      <div className="mt-auto">
+        <button
+          onClick={() => router.push(`/elections/${election.id}`)}
+          disabled={!hasCandidates}
+          className={`w-full flex items-center justify-center gap-2 font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98] ${
+            hasCandidates
+              ? "bg-primary hover:bg-accent-yellow hover:text-slate-900 active:bg-accent-yellow text-white shadow-sm shadow-primary/20 hover:shadow-accent-yellow/20"
+              : "bg-slate-200 text-slate-400 cursor-not-allowed"
+          }`}
+        >
+          <span>{hasCandidates ? "ลงคะแนนเลย" : "ยังไม่มีผู้สมัคร"}</span>
+          {hasCandidates && (
+            <span className="material-symbols-outlined text-[18px]">
+              arrow_forward
+            </span>
+          )}
+        </button>
+      </div>
+    </article>
+  );
+}
 
 export default function Dashboard() {
   const router = useRouter();
   const { user } = useAuth();
+  const { elections: openElections, loading } = useOpenElections();
 
   return (
     <div className="min-h-screen bg-background-light text-slate-900 pb-24">
@@ -52,77 +145,34 @@ export default function Dashboard() {
             การเลือกตั้งที่เปิดอยู่
           </h1>
           <div className="text-xs font-medium px-2 py-1 rounded bg-primary/10 text-primary border border-primary/20">
-            1 รายการ
+            {openElections.length} รายการ
           </div>
         </div>
 
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
-          <button className="px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium whitespace-nowrap shadow-sm shadow-primary/20">
-            ทั้งหมด
-          </button>
-          <button className="px-4 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 text-sm font-medium whitespace-nowrap hover:bg-slate-50">
-            สภานักเรียน
-          </button>
-          <button className="px-4 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 text-sm font-medium whitespace-nowrap hover:bg-slate-50">
-            ชมรม
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 gap-5">
-          {/* Card 1 */}
-          <article className="group relative flex flex-col bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition-all duration-300">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center justify-center size-12 rounded-xl bg-blue-50 text-primary shrink-0">
-                <span className="material-symbols-outlined filled">gavel</span>
-              </div>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold uppercase tracking-wider border border-emerald-200">
-                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                เปิด
-              </span>
-            </div>
-            <h2 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-primary transition-colors">
-              สภานักเรียน 2568
-            </h2>
-            <p className="text-sm text-slate-600 line-clamp-2 mb-4">
-              ลงคะแนนเสียงของคุณเพื่อเลือกตัวแทนสภานักเรียนชุดใหม่
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-12 h-12 border-4 border-slate-200 rounded-full animate-spin border-t-primary" />
+            <p className="mt-4 text-sm text-slate-500">กำลังโหลด...</p>
+          </div>
+        ) : openElections.length > 0 ? (
+          <div className="grid grid-cols-1 gap-5">
+            {openElections.map((election) => (
+              <ElectionCard key={election.id} election={election} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <span className="material-symbols-outlined text-6xl text-slate-300 mb-4">
+              how_to_vote
+            </span>
+            <h3 className="text-lg font-semibold text-slate-700">
+              ไม่มีการเลือกตั้งที่เปิดอยู่
+            </h3>
+            <p className="text-sm text-slate-500 mt-1">
+              กรุณารอจนกว่าจะมีการเลือกตั้งเปิดให้ลงคะแนน
             </p>
-            <div className="space-y-2 mb-5">
-              <div className="flex items-center gap-2.5 text-xs text-slate-500">
-                <span className="material-symbols-outlined text-[16px] opacity-70">
-                  calendar_today
-                </span>
-                <span>
-                  เริ่ม:{" "}
-                  <span className="font-medium text-slate-700">
-                    20 ต.ค. 08:00 น.
-                  </span>
-                </span>
-              </div>
-              <div className="flex items-center gap-2.5 text-xs text-slate-500">
-                <span className="material-symbols-outlined text-[16px] opacity-70">
-                  event_busy
-                </span>
-                <span>
-                  สิ้นสุด:{" "}
-                  <span className="font-medium text-slate-700">
-                    24 ต.ค. 17:00 น.
-                  </span>
-                </span>
-              </div>
-            </div>
-            <div className="mt-auto">
-              <button
-                onClick={() => router.push("/elections/student-council")}
-                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-accent-yellow hover:text-slate-900 active:bg-accent-yellow text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98] shadow-sm shadow-primary/20 hover:shadow-accent-yellow/20"
-              >
-                <span>ลงคะแนนเลย</span>
-                <span className="material-symbols-outlined text-[18px]">
-                  arrow_forward
-                </span>
-              </button>
-            </div>
-          </article>
-        </div>
+          </div>
+        )}
       </main>
 
       <BottomNav />

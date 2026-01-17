@@ -1,3 +1,4 @@
+import { ElectionProvider } from "@/components/ElectionContext";
 import type { Metadata } from "next";
 import { Space_Mono } from "next/font/google";
 import "./globals.css";
@@ -26,7 +27,7 @@ export default function RootLayout({
       <body
         className={`${spaceMono.variable} antialiased bg-background-light text-slate-900 font-display selection:bg-primary/30`}
       >
-        {children}
+        <ElectionProvider>{children}</ElectionProvider>
       </body>
     </html>
   );
