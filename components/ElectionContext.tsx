@@ -87,26 +87,29 @@ const ElectionContext = createContext<ElectionContextType | null>(null);
 // ============================================
 
 export function ElectionProvider({ children }: { children: React.ReactNode }) {
-  // Use lazy initializer to load initial data (avoids setState in effect)
-  const [elections, setElections] = useState<ElectionEvent[]>(() => {
-    if (typeof window === "undefined") return [];
-    return getAllElections();
-  });
-  const [loading] = useState(false);
+  // Start with empty state (same on server and client) to avoid hydration mismatch
+  const [elections, setElections] = useState<ElectionEvent[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Refresh data manually
+  // Refresh data from localStorage
   const refresh = useCallback(() => {
     setElections(getAllElections());
+    setLoading(false);
   }, []);
 
-  // Subscribe to changes (cross-tab sync only)
+  // Load initial data and subscribe to changes
+  // Note: Calling setState in useEffect is valid here because we're syncing with localStorage
   useEffect(() => {
+    // Load initial data (only runs on client)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    refresh();
+
     const unsubscribe = subscribeToElections((updatedElections) => {
       setElections(updatedElections);
     });
 
     return unsubscribe;
-  }, []);
+  }, [refresh]);
 
   // Election operations
   const getElection = useCallback((id: string) => {
