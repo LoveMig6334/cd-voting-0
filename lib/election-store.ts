@@ -330,6 +330,22 @@ export function getCandidatesByPosition(
   return election.candidates.filter((c) => c.positionId === positionId);
 }
 
+/**
+ * Get the next available candidate rank for a position
+ * @param electionId - Election ID
+ * @param positionId - Position ID
+ * @returns Next rank number (max existing rank + 1, or 1 if no candidates)
+ */
+export function getNextCandidateRank(
+  electionId: string,
+  positionId: string,
+): number {
+  const candidates = getCandidatesByPosition(electionId, positionId);
+  if (candidates.length === 0) return 1;
+  const maxRank = Math.max(...candidates.map((c) => c.rank));
+  return maxRank + 1;
+}
+
 // ============================================
 // Subscription for Real-time Sync
 // ============================================

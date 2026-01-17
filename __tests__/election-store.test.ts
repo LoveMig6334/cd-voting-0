@@ -10,6 +10,7 @@ import {
   DEFAULT_AVATAR_URL,
   deleteCandidate,
   getAllElections,
+  getNextCandidateRank,
   isCandidateNameDuplicate,
   updateCandidate,
 } from "@/lib/election-store";
@@ -405,6 +406,113 @@ describe("election-store", () => {
 
       expect(result).not.toBeNull();
       expect(result?.candidates).toHaveLength(0);
+    });
+  });
+
+  // ============================================
+  // getNextCandidateRank Tests
+  // ============================================
+  describe("getNextCandidateRank", () => {
+    it("should return 1 when no candidates exist", () => {
+      const election = createTestElection();
+
+      const result = getNextCandidateRank(election.id, "president");
+
+      expect(result).toBe(1);
+    });
+
+    it("should return 2 when one candidate exists with rank 1", () => {
+      const election = createTestElection();
+
+      addCandidate(election.id, {
+        positionId: "president",
+        name: "Candidate 1",
+        slogan: "Test",
+        imageUrl: "/test.jpg",
+        rank: 1,
+      });
+
+      const result = getNextCandidateRank(election.id, "president");
+
+      expect(result).toBe(2);
+    });
+
+    it("should return max rank + 1 when multiple candidates exist", () => {
+      const election = createTestElection();
+
+      addCandidate(election.id, {
+        positionId: "president",
+        name: "Candidate 1",
+        slogan: "Test",
+        imageUrl: "/test.jpg",
+        rank: 1,
+      });
+
+      addCandidate(election.id, {
+        positionId: "president",
+        name: "Candidate 2",
+        slogan: "Test",
+        imageUrl: "/test.jpg",
+        rank: 2,
+      });
+
+      addCandidate(election.id, {
+        positionId: "president",
+        name: "Candidate 3",
+        slogan: "Test",
+        imageUrl: "/test.jpg",
+        rank: 3,
+      });
+
+      const result = getNextCandidateRank(election.id, "president");
+
+      expect(result).toBe(4);
+    });
+
+    it("should handle non-sequential ranks correctly", () => {
+      const election = createTestElection();
+
+      addCandidate(election.id, {
+        positionId: "president",
+        name: "Candidate A",
+        slogan: "Test",
+        imageUrl: "/test.jpg",
+        rank: 1,
+      });
+
+      addCandidate(election.id, {
+        positionId: "president",
+        name: "Candidate B",
+        slogan: "Test",
+        imageUrl: "/test.jpg",
+        rank: 5,
+      });
+
+      const result = getNextCandidateRank(election.id, "president");
+
+      expect(result).toBe(6);
+    });
+
+    it("should return 1 for different position without candidates", () => {
+      const election = createTestElection();
+
+      addCandidate(election.id, {
+        positionId: "president",
+        name: "Candidate 1",
+        slogan: "Test",
+        imageUrl: "/test.jpg",
+        rank: 1,
+      });
+
+      const result = getNextCandidateRank(election.id, "secretary");
+
+      expect(result).toBe(1);
+    });
+
+    it("should return 1 for non-existent election", () => {
+      const result = getNextCandidateRank("non-existent-id", "president");
+
+      expect(result).toBe(1);
     });
   });
 });

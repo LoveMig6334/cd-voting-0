@@ -3,6 +3,7 @@
 import { useElection } from "@/components/ElectionContext";
 import {
   DEFAULT_AVATAR_URL,
+  getNextCandidateRank,
   isCandidateNameDuplicate,
 } from "@/lib/election-store";
 import { ElectionCandidate, Position } from "@/lib/election-types";
@@ -271,19 +272,21 @@ function AddCandidateModal({
   electionId,
   positionId,
   positionTitle,
+  initialRank,
   onClose,
   onAdd,
 }: {
   electionId: string;
   positionId: string;
   positionTitle: string;
+  initialRank: number;
   onClose: () => void;
   onAdd: (candidate: Omit<ElectionCandidate, "id">) => void;
 }) {
   const [name, setName] = useState("");
   const [slogan, setSlogan] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [rank, setRank] = useState(1);
+  const [rank, setRank] = useState(initialRank);
   const [error, setError] = useState("");
 
   const handleSubmit = () => {
@@ -833,6 +836,10 @@ export default function CandidateManagement() {
           electionId={electionId}
           positionId={showAddCandidate.positionId}
           positionTitle={showAddCandidate.positionTitle}
+          initialRank={getNextCandidateRank(
+            electionId,
+            showAddCandidate.positionId,
+          )}
           onClose={() => setShowAddCandidate(null)}
           onAdd={handleAddCandidate}
         />
