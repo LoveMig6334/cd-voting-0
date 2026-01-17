@@ -42,7 +42,7 @@ export default function Login() {
           const found = students.find(
             (s) =>
               String(s.id) === studentId.trim() &&
-              s.nationalId === nationalId.trim()
+              s.nationalId === nationalId.trim(),
           );
 
           if (found) {
@@ -80,7 +80,7 @@ export default function Login() {
           String(s.id) === studentId.trim() &&
           s.nationalId === nationalId.trim() &&
           s.name.trim() === name.trim() &&
-          s.surname.trim() === surname.trim()
+          s.surname.trim() === surname.trim(),
       );
 
       if (found) {
@@ -192,12 +192,12 @@ export default function Login() {
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-500">
-                  รหัสนักเรียน
+                  รหัสประจำตัวนักเรียน
                 </label>
                 <div className="relative">
                   <input
                     className="block w-full rounded-lg border-slate-200 bg-white/70 p-3.5 pr-10 text-base focus:bg-white focus:border-primary focus:ring-primary transition-colors"
-                    placeholder="กรอกรหัสนักเรียน"
+                    placeholder="รหัสประจำตัวนักเรียน 4 หลัก"
                     value={studentId}
                     onChange={(e) => setStudentId(e.target.value)}
                   />
