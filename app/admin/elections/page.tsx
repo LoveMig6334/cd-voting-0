@@ -274,7 +274,7 @@ export default function ElectionManagement() {
             </span>
             <p className="text-slate-500">ไม่พบการเลือกตั้ง</p>
             <p className="text-slate-400 text-sm mt-1">
-              คลิก "สร้างการเลือกตั้งใหม่" เพื่อเริ่มต้น
+              คลิก &quot;สร้างการเลือกตั้งใหม่&quot; เพื่อเริ่มต้น
             </p>
           </div>
         )}
