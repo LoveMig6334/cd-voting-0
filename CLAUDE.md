@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-CD Voting 0 is a Next.js-based school election system for online voting. Features include role-based access (Student/Admin), OCR-based registration via student cards, and real-time vote tracking. Currently uses mock data with no backend implementation.
+CD Voting 0 is a Next.js-based school election system for online voting. Features include role-based access (Student/Admin), manual student login with National ID auto-fill, and real-time vote tracking. Currently uses mock data with no backend implementation.
 
 ## Development Commands
 
@@ -20,22 +20,25 @@ npm run lint     # Run ESLint
 - **Framework:** Next.js 16 with App Router, React 19, TypeScript (strict mode)
 - **Styling:** Tailwind CSS 4, glassmorphism design patterns
 - **UI Libraries:** TanStack React Table, Recharts, Material Symbols Outlined icons
-- **OCR:** Tesseract.js for student card scanning
+- **OCR (Legacy/Debug):** Tesseract.js and OpenCV.js available for student card scanning (currently in debug pages)
 
 ## Architecture
 
 ### Route Groups
+
 - `app/(auth)/` - Authentication pages (login, register)
 - `app/(student)/` - Protected student routes (dashboard, elections, profile, voting)
 - `app/admin/` - Admin dashboard and management pages
 
 ### Key Directories
-- `components/` - Reusable UI components (BottomNav, AdminNavbar, CameraOverlay)
+
+- `components/` - Reusable UI components (BottomNav, AdminNavbar, ElectionCard)
 - `hooks/` - Custom React hooks (useAuth for localStorage-based auth)
 - `lib/` - Utilities (student-data.ts for mock data fetching)
 - `types.ts` - TypeScript interfaces for Candidate, Election, VoteRecord, Student, OCRResponse
 
 ### Data Flow
+
 - Authentication: `useAuth` hook stores user in localStorage (`currentUser` key)
 - Mock admin credentials: `admin`/`admin123`
 - Student data: Mock database in `public/data.json` (Thai language content)
@@ -51,6 +54,7 @@ npm run lint     # Run ESLint
 ## Styling Patterns
 
 Custom CSS in `globals.css` includes:
+
 - Glassmorphism utilities with backdrop blur
 - Custom animations: scan, fadeIn, slideUp, float, pulse-glow, neon-pulse
 - Color palette: primary (#137fec), royal-blue (#1a56db), vivid-yellow (#fbbf24)
@@ -58,5 +62,6 @@ Custom CSS in `globals.css` includes:
 ## Current State
 
 - All data is mock/client-side (no backend API implemented)
-- Tesseract.js and TanStack Table installed but not fully integrated
+- Tesseract.js is integrated into debug laboratory pages (`app/debug/`)
+- TanStack Table used for Admin results and student management
 - README.md contains extensive Thai documentation with API design specs and TODO list
