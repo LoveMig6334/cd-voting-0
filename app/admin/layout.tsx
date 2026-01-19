@@ -28,7 +28,7 @@ export default function AdminLayout({
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
             <div className="glass-panel rounded-2xl px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-cool-gray">
               <p className="text-dark-slate/70">
-                © 2024 CD Voting 0. สงวนลิขสิทธิ์
+                © 2026 CD Voting 0. สงวนลิขสิทธิ์
               </p>
               <div className="flex gap-6">
                 <a href="#" className="hover:text-royal-blue transition-colors">

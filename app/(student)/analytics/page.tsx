@@ -167,7 +167,7 @@ export default function Analytics() {
                   {Math.round(
                     (selectedElection.stats.votesCast /
                       selectedElection.stats.totalVoters) *
-                      100
+                      100,
                   )}
                   %
                 </span>
@@ -257,8 +257,8 @@ export default function Analytics() {
             {view === "list"
               ? "ผลการเลือกตั้ง"
               : view === "verify"
-              ? "ตรวจสอบความปลอดภัย"
-              : "ผลลัพธ์"}
+                ? "ตรวจสอบความปลอดภัย"
+                : "ผลลัพธ์"}
           </h2>
           <div className="w-10"></div>
         </header>

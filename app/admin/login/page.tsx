@@ -197,7 +197,7 @@ export default function AdminLoginPage() {
             สำหรับผู้ดูแลระบบเท่านั้น
           </p>
           <p className="mt-3 text-xs text-dark-slate/50">
-            CD Voting 0 &copy; 2024
+            CD Voting 0 &copy; 2026
           </p>
         </div>
       </div>
