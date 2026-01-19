@@ -6,7 +6,10 @@
 import {
   getAllVotes,
   getCandidateVotesAggregate,
+  getElectionPrimaryWinner,
+  getElectionWinners,
   getPositionResults,
+  getPositionWinner,
   getVoterTurnout,
   getVotesByElection,
   getVotingLog,
@@ -366,6 +369,188 @@ describe("vote-store", () => {
       mockDispatchEvent.mockClear();
       resetVoteData();
       expect(mockDispatchEvent).toHaveBeenCalled();
+    });
+  });
+
+  // ============================================
+  // getPositionWinner Tests
+  // ============================================
+  describe("getPositionWinner", () => {
+    const candidates = [
+      { id: "c1", name: "Candidate 1" },
+      { id: "c2", name: "Candidate 2" },
+    ];
+
+    it("should return no_candidates status when no candidates", () => {
+      const winner = getPositionWinner("election1", "president", "ประธาน", []);
+
+      expect(winner.status).toBe("no_candidates");
+      expect(winner.totalVotes).toBe(0);
+    });
+
+    it("should return no_votes status when no votes cast", () => {
+      const winner = getPositionWinner(
+        "election1",
+        "president",
+        "ประธาน",
+        candidates,
+      );
+
+      expect(winner.status).toBe("no_votes");
+      expect(winner.totalVotes).toBe(0);
+    });
+
+    it("should return winner status with correct winner", () => {
+      recordVote("election1", 6367, { president: "c1" });
+      recordVote("election1", 6368, { president: "c1" });
+      recordVote("election1", 6369, { president: "c2" });
+
+      const winner = getPositionWinner(
+        "election1",
+        "president",
+        "ประธาน",
+        candidates,
+      );
+
+      expect(winner.status).toBe("winner");
+      expect(winner.winner?.candidateId).toBe("c1");
+      expect(winner.winner?.votes).toBe(2);
+      expect(winner.totalVotes).toBe(3);
+    });
+
+    it("should return abstain_wins status when abstain has most votes", () => {
+      recordVote("election1", 6367, { president: "abstain" });
+      recordVote("election1", 6368, { president: "abstain" });
+      recordVote("election1", 6369, { president: "c1" });
+
+      const winner = getPositionWinner(
+        "election1",
+        "president",
+        "ประธาน",
+        candidates,
+      );
+
+      expect(winner.status).toBe("abstain_wins");
+      expect(winner.abstainCount).toBe(2);
+    });
+
+    it("should return tie status when multiple candidates have same votes", () => {
+      recordVote("election1", 6367, { president: "c1" });
+      recordVote("election1", 6368, { president: "c2" });
+
+      const winner = getPositionWinner(
+        "election1",
+        "president",
+        "ประธาน",
+        candidates,
+      );
+
+      expect(winner.status).toBe("tie");
+      expect(winner.tiedCandidates).toHaveLength(2);
+    });
+
+    it("should handle winner when abstain count equals candidate votes", () => {
+      // When abstain ties with a candidate, candidate wins (abstain must be strictly greater)
+      recordVote("election1", 6367, { president: "c1" });
+      recordVote("election1", 6368, { president: "abstain" });
+
+      const winner = getPositionWinner(
+        "election1",
+        "president",
+        "ประธาน",
+        candidates,
+      );
+
+      // c1 has 1 vote, abstain has 1 vote - should be winner (not abstain_wins)
+      expect(winner.status).toBe("winner");
+      expect(winner.winner?.candidateId).toBe("c1");
+    });
+  });
+
+  // ============================================
+  // getElectionWinners Tests
+  // ============================================
+  describe("getElectionWinners", () => {
+    const positions = [
+      { id: "president", title: "ประธาน", enabled: true },
+      { id: "secretary", title: "เลขานุการ", enabled: true },
+      { id: "disabled_pos", title: "ตำแหน่งปิด", enabled: false },
+    ];
+
+    const candidates = [
+      { id: "c1", name: "Candidate 1", positionId: "president" },
+      { id: "c2", name: "Candidate 2", positionId: "president" },
+      { id: "c3", name: "Candidate 3", positionId: "secretary" },
+    ];
+
+    it("should return winners for all enabled positions", () => {
+      recordVote("election1", 6367, { president: "c1", secretary: "c3" });
+
+      const winners = getElectionWinners("election1", positions, candidates);
+
+      expect(winners).toHaveLength(2); // Only enabled positions
+      expect(winners[0].positionId).toBe("president");
+      expect(winners[1].positionId).toBe("secretary");
+    });
+
+    it("should handle positions with no candidates", () => {
+      const positionsWithEmpty = [
+        ...positions,
+        { id: "empty_pos", title: "ตำแหน่งว่าง", enabled: true },
+      ];
+
+      const winners = getElectionWinners(
+        "election1",
+        positionsWithEmpty,
+        candidates,
+      );
+
+      const emptyPosWinner = winners.find((w) => w.positionId === "empty_pos");
+      expect(emptyPosWinner?.status).toBe("no_candidates");
+    });
+  });
+
+  // ============================================
+  // getElectionPrimaryWinner Tests
+  // ============================================
+  describe("getElectionPrimaryWinner", () => {
+    const positions = [{ id: "president", title: "ประธาน", enabled: true }];
+
+    const candidates = [
+      { id: "c1", name: "Candidate 1", positionId: "president" },
+    ];
+
+    it("should return primary winner text", () => {
+      recordVote("election1", 6367, { president: "c1" });
+
+      const primary = getElectionPrimaryWinner(
+        "election1",
+        positions,
+        candidates,
+      );
+
+      expect(primary?.status).toBe("winner");
+      expect(primary?.text).toBe("Candidate 1");
+    });
+
+    it("should return null when no positions", () => {
+      const primary = getElectionPrimaryWinner("election1", [], candidates);
+
+      expect(primary).toBeNull();
+    });
+
+    it("should return correct text for abstain wins", () => {
+      recordVote("election1", 6367, { president: "abstain" });
+      recordVote("election1", 6368, { president: "abstain" });
+
+      const primary = getElectionPrimaryWinner(
+        "election1",
+        positions,
+        candidates,
+      );
+
+      expect(primary?.status).toBe("abstain_wins");
+      expect(primary?.text).toBe("โหวตไม่เลือก");
     });
   });
 });

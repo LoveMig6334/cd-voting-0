@@ -64,6 +64,29 @@ export interface ElectionResultsSummary {
   allCandidateVotes: CandidateVoteCount[];
 }
 
+/**
+ * Status of winner determination for a position
+ */
+export type WinnerStatus =
+  | "winner" // มีผู้ชนะ
+  | "abstain_wins" // Vote No ชนะ
+  | "tie" // เสมอ
+  | "no_candidates" // ไม่มีผู้สมัคร
+  | "no_votes"; // ยังไม่มีคะแนน
+
+/**
+ * Winner information for a position
+ */
+export interface PositionWinner {
+  positionId: string;
+  positionTitle: string;
+  status: WinnerStatus;
+  winner?: CandidateVoteCount; // ผู้ชนะ (ถ้ามี)
+  tiedCandidates?: CandidateVoteCount[]; // ผู้สมัครที่เสมอกัน
+  abstainCount: number;
+  totalVotes: number;
+}
+
 // ============================================
 // Storage Operations
 // ============================================
@@ -360,4 +383,165 @@ export function resetVoteData(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(STORAGE_KEY);
   window.dispatchEvent(new CustomEvent(STORAGE_EVENT_NAME));
+}
+
+// ============================================
+// Winner Determination
+// ============================================
+
+/**
+ * Determine the winner for a specific position
+ * Handles edge cases: Vote No wins, ties, no candidates, no votes
+ */
+export function getPositionWinner(
+  electionId: string,
+  positionId: string,
+  positionTitle: string,
+  candidates: { id: string; name: string }[],
+): PositionWinner {
+  // Handle no candidates case
+  if (candidates.length === 0) {
+    return {
+      positionId,
+      positionTitle,
+      status: "no_candidates",
+      abstainCount: 0,
+      totalVotes: 0,
+    };
+  }
+
+  // Get position results
+  const results = getPositionResults(
+    electionId,
+    positionId,
+    positionTitle,
+    candidates,
+  );
+
+  // Handle no votes case
+  if (results.totalVotes === 0) {
+    return {
+      positionId,
+      positionTitle,
+      status: "no_votes",
+      abstainCount: 0,
+      totalVotes: 0,
+    };
+  }
+
+  // Get the highest vote count among candidates
+  const maxCandidateVotes =
+    results.candidates.length > 0
+      ? Math.max(...results.candidates.map((c) => c.votes))
+      : 0;
+
+  // Check if abstain wins
+  if (results.abstainCount > maxCandidateVotes && maxCandidateVotes >= 0) {
+    return {
+      positionId,
+      positionTitle,
+      status: "abstain_wins",
+      abstainCount: results.abstainCount,
+      totalVotes: results.totalVotes,
+    };
+  }
+
+  // Find candidates with the highest votes
+  const topCandidates = results.candidates.filter(
+    (c) => c.votes === maxCandidateVotes,
+  );
+
+  // Check for tie
+  if (topCandidates.length > 1) {
+    return {
+      positionId,
+      positionTitle,
+      status: "tie",
+      tiedCandidates: topCandidates,
+      abstainCount: results.abstainCount,
+      totalVotes: results.totalVotes,
+    };
+  }
+
+  // Normal winner
+  return {
+    positionId,
+    positionTitle,
+    status: "winner",
+    winner: topCandidates[0],
+    abstainCount: results.abstainCount,
+    totalVotes: results.totalVotes,
+  };
+}
+
+/**
+ * Get winners for all positions in an election
+ */
+export function getElectionWinners(
+  electionId: string,
+  positions: { id: string; title: string; enabled: boolean }[],
+  candidates: { id: string; name: string; positionId: string }[],
+): PositionWinner[] {
+  const enabledPositions = positions.filter((p) => p.enabled);
+
+  return enabledPositions.map((position) => {
+    const positionCandidates = candidates
+      .filter((c) => c.positionId === position.id)
+      .map((c) => ({ id: c.id, name: c.name }));
+
+    return getPositionWinner(
+      electionId,
+      position.id,
+      position.title,
+      positionCandidates,
+    );
+  });
+}
+
+/**
+ * Get the primary winner display text for an election
+ * Returns the winner of the first position (usually President)
+ */
+export function getElectionPrimaryWinner(
+  electionId: string,
+  positions: { id: string; title: string; enabled: boolean }[],
+  candidates: { id: string; name: string; positionId: string }[],
+): { text: string; status: WinnerStatus } | null {
+  const winners = getElectionWinners(electionId, positions, candidates);
+
+  if (winners.length === 0) {
+    return null;
+  }
+
+  const primaryWinner = winners[0];
+
+  switch (primaryWinner.status) {
+    case "winner":
+      return {
+        text: primaryWinner.winner?.candidateName || "Unknown",
+        status: "winner",
+      };
+    case "abstain_wins":
+      return {
+        text: "โหวตไม่เลือก",
+        status: "abstain_wins",
+      };
+    case "tie":
+      return {
+        text: "เสมอกัน",
+        status: "tie",
+      };
+    case "no_candidates":
+      return {
+        text: "ไม่มีผู้สมัคร",
+        status: "no_candidates",
+      };
+    case "no_votes":
+      return {
+        text: "ยังไม่มีคะแนน",
+        status: "no_votes",
+      };
+    default:
+      return null;
+  }
 }
