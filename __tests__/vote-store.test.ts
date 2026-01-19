@@ -69,6 +69,9 @@ describe("vote-store", () => {
     });
 
     it("should prevent duplicate votes from same student", () => {
+      // Suppress expected console.warn for this test
+      const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+
       const votes = { president: "candidate1" };
 
       // First vote
@@ -81,10 +84,17 @@ describe("vote-store", () => {
       });
       expect(secondResult).toBeNull();
 
+      // Verify warning was called
+      expect(warnSpy).toHaveBeenCalledWith(
+        "Student 6367 already voted in election election1",
+      );
+
       // Only one vote should exist
       const allVotes = getAllVotes();
       expect(allVotes).toHaveLength(1);
       expect(allVotes[0].votes.president).toBe("candidate1");
+
+      warnSpy.mockRestore();
     });
 
     it("should allow same student to vote in different elections", () => {
