@@ -1,3 +1,7 @@
+"use client";
+
+import { formatThaiDate, useDashboardData } from "@/hooks/useDashboardData";
+import { ActivityDisplayItem } from "@/lib/activity-store";
 import Link from "next/link";
 
 // Stats Card Component with Glassmorphism
@@ -117,18 +121,23 @@ function StatsCard({
   return <div className={cardClassName}>{cardContent}</div>;
 }
 
-// Activity Timeline Item
-interface ActivityItem {
-  id: number;
-  icon: string;
-  iconBg: string;
-  iconColor: string;
-  title: string;
-  description: string;
-  time: string;
-}
+// Activity Timeline Item - Updated to use ActivityDisplayItem
+function ActivityTimeline({
+  activities,
+}: {
+  activities: ActivityDisplayItem[];
+}) {
+  if (activities.length === 0) {
+    return (
+      <div className="text-center py-8 text-cool-gray">
+        <span className="material-symbols-outlined text-4xl mb-2 block opacity-50">
+          history
+        </span>
+        <p className="text-sm">ยังไม่มีกิจกรรม</p>
+      </div>
+    );
+  }
 
-function ActivityTimeline({ activities }: { activities: ActivityItem[] }) {
   return (
     <div className="relative pl-10">
       {/* Timeline Line */}
@@ -170,10 +179,17 @@ function ActivityTimeline({ activities }: { activities: ActivityItem[] }) {
 interface Candidate {
   name: string;
   percentage: number;
-  color: string;
 }
 
 function CandidateProgress({ candidates }: { candidates: Candidate[] }) {
+  if (candidates.length === 0) {
+    return (
+      <div className="text-center py-4 text-cool-gray">
+        <p className="text-sm">ยังไม่มีผู้สมัคร</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {candidates.map((candidate, index) => (
@@ -198,53 +214,87 @@ function CandidateProgress({ candidates }: { candidates: Candidate[] }) {
   );
 }
 
-// Mock data
-const mockActivities: ActivityItem[] = [
-  {
-    id: 1,
-    icon: "how_to_reg",
-    iconBg: "bg-royal-blue",
-    iconColor: "text-white",
-    title: "มีการลงคะแนนใหม่",
-    description: "รหัสนักเรียน #4829 ลงคะแนนในสภานักเรียน",
-    time: "เมื่อสักครู่",
-  },
-  {
-    id: 2,
-    icon: "check_circle",
-    iconBg: "bg-emerald-500",
-    iconColor: "text-white",
-    title: "ตรวจสอบระบบ",
-    description: "ตรวจสอบความถูกต้องอัตโนมัติเสร็จสมบูรณ์",
-    time: "14 นาทีที่แล้ว",
-  },
-  {
-    id: 3,
-    icon: "edit",
-    iconBg: "bg-vivid-yellow",
-    iconColor: "text-dark-slate",
-    title: "แก้ไขการเลือกตั้ง",
-    description: 'ผู้ดูแลแก้ไขคำอธิบาย "ชมรม"',
-    time: "1 ชั่วโมงที่แล้ว",
-  },
-  {
-    id: 4,
-    icon: "person_add",
-    iconBg: "bg-slate-500",
-    iconColor: "text-white",
-    title: "ลงทะเบียนใหม่",
-    description: "นำเข้าข้อมูลนักเรียนเป็นชุดเสร็จสมบูรณ์",
-    time: "3 ชั่วโมงที่แล้ว",
-  },
-];
+// No Active Election Placeholder
+function NoActiveElection() {
+  return (
+    <div className="ticket-card rounded-2xl overflow-hidden">
+      <div className="p-12 text-center">
+        <span className="material-symbols-outlined text-6xl text-cool-gray/30 mb-4 block">
+          how_to_vote
+        </span>
+        <h3 className="text-xl font-bold text-dark-slate mb-2">
+          ไม่มีการเลือกตั้งที่เปิดอยู่
+        </h3>
+        <p className="text-cool-gray mb-6">
+          สร้างการเลือกตั้งใหม่เพื่อเริ่มรับคะแนนจากนักเรียน
+        </p>
+        <Link
+          href="/admin/elections"
+          className="inline-flex items-center gap-2 bg-linear-to-r from-royal-blue to-cyan-500 hover:from-royal-blue/90 hover:to-cyan-500/90 text-white px-6 py-3 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-royal-blue/25"
+        >
+          <span className="material-symbols-outlined text-sm">add</span>
+          สร้างการเลือกตั้ง
+        </Link>
+      </div>
+    </div>
+  );
+}
 
-const mockCandidates: Candidate[] = [
-  { name: "Sarah Jenkins", percentage: 45, color: "bg-blue-500" },
-  { name: "Michael Chen", percentage: 32, color: "bg-indigo-400" },
-  { name: "Jessica Wong", percentage: 23, color: "bg-cyan-400" },
-];
+// Loading Skeleton
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-8 animate-pulse">
+      {/* Header Skeleton */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="h-8 bg-slate-200 rounded w-64 mb-2"></div>
+          <div className="h-4 bg-slate-200 rounded w-48"></div>
+        </div>
+      </div>
+
+      {/* Stats Cards Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="glass-card rounded-2xl p-6 h-40">
+            <div className="h-10 w-10 bg-slate-200 rounded-xl mb-4"></div>
+            <div className="h-4 bg-slate-200 rounded w-24 mb-2"></div>
+            <div className="h-8 bg-slate-200 rounded w-16"></div>
+          </div>
+        ))}
+      </div>
+
+      {/* Main Content Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <div className="glass-card rounded-2xl h-96"></div>
+        </div>
+        <div className="lg:col-span-1">
+          <div className="glass-card rounded-2xl h-96"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
+  const {
+    totalStudents,
+    studentTrend,
+    activeElections,
+    totalVotesInActiveElections,
+    voterTurnoutPercentage,
+    systemStatus,
+    primaryActiveElection,
+    recentActivities,
+    closeElection,
+    isLoading,
+  } = useDashboardData();
+
+  // Show loading skeleton while data is being fetched
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
   return (
     <div className="space-y-8">
       {/* Header Section */}
@@ -261,10 +311,13 @@ export default function AdminDashboard() {
           <span className="text-sm text-cool-gray bg-white/50 px-3 py-1.5 rounded-lg backdrop-blur-sm">
             เข้าสู่ระบบล่าสุด: วันนี้, 8:30 น.
           </span>
-          <button className="glass-card px-4 py-2 rounded-xl text-sm font-medium text-dark-slate hover:bg-white/90 transition-colors flex items-center gap-2">
+          <Link
+            href="/admin/results"
+            className="glass-card px-4 py-2 rounded-xl text-sm font-medium text-dark-slate hover:bg-white/90 transition-colors flex items-center gap-2"
+          >
             <span className="material-symbols-outlined text-lg">analytics</span>
             ดูรายงาน
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -272,34 +325,44 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="นักเรียนทั้งหมด"
-          value="1,452"
+          value={totalStudents.toLocaleString()}
           icon="school"
           iconColor="text-royal-blue"
-          trend={{ value: "2.5%", isPositive: true }}
+          trend={studentTrend}
           href="/admin/students"
         />
         <StatsCard
           title="การเลือกตั้งที่เปิด"
-          value="2"
+          value={activeElections}
           icon="how_to_vote"
           iconColor="text-emerald-600"
-          badge={{ text: "เปิด", color: "bg-emerald-100 text-emerald-700" }}
+          badge={
+            activeElections > 0
+              ? { text: "เปิด", color: "bg-emerald-100 text-emerald-700" }
+              : { text: "ปิด", color: "bg-slate-100 text-slate-600" }
+          }
           href="/admin/elections"
         />
         <StatsCard
           title="คะแนนทั้งหมด"
-          value="843"
+          value={totalVotesInActiveElections.toLocaleString()}
           icon="ballot"
           iconColor="text-violet-600"
-          badge={{ text: "58%", color: "bg-royal-blue/10 text-[#0F5FC2]" }}
+          badge={{
+            text: `${voterTurnoutPercentage}%`,
+            color: "bg-royal-blue/10 text-[#0F5FC2]",
+          }}
           href="/admin/results"
         />
         <StatsCard
           title="สถานะระบบ"
-          value="12%"
+          value={systemStatus === "online" ? "พร้อมใช้งาน" : "ออฟไลน์"}
           icon="dns"
           iconColor="text-orange-600"
-          indicator={{ text: "ออนไลน์", pulse: true }}
+          indicator={{
+            text: systemStatus === "online" ? "ออนไลน์" : "ออฟไลน์",
+            pulse: systemStatus === "online",
+          }}
           href="/admin/settings"
         />
       </div>
@@ -308,112 +371,122 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Active Election Card - Premium Ticket Design */}
         <div className="lg:col-span-2">
-          <div className="ticket-card rounded-2xl overflow-hidden">
-            <div className="p-6 border-b border-slate-100/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-linear-to-r from-royal-blue/5 to-transparent">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                  <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
-                    Live
-                  </span>
+          {primaryActiveElection ? (
+            <div className="ticket-card rounded-2xl overflow-hidden">
+              <div className="p-6 border-b border-slate-100/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-linear-to-r from-royal-blue/5 to-transparent">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">
+                      Live
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-bold text-dark-slate">
+                    {primaryActiveElection.title}
+                  </h3>
+                  <p className="text-sm text-cool-gray mt-1">
+                    {primaryActiveElection.description}
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold text-dark-slate">
-                  สภานักเรียน 2568
-                </h3>
-                <p className="text-sm text-cool-gray mt-1">
-                  ลงคะแนนเสียงของคุณเพื่อเลือกตัวแทนสภานักเรียนชุดใหม่
-                </p>
+                <div className="flex gap-3">
+                  <Link
+                    href={`/admin/elections/${primaryActiveElection.id}/results`}
+                    className="bg-linear-to-r from-royal-blue to-cyan-500 hover:from-royal-blue/90 hover:to-cyan-500/90 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-royal-blue/25 flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-sm">
+                      analytics
+                    </span>
+                    ผลลัพธ์สด
+                  </Link>
+                  <button
+                    onClick={() => closeElection(primaryActiveElection.id)}
+                    className="glass-card border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+                  >
+                    ปิด
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-3">
+
+              <div className="p-6">
+                {/* Election Meta */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+                  <div className="glass-card rounded-xl p-4 flex items-center gap-4">
+                    <div className="p-2 bg-royal-blue/10 rounded-lg">
+                      <span className="material-symbols-outlined text-royal-blue">
+                        calendar_today
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-cool-gray uppercase font-semibold">
+                        วันเริ่ม
+                      </p>
+                      <p className="text-sm font-bold text-dark-slate">
+                        {formatThaiDate(primaryActiveElection.startDate)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="glass-card rounded-xl p-4 flex items-center gap-4">
+                    <div className="p-2 bg-orange-500/10 rounded-lg">
+                      <span className="material-symbols-outlined text-orange-500">
+                        event
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-cool-gray uppercase font-semibold">
+                        วันสิ้นสุด
+                      </p>
+                      <p className="text-sm font-bold text-dark-slate">
+                        {formatThaiDate(primaryActiveElection.endDate)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="glass-card rounded-xl p-4 flex items-center gap-4">
+                    <div className="p-2 bg-emerald-500/10 rounded-lg">
+                      <span className="material-symbols-outlined text-emerald-500">
+                        group
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-cool-gray uppercase font-semibold">
+                        การมีส่วนร่วม
+                      </p>
+                      <p className="text-sm font-bold text-dark-slate">
+                        {primaryActiveElection.voterTurnout.percentage}%
+                        ลงคะแนนแล้ว
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Candidate Progress */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold text-dark-slate flex items-center gap-2">
+                    <span className="material-symbols-outlined text-lg text-royal-blue">
+                      trending_up
+                    </span>
+                    แนวโน้มผู้สมัครนำ
+                  </h4>
+                  <CandidateProgress
+                    candidates={primaryActiveElection.topCandidates}
+                  />
+                </div>
+              </div>
+
+              <div className="bg-linear-to-r from-royal-blue/5 via-transparent to-cyan-500/5 px-6 py-4 border-t border-slate-100/50 flex justify-center">
                 <Link
-                  href="/admin/elections/1/results"
-                  className="bg-linear-to-r from-royal-blue to-cyan-500 hover:from-royal-blue/90 hover:to-cyan-500/90 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-royal-blue/25 flex items-center gap-2"
+                  href={`/admin/elections/${primaryActiveElection.id}/results`}
+                  className="text-royal-blue hover:text-cyan-600 text-sm font-semibold flex items-center gap-1 transition-colors"
                 >
+                  ดูวิเคราะห์ละเอียด
                   <span className="material-symbols-outlined text-sm">
-                    analytics
+                    arrow_forward
                   </span>
-                  ผลลัพธ์สด
                 </Link>
-                <button className="glass-card border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 rounded-xl text-sm font-medium transition-colors">
-                  ปิด
-                </button>
               </div>
             </div>
-
-            <div className="p-6">
-              {/* Election Meta */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-                <div className="glass-card rounded-xl p-4 flex items-center gap-4">
-                  <div className="p-2 bg-royal-blue/10 rounded-lg">
-                    <span className="material-symbols-outlined text-royal-blue">
-                      calendar_today
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-cool-gray uppercase font-semibold">
-                      วันเริ่ม
-                    </p>
-                    <p className="text-sm font-bold text-dark-slate">
-                      20 ต.ค. 08:00 น.
-                    </p>
-                  </div>
-                </div>
-                <div className="glass-card rounded-xl p-4 flex items-center gap-4">
-                  <div className="p-2 bg-orange-500/10 rounded-lg">
-                    <span className="material-symbols-outlined text-orange-500">
-                      event
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-cool-gray uppercase font-semibold">
-                      วันสิ้นสุด
-                    </p>
-                    <p className="text-sm font-bold text-dark-slate">
-                      24 ต.ค. 17:00 น.
-                    </p>
-                  </div>
-                </div>
-                <div className="glass-card rounded-xl p-4 flex items-center gap-4">
-                  <div className="p-2 bg-emerald-500/10 rounded-lg">
-                    <span className="material-symbols-outlined text-emerald-500">
-                      group
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-cool-gray uppercase font-semibold">
-                      การมีส่วนร่วม
-                    </p>
-                    <p className="text-sm font-bold text-dark-slate">
-                      58% ลงคะแนนแล้ว
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Candidate Progress */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-semibold text-dark-slate flex items-center gap-2">
-                  <span className="material-symbols-outlined text-lg text-royal-blue">
-                    trending_up
-                  </span>
-                  แนวโน้มผู้สมัครนำ
-                </h4>
-                <CandidateProgress candidates={mockCandidates} />
-              </div>
-            </div>
-
-            <div className="bg-linear-to-r from-royal-blue/5 via-transparent to-cyan-500/5 px-6 py-4 border-t border-slate-100/50 flex justify-center">
-              <Link
-                href="/admin/elections/1/results"
-                className="text-royal-blue hover:text-cyan-600 text-sm font-semibold flex items-center gap-1 transition-colors"
-              >
-                ดูวิเคราะห์ละเอียด
-                <span className="material-symbols-outlined text-sm">
-                  arrow_forward
-                </span>
-              </Link>
-            </div>
-          </div>
+          ) : (
+            <NoActiveElection />
+          )}
         </div>
 
         {/* Activity Timeline - Vertical Glass Pane */}
@@ -430,7 +503,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="p-6 grow overflow-y-auto max-h-[400px] no-scrollbar">
-              <ActivityTimeline activities={mockActivities} />
+              <ActivityTimeline activities={recentActivities} />
             </div>
             <div className="p-4 border-t border-slate-100/50 text-center">
               <button className="text-sm font-semibold text-royal-blue hover:text-cyan-600 transition-colors flex items-center gap-1 mx-auto">
