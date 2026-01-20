@@ -6,12 +6,15 @@
 import {
   addCandidate,
   addCandidateWithValidation,
+  addCustomPosition,
   createElection,
   DEFAULT_AVATAR_URL,
   deleteCandidate,
   getAllElections,
   getNextCandidateRank,
   isCandidateNameDuplicate,
+  isElectionLocked,
+  togglePosition,
   updateCandidate,
 } from "@/lib/election-store";
 import type { ElectionCandidate } from "@/lib/election-types";
@@ -49,14 +52,14 @@ describe("election-store", () => {
     mockDispatchEvent.mockClear();
   });
 
-  // Helper function to create a test election
+  // Helper function to create a test election (draft status - future start date)
   const createTestElection = () => {
     return createElection({
       title: "Test Election",
       description: "Test Description",
       type: "student-committee",
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 86400000).toISOString(),
+      startDate: new Date(Date.now() + 86400000).toISOString(), // Tomorrow (draft)
+      endDate: new Date(Date.now() + 172800000).toISOString(), // Day after tomorrow
     });
   };
 

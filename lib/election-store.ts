@@ -16,22 +16,6 @@ const STORAGE_KEY = "cd-voting-elections";
 const STORAGE_EVENT_NAME = "elections-updated";
 
 // ============================================
-// Lock Utilities
-// ============================================
-
-/**
- * Check if an election is locked (cannot modify positions/candidates)
- * An election is locked when its status is 'open' or 'closed'
- * @param electionId - Election ID to check
- * @returns true if locked, false if editable
- */
-export function isElectionLocked(electionId: string): boolean {
-  const election = getElectionById(electionId);
-  if (!election) return false;
-  return election.status === "open" || election.status === "closed";
-}
-
-// ============================================
 // Storage Operations
 // ============================================
 
@@ -64,6 +48,22 @@ export function getAllElections(): ElectionEvent[] {
 export function getElectionById(id: string): ElectionEvent | null {
   const elections = getAllElections();
   return elections.find((e) => e.id === id) || null;
+}
+
+// ============================================
+// Lock Utilities
+// ============================================
+
+/**
+ * Check if an election is locked (cannot modify positions/candidates)
+ * An election is locked when its status is 'open' or 'closed'
+ * @param electionId - Election ID to check
+ * @returns true if locked, false if editable
+ */
+export function isElectionLocked(electionId: string): boolean {
+  const election = getElectionById(electionId);
+  if (!election) return false;
+  return election.status === "open" || election.status === "closed";
 }
 
 /**

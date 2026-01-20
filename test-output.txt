@@ -1,0 +1,151 @@
+FAIL __tests__/election-store.test.ts
+  election-store
+    isCandidateNameDuplicate
+      √ should return false when no candidates exist (2 ms)
+      √ should return true for duplicate names in same position (1 ms)
+      √ should return false for same name in different positions
+      √ should be case-insensitive (1 ms)
+      √ should trim whitespace when comparing
+      √ should exclude specified candidate when editing (1 ms)
+      √ should return false for non-existent election
+    addCandidateWithValidation
+      √ should add candidate successfully when name is unique (1 ms)
+      √ should reject duplicate candidate names
+      √ should allow same name in different positions (1 ms)
+      √ should return error for non-existent election
+    DEFAULT_AVATAR_URL
+      √ should be defined and point to correct path
+    addCandidate
+      √ should add a candidate successfully
+      √ should generate unique ID for candidate (1 ms)
+      √ should return null for non-existent election
+    updateCandidate
+      √ should update candidate data
+    deleteCandidate
+      √ should remove candidate from election
+    getNextCandidateRank
+      √ should return 1 when no candidates exist
+      √ should return 2 when one candidate exists with rank 1 (1 ms)
+      √ should return max rank + 1 when multiple candidates exist
+      √ should handle non-sequential ranks correctly
+      √ should return 1 for different position without candidates
+      √ should return 1 for non-existent election (1 ms)
+    isElectionLocked
+      × should return false for draft elections
+      × should return true for open elections
+      × should return true for closed elections
+      × should return false for non-existent election
+    Position operations with lock
+      × should reject addCustomPosition when election is locked (1 ms)
+      × should allow addCustomPosition when election is draft
+      × should reject togglePosition when election is locked
+    Candidate operations with lock
+      √ should reject addCandidate when election is locked (1 ms)
+      √ should reject addCandidateWithValidation when election is locked
+      √ should reject updateCandidate when election is locked
+      √ should reject deleteCandidate when election is locked (1 ms)
+      √ should allow addCandidate when election is draft
+
+  ● election-store › isElectionLocked › should return false for draft elections
+
+    ReferenceError: isElectionLocked is not defined
+
+      531 |       });
+      532 |
+    > 533 |       const result = isElectionLocked(election.id);
+          |                      ^
+      534 |
+      535 |       expect(result).toBe(false);
+      536 |     });
+
+      at Object.isElectionLocked (__tests__/election-store.test.ts:533:22)
+
+  ● election-store › isElectionLocked › should return true for open elections
+
+    ReferenceError: isElectionLocked is not defined
+
+      546 |       });
+      547 |
+    > 548 |       const result = isElectionLocked(election.id);
+          |                      ^
+      549 |
+      550 |       expect(result).toBe(true);
+      551 |     });
+
+      at Object.isElectionLocked (__tests__/election-store.test.ts:548:22)
+
+  ● election-store › isElectionLocked › should return true for closed elections
+
+    ReferenceError: isElectionLocked is not defined
+
+      561 |       });
+      562 |
+    > 563 |       const result = isElectionLocked(election.id);
+          |                      ^
+      564 |
+      565 |       expect(result).toBe(true);
+      566 |     });
+
+      at Object.isElectionLocked (__tests__/election-store.test.ts:563:22)
+
+  ● election-store › isElectionLocked › should return false for non-existent election
+
+    ReferenceError: isElectionLocked is not defined
+
+      567 |
+      568 |     it("should return false for non-existent election", () => {
+    > 569 |       const result = isElectionLocked("non-existent-id");
+          |                      ^
+      570 |
+      571 |       expect(result).toBe(false);
+      572 |     });
+
+      at Object.isElectionLocked (__tests__/election-store.test.ts:569:22)
+
+  ● election-store › Position operations with lock › should reject addCustomPosition when election is locked
+
+    ReferenceError: addCustomPosition is not defined
+
+      587 |       });
+      588 |
+    > 589 |       const result = addCustomPosition(election.id, "New Position", "star");
+          |                      ^
+      590 |
+      591 |       expect(result).toBeNull();
+      592 |     });
+
+      at Object.addCustomPosition (__tests__/election-store.test.ts:589:22)
+
+  ● election-store › Position operations with lock › should allow addCustomPosition when election is draft
+
+    ReferenceError: addCustomPosition is not defined
+
+      602 |       });
+      603 |
+    > 604 |       const result = addCustomPosition(election.id, "New Position", "star");
+          |                      ^
+      605 |
+      606 |       expect(result).not.toBeNull();
+      607 |       expect(result?.positions.some((p) => p.title === "New Position")).toBe(
+
+      at Object.addCustomPosition (__tests__/election-store.test.ts:604:22)
+
+  ● election-store › Position operations with lock › should reject togglePosition when election is locked
+
+    ReferenceError: togglePosition is not defined
+
+      620 |       });
+      621 |
+    > 622 |       const result = togglePosition(election.id, "president");
+          |                      ^
+      623 |
+      624 |       expect(result).toBeNull();
+      625 |     });
+
+      at Object.togglePosition (__tests__/election-store.test.ts:622:22)
+
+Test Suites: 1 failed, 1 total
+Tests:       7 failed, 28 passed, 35 total
+Snapshots:   0 total
+Time:        0.624 s, estimated 1 s
+Ran all test suites matching __tests__/election-store.test.ts.
