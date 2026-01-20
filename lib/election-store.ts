@@ -161,11 +161,13 @@ export function deleteElection(id: string): boolean {
 
 /**
  * Update positions for an election
+ * Returns null if election is locked (open/closed)
  */
 export function updatePositions(
   electionId: string,
   positions: Position[],
 ): ElectionEvent | null {
+  if (isElectionLocked(electionId)) return null;
   return updateElection(electionId, { positions });
 }
 
@@ -177,6 +179,7 @@ export function addCustomPosition(
   title: string,
   icon: string = "star",
 ): ElectionEvent | null {
+  if (isElectionLocked(electionId)) return null;
   const election = getElectionById(electionId);
   if (!election) return null;
 
@@ -200,6 +203,7 @@ export function togglePosition(
   electionId: string,
   positionId: string,
 ): ElectionEvent | null {
+  if (isElectionLocked(electionId)) return null;
   const election = getElectionById(electionId);
   if (!election) return null;
 
@@ -259,6 +263,14 @@ export function addCandidateWithValidation(
   electionId: string,
   candidate: Omit<ElectionCandidate, "id">,
 ): AddCandidateResult {
+  // Check if election is locked
+  if (isElectionLocked(electionId)) {
+    return {
+      success: false,
+      error: "การเลือกตั้งเริ่มต้นแล้ว ไม่สามารถเพิ่มผู้สมัครได้",
+    };
+  }
+
   // Check for duplicate name
   if (
     isCandidateNameDuplicate(electionId, candidate.positionId, candidate.name)
@@ -287,6 +299,7 @@ export function addCandidate(
   electionId: string,
   candidate: Omit<ElectionCandidate, "id">,
 ): ElectionEvent | null {
+  if (isElectionLocked(electionId)) return null;
   const election = getElectionById(electionId);
   if (!election) return null;
 
@@ -308,6 +321,7 @@ export function updateCandidate(
   candidateId: string,
   data: Partial<ElectionCandidate>,
 ): ElectionEvent | null {
+  if (isElectionLocked(electionId)) return null;
   const election = getElectionById(electionId);
   if (!election) return null;
 
@@ -325,6 +339,7 @@ export function deleteCandidate(
   electionId: string,
   candidateId: string,
 ): ElectionEvent | null {
+  if (isElectionLocked(electionId)) return null;
   const election = getElectionById(electionId);
   if (!election) return null;
 
