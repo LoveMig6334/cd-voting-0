@@ -505,6 +505,7 @@ function AddPositionModal({
 function PositionCard({
   position,
   candidates,
+  isLocked,
   onToggle,
   onAddCandidate,
   onEditCandidate,
@@ -512,6 +513,7 @@ function PositionCard({
 }: {
   position: Position;
   candidates: ElectionCandidate[];
+  isLocked: boolean;
   onToggle: () => void;
   onAddCandidate: () => void;
   onEditCandidate: (candidate: ElectionCandidate) => void;
@@ -549,9 +551,15 @@ function PositionCard({
         </div>
         <button
           onClick={onToggle}
+          disabled={isLocked}
+          title={
+            isLocked
+              ? "ไม่สามารถแก้ไขได้ - การเลือกตั้งเริ่มต้นแล้ว"
+              : undefined
+          }
           className={`relative w-12 h-6 rounded-full transition-colors ${
             position.enabled ? "bg-primary" : "bg-slate-300"
-          }`}
+          } ${isLocked ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <span
             className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${
@@ -593,8 +601,17 @@ function PositionCard({
                   <div className="flex gap-1">
                     <button
                       onClick={() => onEditCandidate(candidate)}
-                      className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                      title="แก้ไข"
+                      disabled={isLocked}
+                      title={
+                        isLocked
+                          ? "ไม่สามารถแก้ไขได้ - การเลือกตั้งเริ่มต้นแล้ว"
+                          : "แก้ไข"
+                      }
+                      className={`p-1.5 text-slate-400 rounded-lg transition-colors ${
+                        isLocked
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:text-primary hover:bg-primary/10"
+                      }`}
                     >
                       <span className="material-symbols-outlined text-lg">
                         edit
@@ -602,8 +619,17 @@ function PositionCard({
                     </button>
                     <button
                       onClick={() => onDeleteCandidate(candidate.id)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="ลบ"
+                      disabled={isLocked}
+                      title={
+                        isLocked
+                          ? "ไม่สามารถลบได้ - การเลือกตั้งเริ่มต้นแล้ว"
+                          : "ลบ"
+                      }
+                      className={`p-1.5 text-slate-400 rounded-lg transition-colors ${
+                        isLocked
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:text-red-600 hover:bg-red-50"
+                      }`}
                     >
                       <span className="material-symbols-outlined text-lg">
                         delete
@@ -621,7 +647,17 @@ function PositionCard({
 
           <button
             onClick={onAddCandidate}
-            className="w-full mt-3 py-2.5 border border-dashed border-slate-300 rounded-lg text-sm text-slate-600 hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2"
+            disabled={isLocked}
+            title={
+              isLocked
+                ? "ไม่สามารถเพิ่มผู้สมัครได้ - การเลือกตั้งเริ่มต้นแล้ว"
+                : undefined
+            }
+            className={`w-full mt-3 py-2.5 border border-dashed rounded-lg text-sm flex items-center justify-center gap-2 transition-colors ${
+              isLocked
+                ? "border-slate-200 text-slate-400 cursor-not-allowed"
+                : "border-slate-300 text-slate-600 hover:border-primary hover:text-primary"
+            }`}
           >
             <span className="material-symbols-outlined text-lg">add</span>
             เพิ่มผู้สมัคร
@@ -689,6 +725,9 @@ export default function CandidateManagement() {
     );
   }
 
+  // Check if election is locked (open or closed status)
+  const isLocked = election.status !== "draft";
+
   const getCandidatesForPosition = (positionId: string) => {
     return election.candidates.filter((c) => c.positionId === positionId);
   };
@@ -725,6 +764,24 @@ export default function CandidateManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Lock Warning Banner */}
+      {isLocked && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+          <span className="material-symbols-outlined text-amber-600 text-xl mt-0.5">
+            warning
+          </span>
+          <div>
+            <p className="font-medium text-amber-800">
+              การเลือกตั้งเริ่มต้นแล้ว - ไม่สามารถแก้ไขตำแหน่งและผู้สมัครได้
+            </p>
+            <p className="text-sm text-amber-700 mt-1">
+              หากต้องการแก้ไข กรุณาเลื่อนวันเริ่มต้นออกไปก่อน
+              โดยคลิกปุ่มแก้ไขที่หัวข้อการเลือกตั้ง
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header with Edit Button */}
       <div className="bg-white rounded-xl border border-slate-200 p-6">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -749,6 +806,22 @@ export default function CandidateManagement() {
                     edit
                   </span>
                 </button>
+                {/* Status Badge */}
+                <span
+                  className={`px-2 py-0.5 rounded text-xs font-medium ${
+                    election.status === "draft"
+                      ? "bg-slate-100 text-slate-600"
+                      : election.status === "open"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {election.status === "draft"
+                    ? "ฉบับร่าง"
+                    : election.status === "open"
+                      ? "เปิดรับโหวต"
+                      : "ปิดแล้ว"}
+                </span>
               </div>
               {election.description && (
                 <p className="text-slate-600 text-sm mt-1">
@@ -777,13 +850,16 @@ export default function CandidateManagement() {
               </div>
             </div>
           </div>
-          <button
-            onClick={() => setShowAddPosition(true)}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 self-start"
-          >
-            <span className="material-symbols-outlined text-xl">add</span>
-            เพิ่มตำแหน่งใหม่
-          </button>
+          {/* Hide Add Position button when locked */}
+          {!isLocked && (
+            <button
+              onClick={() => setShowAddPosition(true)}
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 self-start"
+            >
+              <span className="material-symbols-outlined text-xl">add</span>
+              เพิ่มตำแหน่งใหม่
+            </button>
+          )}
         </div>
       </div>
 
@@ -794,6 +870,7 @@ export default function CandidateManagement() {
             key={position.id}
             position={position}
             candidates={getCandidatesForPosition(position.id)}
+            isLocked={isLocked}
             onToggle={() => togglePosition(electionId, position.id)}
             onAddCandidate={() =>
               setShowAddCandidate({
