@@ -515,4 +515,275 @@ describe("election-store", () => {
       expect(result).toBe(1);
     });
   });
+
+  // ============================================
+  // isElectionLocked Tests
+  // ============================================
+  describe("isElectionLocked", () => {
+    it("should return false for draft elections", () => {
+      // Create election with future start date (draft status)
+      const election = createElection({
+        title: "Draft Election",
+        description: "Test",
+        type: "student-committee",
+        startDate: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+        endDate: new Date(Date.now() + 172800000).toISOString(), // Day after tomorrow
+      });
+
+      const result = isElectionLocked(election.id);
+
+      expect(result).toBe(false);
+    });
+
+    it("should return true for open elections", () => {
+      // Create election with past start date and future end date (open status)
+      const election = createElection({
+        title: "Open Election",
+        description: "Test",
+        type: "student-committee",
+        startDate: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+        endDate: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+      });
+
+      const result = isElectionLocked(election.id);
+
+      expect(result).toBe(true);
+    });
+
+    it("should return true for closed elections", () => {
+      // Create election with past end date (closed status)
+      const election = createElection({
+        title: "Closed Election",
+        description: "Test",
+        type: "student-committee",
+        startDate: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+        endDate: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+      });
+
+      const result = isElectionLocked(election.id);
+
+      expect(result).toBe(true);
+    });
+
+    it("should return false for non-existent election", () => {
+      const result = isElectionLocked("non-existent-id");
+
+      expect(result).toBe(false);
+    });
+  });
+
+  // ============================================
+  // Position Operations with Lock Tests
+  // ============================================
+  describe("Position operations with lock", () => {
+    it("should reject addCustomPosition when election is locked", () => {
+      // Create open election (locked)
+      const election = createElection({
+        title: "Open Election",
+        description: "Test",
+        type: "student-committee",
+        startDate: new Date(Date.now() - 86400000).toISOString(),
+        endDate: new Date(Date.now() + 86400000).toISOString(),
+      });
+
+      const result = addCustomPosition(election.id, "New Position", "star");
+
+      expect(result).toBeNull();
+    });
+
+    it("should allow addCustomPosition when election is draft", () => {
+      // Create draft election (not locked)
+      const election = createElection({
+        title: "Draft Election",
+        description: "Test",
+        type: "student-committee",
+        startDate: new Date(Date.now() + 86400000).toISOString(),
+        endDate: new Date(Date.now() + 172800000).toISOString(),
+      });
+
+      const result = addCustomPosition(election.id, "New Position", "star");
+
+      expect(result).not.toBeNull();
+      expect(result?.positions.some((p) => p.title === "New Position")).toBe(
+        true,
+      );
+    });
+
+    it("should reject togglePosition when election is locked", () => {
+      // Create open election (locked)
+      const election = createElection({
+        title: "Open Election",
+        description: "Test",
+        type: "student-committee",
+        startDate: new Date(Date.now() - 86400000).toISOString(),
+        endDate: new Date(Date.now() + 86400000).toISOString(),
+      });
+
+      const result = togglePosition(election.id, "president");
+
+      expect(result).toBeNull();
+    });
+  });
+
+  // ============================================
+  // Candidate Operations with Lock Tests
+  // ============================================
+  describe("Candidate operations with lock", () => {
+    it("should reject addCandidate when election is locked", () => {
+      // Create open election (locked)
+      const election = createElection({
+        title: "Open Election",
+        description: "Test",
+        type: "student-committee",
+        startDate: new Date(Date.now() - 86400000).toISOString(),
+        endDate: new Date(Date.now() + 86400000).toISOString(),
+      });
+
+      const result = addCandidate(election.id, {
+        positionId: "president",
+        name: "Test Candidate",
+        slogan: "Test",
+        imageUrl: "/test.jpg",
+        rank: 1,
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it("should reject addCandidateWithValidation when election is locked", () => {
+      // Create open election (locked)
+      const election = createElection({
+        title: "Open Election",
+        description: "Test",
+        type: "student-committee",
+        startDate: new Date(Date.now() - 86400000).toISOString(),
+        endDate: new Date(Date.now() + 86400000).toISOString(),
+      });
+
+      const result = addCandidateWithValidation(election.id, {
+        positionId: "president",
+        name: "Test Candidate",
+        slogan: "Test",
+        imageUrl: "/test.jpg",
+        rank: 1,
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe(
+          "การเลือกตั้งเริ่มต้นแล้ว ไม่สามารถเพิ่มผู้สมัครได้",
+        );
+      }
+    });
+
+    it("should reject updateCandidate when election is locked", () => {
+      // Create draft election first and add a candidate
+      const draftElection = createElection({
+        title: "Draft Election",
+        description: "Test",
+        type: "student-committee",
+        startDate: new Date(Date.now() + 86400000).toISOString(),
+        endDate: new Date(Date.now() + 172800000).toISOString(),
+      });
+
+      addCandidate(draftElection.id, {
+        positionId: "president",
+        name: "Test Candidate",
+        slogan: "Test",
+        imageUrl: "/test.jpg",
+        rank: 1,
+      });
+
+      const elections = getAllElections();
+      const updatedElection = elections.find((e) => e.id === draftElection.id);
+      const candidateId = updatedElection?.candidates[0]?.id as string;
+
+      // Now simulate the election becoming open by modifying storage directly
+      const storedElections = getAllElections();
+      const targetElection = storedElections.find(
+        (e) => e.id === draftElection.id,
+      );
+      if (targetElection) {
+        targetElection.startDate = new Date(
+          Date.now() - 86400000,
+        ).toISOString();
+        localStorage.setItem(
+          "cd-voting-elections",
+          JSON.stringify(storedElections),
+        );
+      }
+
+      // Try to update candidate when election is now locked
+      const result = updateCandidate(draftElection.id, candidateId, {
+        name: "Updated Name",
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it("should reject deleteCandidate when election is locked", () => {
+      // Create draft election first and add a candidate
+      const draftElection = createElection({
+        title: "Draft Election",
+        description: "Test",
+        type: "student-committee",
+        startDate: new Date(Date.now() + 86400000).toISOString(),
+        endDate: new Date(Date.now() + 172800000).toISOString(),
+      });
+
+      addCandidate(draftElection.id, {
+        positionId: "president",
+        name: "Test Candidate",
+        slogan: "Test",
+        imageUrl: "/test.jpg",
+        rank: 1,
+      });
+
+      const elections = getAllElections();
+      const updatedElection = elections.find((e) => e.id === draftElection.id);
+      const candidateId = updatedElection?.candidates[0]?.id as string;
+
+      // Simulate the election becoming open
+      const storedElections = getAllElections();
+      const targetElection = storedElections.find(
+        (e) => e.id === draftElection.id,
+      );
+      if (targetElection) {
+        targetElection.startDate = new Date(
+          Date.now() - 86400000,
+        ).toISOString();
+        localStorage.setItem(
+          "cd-voting-elections",
+          JSON.stringify(storedElections),
+        );
+      }
+
+      // Try to delete candidate when election is now locked
+      const result = deleteCandidate(draftElection.id, candidateId);
+
+      expect(result).toBeNull();
+    });
+
+    it("should allow addCandidate when election is draft", () => {
+      // Create draft election (not locked)
+      const election = createElection({
+        title: "Draft Election",
+        description: "Test",
+        type: "student-committee",
+        startDate: new Date(Date.now() + 86400000).toISOString(),
+        endDate: new Date(Date.now() + 172800000).toISOString(),
+      });
+
+      const result = addCandidate(election.id, {
+        positionId: "president",
+        name: "Test Candidate",
+        slogan: "Test",
+        imageUrl: "/test.jpg",
+        rank: 1,
+      });
+
+      expect(result).not.toBeNull();
+      expect(result?.candidates).toHaveLength(1);
+    });
+  });
 });
