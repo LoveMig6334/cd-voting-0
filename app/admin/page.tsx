@@ -506,12 +506,15 @@ export default function AdminDashboard() {
               <ActivityTimeline activities={recentActivities} />
             </div>
             <div className="p-4 border-t border-slate-100/50 text-center">
-              <button className="text-sm font-semibold text-royal-blue hover:text-cyan-600 transition-colors flex items-center gap-1 mx-auto">
+              <Link
+                href="/admin/activity"
+                className="text-sm font-semibold text-royal-blue hover:text-cyan-600 transition-colors flex items-center gap-1 mx-auto"
+              >
                 ดูกิจกรรมทั้งหมด
                 <span className="material-symbols-outlined text-sm">
                   chevron_right
                 </span>
-              </button>
+              </Link>
             </div>
           </div>
         </div>
