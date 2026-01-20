@@ -1,6 +1,7 @@
 "use client";
 
 import { useElection } from "@/components/ElectionContext";
+import { logAdminAction, logElectionChange } from "@/lib/activity-store";
 import {
   DEFAULT_AVATAR_URL,
   getNextCandidateRank,
@@ -734,23 +735,49 @@ export default function CandidateManagement() {
 
   const handleAddCandidate = (candidate: Omit<ElectionCandidate, "id">) => {
     addCandidate(electionId, candidate);
+    // Log activity
+    logAdminAction(
+      "เพิ่มผู้สมัคร",
+      `${candidate.name} ในการเลือกตั้ง ${election?.title}`,
+    );
   };
 
   const handleEditCandidate = (
     candidateId: string,
     data: Partial<ElectionCandidate>,
   ) => {
+    const candidateName =
+      election?.candidates.find((c) => c.id === candidateId)?.name ||
+      data.name ||
+      "Unknown";
     updateCandidate(electionId, candidateId, data);
+    // Log activity
+    logAdminAction(
+      "แก้ไขผู้สมัคร",
+      `${candidateName} ในการเลือกตั้ง ${election?.title}`,
+    );
   };
 
   const handleDeleteCandidate = (candidateId: string) => {
+    const candidateName =
+      election?.candidates.find((c) => c.id === candidateId)?.name || "Unknown";
     if (confirm("ต้องการลบผู้สมัครนี้หรือไม่?")) {
       deleteCandidate(electionId, candidateId);
+      // Log activity after successful deletion
+      logAdminAction(
+        "ลบผู้สมัคร",
+        `${candidateName} ในการเลือกตั้ง ${election?.title}`,
+      );
     }
   };
 
   const handleAddPosition = (title: string, icon: string) => {
     addCustomPosition(electionId, title, icon);
+    // Log activity
+    logAdminAction(
+      "เพิ่มตำแหน่ง",
+      `${title} ในการเลือกตั้ง ${election?.title}`,
+    );
   };
 
   const handleUpdateElection = (data: {
@@ -760,6 +787,21 @@ export default function CandidateManagement() {
     endDate: string;
   }) => {
     updateElection(electionId, data);
+    // Log activity
+    logElectionChange("แก้ไขการเลือกตั้ง", election?.title || data.title);
+  };
+
+  // Handler for toggling position with logging
+  const handleTogglePosition = (positionId: string) => {
+    const position = election?.positions.find((p) => p.id === positionId);
+    togglePosition(electionId, positionId);
+    // Log activity
+    if (position) {
+      logAdminAction(
+        position.enabled ? "ปิดตำแหน่ง" : "เปิดตำแหน่ง",
+        `${position.title} ในการเลือกตั้ง ${election?.title}`,
+      );
+    }
   };
 
   return (
@@ -871,7 +913,7 @@ export default function CandidateManagement() {
             position={position}
             candidates={getCandidatesForPosition(position.id)}
             isLocked={isLocked}
-            onToggle={() => togglePosition(electionId, position.id)}
+            onToggle={() => handleTogglePosition(position.id)}
             onAddCandidate={() =>
               setShowAddCandidate({
                 positionId: position.id,
