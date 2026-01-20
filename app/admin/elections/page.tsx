@@ -1,6 +1,7 @@
 "use client";
 
 import { useElections } from "@/components/ElectionContext";
+import { logElectionChange } from "@/lib/activity-store";
 import { ElectionEvent, ElectionType } from "@/lib/election-types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -94,6 +95,9 @@ export default function ElectionManagement() {
       endDate: new Date(formData.endDate).toISOString(),
     });
 
+    // Log activity
+    logElectionChange("สร้างการเลือกตั้ง", newElection.title);
+
     // Reset form
     setFormData({
       title: "",
@@ -110,8 +114,13 @@ export default function ElectionManagement() {
   };
 
   const handleDeleteElection = (id: string) => {
+    const election = elections.find((e) => e.id === id);
     if (confirm("คุณต้องการลบการเลือกตั้งนี้หรือไม่?")) {
       deleteElection(id);
+      // Log activity after successful deletion
+      if (election) {
+        logElectionChange("ลบการเลือกตั้ง", election.title);
+      }
     }
   };
 
