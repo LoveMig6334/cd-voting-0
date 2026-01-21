@@ -1,0 +1,146 @@
+-- =====================================================
+-- CD Voting System - MySQL Database Schema
+-- Version: 2.0 (Updated for Multi-Position Elections)
+-- =====================================================
+
+-- 1. ตารางนักเรียน (Authentication & Student Data)
+CREATE TABLE students (
+    id VARCHAR(10) PRIMARY KEY,              -- รหัสนักเรียน (Student ID, e.g., "6367")
+    national_id VARCHAR(13) NOT NULL,        -- เลขประจำตัวประชาชน (Plain text)
+    prefix VARCHAR(20),                       -- คำนำหน้าชื่อ (นาย, นางสาว, เด็กชาย, เด็กหญิง)
+    name VARCHAR(100) NOT NULL,              -- ชื่อ
+    surname VARCHAR(100) NOT NULL,           -- นามสกุล
+    student_no INT,                           -- เลขที่ในห้อง
+    class_room VARCHAR(20) NOT NULL,         -- ห้องเรียน (e.g., "3/1", "3/2")
+    role ENUM('STUDENT', 'ADMIN') DEFAULT 'STUDENT',
+    
+    -- Voting Rights
+    voting_approved BOOLEAN DEFAULT FALSE,   -- ได้รับอนุมัติสิทธิ์โหวตหรือไม่
+    voting_approved_at DATETIME,             -- วันที่อนุมัติ
+    voting_approved_by VARCHAR(100),         -- ผู้อนุมัติ
+    
+    -- Metadata
+    last_active DATETIME,                    -- ใช้งานล่าสุด
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_national_id (national_id),
+    INDEX idx_class_room (class_room)
+);
+
+-- 2. ตารางการเลือกตั้ง (Election Config)
+CREATE TABLE elections (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,             -- หัวข้อการเลือกตั้ง
+    description TEXT,                         -- รายละเอียด
+    type VARCHAR(50),                         -- ประเภท (e.g., 'student_council', 'class_leader')
+    start_date DATETIME NOT NULL,            -- วันเริ่มต้น
+    end_date DATETIME NOT NULL,              -- วันสิ้นสุด
+    status ENUM('PENDING', 'OPEN', 'CLOSED') DEFAULT 'PENDING',
+    is_active BOOLEAN DEFAULT TRUE,
+    total_votes INT DEFAULT 0,               -- จำนวนผู้มาใช้สิทธิ์ทั้งหมด
+    
+    -- Metadata
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 3. ตารางตำแหน่ง (Positions for Multi-Position Elections)
+CREATE TABLE positions (
+    id VARCHAR(50) PRIMARY KEY,              -- รหัสตำแหน่ง (e.g., "president", "secretary")
+    election_id INT NOT NULL,                -- สังกัดการเลือกตั้งไหน
+    title VARCHAR(100) NOT NULL,             -- ชื่อตำแหน่ง (e.g., "ประธาน", "เลขาฯ")
+    icon VARCHAR(50),                         -- ไอคอน (Material Symbol name)
+    enabled BOOLEAN DEFAULT TRUE,            -- เปิดใช้งานหรือไม่
+    is_custom BOOLEAN DEFAULT FALSE,         -- เป็นตำแหน่งที่สร้างเองหรือไม่
+    sort_order INT DEFAULT 0,                -- ลำดับการแสดงผล
+    
+    FOREIGN KEY (election_id) REFERENCES elections(id) ON DELETE CASCADE,
+    INDEX idx_election_id (election_id)
+);
+
+-- 4. ตารางผู้สมัคร (Candidates)
+CREATE TABLE candidates (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    election_id INT NOT NULL,                -- สังกัดการเลือกตั้งไหน
+    position_id VARCHAR(50) NOT NULL,        -- ลงสมัครตำแหน่งไหน
+    rank INT NOT NULL,                        -- หมายเลขผู้สมัคร (เบอร์)
+    name VARCHAR(255) NOT NULL,              -- ชื่อผู้สมัคร
+    slogan VARCHAR(255),                      -- คำขวัญ
+    image_url VARCHAR(500),                   -- รูปภาพ
+    
+    -- Metadata
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (election_id) REFERENCES elections(id) ON DELETE CASCADE,
+    FOREIGN KEY (position_id) REFERENCES positions(id) ON DELETE CASCADE,
+    INDEX idx_election_position (election_id, position_id)
+);
+
+-- 5. ตารางบันทึกการใช้สิทธิ์ (Voter Turnout / History)
+-- ตารางนี้รู้ว่า "ใคร" มาใช้สิทธิ์ "การเลือกตั้งไหน" แต่ไม่รู้ว่า "กาเบอร์อะไร"
+CREATE TABLE vote_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id VARCHAR(10) NOT NULL,
+    election_id INT NOT NULL,
+    voted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ip_address VARCHAR(45),                   -- Optional: เพื่อตรวจสอบ Audit Log
+    user_agent TEXT,                          -- Optional: Browser info
+
+    FOREIGN KEY (student_id) REFERENCES students(id),
+    FOREIGN KEY (election_id) REFERENCES elections(id),
+
+    -- Constraint สำคัญ: นักเรียน 1 คน โหวตได้ 1 ครั้งต่อ 1 การเลือกตั้ง
+    UNIQUE KEY unique_voter (student_id, election_id)
+);
+
+-- 6. ตารางผลคะแนน (Ballots)
+-- ตารางนี้รู้ว่า "เบอร์ไหน" ได้คะแนน แต่ไม่รู้ว่า "ใครกา" (Anonymous)
+CREATE TABLE votes (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    election_id INT NOT NULL,
+    position_id VARCHAR(50) NOT NULL,        -- ตำแหน่งที่โหวต
+    candidate_id INT,                         -- NULL ถ้าเลือก No Vote (งดออกเสียง)
+    is_no_vote BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (election_id) REFERENCES elections(id),
+    FOREIGN KEY (position_id) REFERENCES positions(id),
+    FOREIGN KEY (candidate_id) REFERENCES candidates(id),
+    
+    INDEX idx_election_position_candidate (election_id, position_id, candidate_id)
+);
+
+-- 7. ตาราง Sessions (สำหรับ Server-Side Authentication)
+CREATE TABLE sessions (
+    id VARCHAR(255) PRIMARY KEY,             -- Random Session Token
+    student_id VARCHAR(10) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    INDEX idx_expires_at (expires_at)
+);
+
+-- =====================================================
+-- Sample Data (Optional - for testing)
+-- =====================================================
+
+-- ตัวอย่างคำนำหน้าที่ใช้:
+-- 'นาย', 'นางสาว', 'เด็กชาย', 'เด็กหญิง', 'นาง'
+
+-- =====================================================
+-- Useful Queries
+-- =====================================================
+
+-- นับคะแนนแต่ละผู้สมัครตามตำแหน่ง:
+-- SELECT c.name, c.rank, p.title as position, COUNT(v.id) as vote_count
+-- FROM candidates c
+-- JOIN positions p ON c.position_id = p.id
+-- LEFT JOIN votes v ON v.candidate_id = c.id
+-- WHERE c.election_id = ?
+-- GROUP BY c.id, p.id
+-- ORDER BY p.sort_order, vote_count DESC;
+
+-- ตรวจสอบว่านักเรียนโหวตแล้วหรือยัง:
+-- SELECT * FROM vote_history WHERE student_id = ? AND election_id = ?;
