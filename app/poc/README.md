@@ -49,7 +49,7 @@ flowchart TB
 
 เนื่องจากโรงเรียนใช้ **Apache** เป็นเว็บเซิร์ฟเวอร์หลัก เราจะใช้เทคนิค **Reverse Proxy** เพื่อเชื่อมต่อกับ Next.js
 
-### Option 1: Subdomain (แนะนำ ✅)
+### Subdomain
 
 ใช้งานผ่าน `e.g. vote.school.ac.th`
 
@@ -61,18 +61,6 @@ flowchart TB
       ProxyPass / http://localhost:3000/
       ProxyPassReverse / http://localhost:3000/
   </VirtualHost>
-  ```
-
-### Option 2: Subdirectory
-
-ใช้งานผ่าน `e.g. www.school.ac.th/vote`
-
-- **ข้อดี:** ใช้ Domain เดิมของโรงเรียนได้เลย
-- **ข้อควรระวัง:** ต้องตั้งค่า `basePath: '/vote'` ใน `next.config.ts`
-- **Apache Config:**
-  ```apache
-  ProxyPass /vote http://localhost:3000/vote
-  ProxyPassReverse /vote http://localhost:3000/vote
   ```
 
 ## 🗄️ Database Schema
