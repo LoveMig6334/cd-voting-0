@@ -44,7 +44,8 @@ function formatDate(isoString: string): string {
 
 export default function ElectionManagement() {
   const router = useRouter();
-  const { elections, createElection, deleteElection } = useElections();
+  const { elections, createElection, updateElection, deleteElection } =
+    useElections();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
@@ -111,6 +112,40 @@ export default function ElectionManagement() {
 
     // Redirect to candidate management
     router.push(`/admin/elections/${newElection.id}/candidates`);
+  };
+
+  const handleToggleStatus = (election: ElectionEvent) => {
+    const isOpening = election.status !== "open";
+    const action = isOpening ? "เปิด" : "ปิด";
+
+    if (
+      confirm(
+        `คุณต้องการ${action}การเลือกตั้ง "${election.title}" ทันทีหรือไม่?\n\nการดำเนินการนี้จะปรับเปลี่ยนเวลาเริ่มต้น/สิ้นสุดของการเลือกตั้งโดยอัตโนมัติ`,
+      )
+    ) {
+      const now = new Date();
+      const updates: { startDate?: string; endDate?: string } = {};
+
+      if (isOpening) {
+        // Opening: Set start date to now
+        updates.startDate = now.toISOString();
+
+        // Ensure end date is in the future
+        const currentEnd = new Date(election.endDate);
+        if (currentEnd <= now) {
+          // Default to 24 hours from now if end date is passed
+          const tomorrow = new Date(now);
+          tomorrow.setHours(tomorrow.getHours() + 24);
+          updates.endDate = tomorrow.toISOString();
+        }
+      } else {
+        // Closing: Set end date to now
+        updates.endDate = now.toISOString();
+      }
+
+      updateElection(election.id, updates);
+      logElectionChange(`${action}การเลือกตั้ง`, election.title);
+    }
   };
 
   const handleDeleteElection = (id: string) => {
@@ -259,6 +294,25 @@ export default function ElectionManagement() {
                           bar_chart
                         </span>
                       </Link>
+                      <button
+                        onClick={() => handleToggleStatus(election)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          election.status === "open"
+                            ? "text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                            : "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                        }`}
+                        title={
+                          election.status === "open"
+                            ? "ปิดการเลือกตั้ง"
+                            : "เปิดการเลือกตั้ง"
+                        }
+                      >
+                        <span className="material-symbols-outlined text-xl">
+                          {election.status === "open"
+                            ? "stop_circle"
+                            : "play_circle"}
+                        </span>
+                      </button>
                       <button
                         onClick={() => handleDeleteElection(election.id)}
                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
