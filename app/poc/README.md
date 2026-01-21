@@ -11,16 +11,20 @@ flowchart TB
         ADMIN["👨‍💼 Admin Browser"]
     end
 
-    subgraph NEXTJS["⚡ Next.js Server"]
-        subgraph PAGES["Pages (Frontend)"]
-            AUTH["(auth)/login, register"]
-            STU_PAGES["(student)/dashboard, vote"]
-            ADM_PAGES["admin/elections, results"]
-        end
+    subgraph SCHOOL_SERVER["🏫 School Web Server (Linux/Windows)"]
+        APACHE["🌐 Apache (Reverse Proxy)"]
 
-        subgraph API["API Routes (Backend)"]
-            API_AUTH["/api/auth/*"]
-            API_DATA["/api/students, elections, votes"]
+        subgraph NEXTJS["⚡ Next.js Server (Port 3000)"]
+            subgraph PAGES["Pages (Frontend)"]
+                AUTH["(auth)/login, register"]
+                STU_PAGES["(student)/dashboard, vote"]
+                ADM_PAGES["admin/elections, results"]
+            end
+
+            subgraph API["API Routes (Backend)"]
+                API_AUTH["/api/auth/*"]
+                API_DATA["/api/students, elections, votes"]
+            end
         end
     end
 
@@ -33,12 +37,43 @@ flowchart TB
         end
     end
 
-    STUDENT --> AUTH & STU_PAGES
-    ADMIN --> AUTH & ADM_PAGES
+    STUDENT --> APACHE
+    ADMIN --> APACHE
+    APACHE --"http://localhost:3000"--> AUTH & STU_PAGES & ADM_PAGES
 
     PAGES --> API
     API --> DB
 ```
+
+## 🚀 Deployment Strategy (Apache Integration)
+
+เนื่องจากโรงเรียนใช้ **Apache** เป็นเว็บเซิร์ฟเวอร์หลัก เราจะใช้เทคนิค **Reverse Proxy** เพื่อเชื่อมต่อกับ Next.js
+
+### Option 1: Subdomain (แนะนำ ✅)
+
+ใช้งานผ่าน `e.g. vote.school.ac.th`
+
+- **ข้อดี:** ไม่ต้องแก้ Code path, จัดการง่ายสุด
+- **Apache Config:**
+  ```apache
+  <VirtualHost *:80>
+      ServerName vote.school.ac.th
+      ProxyPass / http://localhost:3000/
+      ProxyPassReverse / http://localhost:3000/
+  </VirtualHost>
+  ```
+
+### Option 2: Subdirectory
+
+ใช้งานผ่าน `e.g. www.school.ac.th/vote`
+
+- **ข้อดี:** ใช้ Domain เดิมของโรงเรียนได้เลย
+- **ข้อควรระวัง:** ต้องตั้งค่า `basePath: '/vote'` ใน `next.config.ts`
+- **Apache Config:**
+  ```apache
+  ProxyPass /vote http://localhost:3000/vote
+  ProxyPassReverse /vote http://localhost:3000/vote
+  ```
 
 ## 🗄️ Database Schema
 
@@ -56,7 +91,7 @@ flowchart TB
 
 ## � Implementation Steps
 
-1.  **Environment Setup**: ตั้งค่า `.env` เชื่อมต่อ MySQL (ผ่าน Hamachi/LAN).
+1.  **Environment Setup**: ตั้งค่า `.env` เชื่อมต่อ MySQL (ผ่าน LAN).
 2.  **Database Layer (`lib/db.ts`)**: สร้าง Connection Pool ด้วย `mysql2` หรือ ORM.
 3.  **Data Access Layer**: สร้าง API Routes หรือ Server Actions เพื่อดึง/บันทึกข้อมูล.
 4.  **Auth Integration**: ปรับระบบ Login ให้ตรวจสอบกับ Table `students`.
