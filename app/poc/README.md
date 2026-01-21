@@ -48,6 +48,47 @@ Migrate ระบบ CD Voting จาก **localStorage-based mock** ไปใ�
 
 ## 🏗️ Architecture
 
+```mermaid
+flowchart TB
+    subgraph CLIENT["🖥️ Client Side"]
+        STUDENT["👨‍🎓 Student Browser"]
+        ADMIN["👨‍💼 Admin Browser"]
+    end
+
+    subgraph SCHOOL_SERVER["🏫 School Web Server (Linux/Windows)"]
+        APACHE["🌐 Apache (Reverse Proxy)"]
+
+        subgraph NEXTJS["⚡ Next.js Server (Port 3000)"]
+            subgraph PAGES["Pages (Frontend)"]
+                AUTH["(auth)/login, register"]
+                STU_PAGES["(student)/dashboard, vote"]
+                ADM_PAGES["admin/elections, results"]
+            end
+
+            subgraph API["API Routes (Backend)"]
+                API_AUTH["/api/auth/*"]
+                API_DATA["/api/students, elections, votes"]
+            end
+        end
+    end
+
+    subgraph SCHOOL_NET["🏫 School Network / Hamachi"]
+        subgraph DB["MySQL Server"]
+            TBL_STU[("students")]
+            TBL_ELEC[("elections")]
+            TBL_CAND[("candidates")]
+            TBL_VOTE[("votes")]
+        end
+    end
+
+    STUDENT --> APACHE
+    ADMIN --> APACHE
+    APACHE --"http://localhost:3000"--> AUTH & STU_PAGES & ADM_PAGES
+
+    PAGES --> API
+    API --> DB
+```
+
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │   Browser       │────▶│  Apache         │────▶│  Next.js        │
