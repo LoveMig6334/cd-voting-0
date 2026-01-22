@@ -1,15 +1,17 @@
 "use client";
 
 import { AdminNavbar } from "@/components/admin/AdminNavbar";
-import { AdminRow } from "@/lib/db";
+import { ACCESS_LEVELS, AccessLevel, AdminUser } from "@/lib/admin-types";
+import { canAccessPage, getDefaultPage, PageName } from "@/lib/permissions";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect } from "react";
 
-// Admin type for context
-export interface AdminUser {
+// Props interface - AdminRow is passed from server but we only need these fields
+interface AdminData {
   id: number;
   username: string;
-  displayName: string | null;
+  display_name: string | null;
+  access_level: AccessLevel;
 }
 
 // Context
@@ -31,9 +33,43 @@ export function useRequireAdmin() {
   return admin;
 }
 
+// Hook to check if admin has access to a page
+export function useHasAccess(page: PageName): boolean {
+  const admin = useAdmin();
+  if (!admin) return false;
+  return canAccessPage(page, admin.accessLevel);
+}
+
+// Helper to check if current admin is root
+export function useIsRoot(): boolean {
+  const admin = useAdmin();
+  return admin?.accessLevel === ACCESS_LEVELS.ROOT;
+}
+
+// Helper to check if current admin can manage admins
+export function useCanManageAdmins(): boolean {
+  const admin = useAdmin();
+  if (!admin) return false;
+  return (
+    admin.accessLevel === ACCESS_LEVELS.ROOT ||
+    admin.accessLevel === ACCESS_LEVELS.SYSTEM_ADMIN
+  );
+}
+
 interface AdminLayoutClientProps {
   children: React.ReactNode;
-  admin: AdminRow | null;
+  admin: AdminData | null;
+}
+
+// Map pathname to page name for permission checking
+function getPageNameFromPath(pathname: string): PageName | null {
+  if (pathname === "/admin" || pathname === "/admin/") return "dashboard";
+  if (pathname.startsWith("/admin/elections")) return "elections";
+  if (pathname.startsWith("/admin/students")) return "students";
+  if (pathname.startsWith("/admin/results")) return "results";
+  if (pathname.startsWith("/admin/admins")) return "adminManagement";
+  if (pathname.startsWith("/admin/activity")) return "activity";
+  return null;
 }
 
 export function AdminLayoutClient({ children, admin }: AdminLayoutClientProps) {
@@ -47,6 +83,19 @@ export function AdminLayoutClient({ children, admin }: AdminLayoutClientProps) {
       router.push("/admin/login");
     }
   }, [admin, isLoginPage, router]);
+
+  // Permission-based redirect for restricted pages
+  useEffect(() => {
+    if (admin && !isLoginPage) {
+      const pageName = getPageNameFromPath(pathname);
+
+      if (pageName && !canAccessPage(pageName, admin.access_level)) {
+        // Redirect to their default page
+        const defaultPage = getDefaultPage(admin.access_level);
+        router.push(defaultPage);
+      }
+    }
+  }, [admin, pathname, isLoginPage, router]);
 
   // Login page has its own full-screen layout
   if (isLoginPage) {
@@ -67,6 +116,7 @@ export function AdminLayoutClient({ children, admin }: AdminLayoutClientProps) {
     id: admin.id,
     username: admin.username,
     displayName: admin.display_name,
+    accessLevel: admin.access_level,
   };
 
   return (

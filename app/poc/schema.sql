@@ -128,6 +128,7 @@ CREATE TABLE admins (
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,  -- bcrypt hash
     display_name VARCHAR(100),
+    access_level TINYINT DEFAULT 1,       -- 0=Root, 1=System, 2=Teacher, 3=Observer
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -149,9 +150,9 @@ CREATE TABLE admin_sessions (
 -- ตัวอย่างคำนำหน้าที่ใช้:
 -- 'นาย', 'นางสาว', 'เด็กชาย', 'เด็กหญิง', 'นาง'
 
--- Default Admin (password: admin123)
--- INSERT INTO admins (username, password_hash, display_name) VALUES
--- ('admin', '$2a$10$rqKvPYZvTZx8t8YGqPvnHOqVPZQ5mGWkDVLFM8KMQvRJrXbZ.lR6W', 'Administrator');
+-- Default Admin (password: admin123, access_level: 0=Root)
+-- INSERT INTO admins (username, password_hash, display_name, access_level) VALUES
+-- ('admin', '$2a$10$rqKvPYZvTZx8t8YGqPvnHOqVPZQ5mGWkDVLFM8KMQvRJrXbZ.lR6W', 'Administrator', 0);
 
 -- =====================================================
 -- Useful Queries
@@ -168,3 +169,11 @@ CREATE TABLE admin_sessions (
 
 -- ตรวจสอบว่านักเรียนโหวตแล้วหรือยัง:
 -- SELECT * FROM vote_history WHERE student_id = ? AND election_id = ?;
+
+-- =====================================================
+-- Migration Scripts
+-- =====================================================
+
+-- v2.1: Add Admin Access Levels
+-- ALTER TABLE admins ADD COLUMN access_level TINYINT DEFAULT 1 AFTER display_name;
+-- UPDATE admins SET access_level = 0 WHERE id = 1;

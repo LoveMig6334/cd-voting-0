@@ -1,8 +1,21 @@
 "use server";
 
+import {
+  ACCESS_LEVELS,
+  AccessLevel,
+  AdminRow,
+  AdminSessionRow,
+  execute,
+  query,
+} from "@/lib/db";
+import {
+  canCreateAdmin,
+  canDeleteAdmin,
+  canEditAdmin,
+} from "@/lib/permissions";
 import bcrypt from "bcryptjs";
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
-import { query, execute, AdminRow, AdminSessionRow } from "@/lib/db";
 
 // ==========================================
 // Types
@@ -15,6 +28,7 @@ export interface AdminLoginResult {
     id: number;
     username: string;
     displayName: string | null;
+    accessLevel: AccessLevel;
   };
 }
 
@@ -32,7 +46,7 @@ export interface AdminSessionData {
  * Validates username + password against database
  */
 export async function adminLoginAction(
-  formData: FormData
+  formData: FormData,
 ): Promise<AdminLoginResult> {
   const username = formData.get("username") as string;
   const password = formData.get("password") as string;
@@ -46,7 +60,7 @@ export async function adminLoginAction(
     // 2. Query database for admin
     const admins = await query<AdminRow>(
       "SELECT * FROM admins WHERE username = ?",
-      [username.trim()]
+      [username.trim()],
     );
 
     if (admins.length === 0) {
@@ -67,7 +81,7 @@ export async function adminLoginAction(
 
     await execute(
       "INSERT INTO admin_sessions (id, admin_id, expires_at) VALUES (?, ?, ?)",
-      [sessionId, admin.id, expiresAt]
+      [sessionId, admin.id, expiresAt],
     );
 
     // 5. Set session cookie
@@ -86,6 +100,7 @@ export async function adminLoginAction(
         id: admin.id,
         username: admin.username,
         displayName: admin.display_name,
+        accessLevel: admin.access_level,
       },
     };
   } catch (error) {
@@ -122,7 +137,7 @@ export async function getCurrentAdmin(): Promise<AdminSessionData | null> {
     // Check session validity
     const sessions = await query<AdminSessionRow>(
       "SELECT * FROM admin_sessions WHERE id = ? AND expires_at > NOW()",
-      [sessionId.value]
+      [sessionId.value],
     );
 
     if (sessions.length === 0) return null;
@@ -145,34 +160,56 @@ export async function getCurrentAdmin(): Promise<AdminSessionData | null> {
 }
 
 /**
- * Create a new admin account (for initial setup)
+ * Create a new admin account
+ * @param accessLevel - Required access level (0-3)
+ * @param creatorLevel - Access level of the creator (for permission check)
  */
 export async function createAdmin(
   username: string,
   password: string,
-  displayName?: string
-): Promise<{ success: boolean; message?: string }> {
+  displayName?: string,
+  accessLevel: AccessLevel = ACCESS_LEVELS.SYSTEM_ADMIN,
+  creatorLevel?: AccessLevel,
+): Promise<{ success: boolean; message?: string; adminId?: number }> {
   try {
+    // Permission check (if creator level is provided)
+    if (
+      creatorLevel !== undefined &&
+      !canCreateAdmin(creatorLevel, accessLevel)
+    ) {
+      return {
+        success: false,
+        message: "คุณไม่มีสิทธิ์สร้าง Admin ระดับนี้",
+      };
+    }
+
     // Check if username exists
     const existing = await query<AdminRow>(
       "SELECT id FROM admins WHERE username = ?",
-      [username]
+      [username],
     );
 
     if (existing.length > 0) {
       return { success: false, message: "ชื่อผู้ใช้นี้มีอยู่แล้ว" };
     }
 
+    // Validate password
+    if (password.length < 6) {
+      return { success: false, message: "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร" };
+    }
+
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Insert admin
-    await execute(
-      "INSERT INTO admins (username, password_hash, display_name) VALUES (?, ?, ?)",
-      [username, passwordHash, displayName || null]
+    const result = await execute(
+      "INSERT INTO admins (username, password_hash, display_name, access_level) VALUES (?, ?, ?, ?)",
+      [username, passwordHash, displayName || null, accessLevel],
     );
 
-    return { success: true };
+    revalidatePath("/admin/admins");
+
+    return { success: true, adminId: result.insertId };
   } catch (error) {
     console.error("Create admin error:", error);
     return { success: false, message: "เกิดข้อผิดพลาดในการสร้างบัญชี" };
@@ -185,7 +222,7 @@ export async function createAdmin(
 export async function changeAdminPassword(
   adminId: number,
   currentPassword: string,
-  newPassword: string
+  newPassword: string,
 ): Promise<{ success: boolean; message?: string }> {
   try {
     // Get admin
@@ -200,7 +237,7 @@ export async function changeAdminPassword(
     // Verify current password
     const isValid = await bcrypt.compare(
       currentPassword,
-      admins[0].password_hash
+      admins[0].password_hash,
     );
     if (!isValid) {
       return { success: false, message: "รหัสผ่านปัจจุบันไม่ถูกต้อง" };
@@ -219,5 +256,163 @@ export async function changeAdminPassword(
   } catch (error) {
     console.error("Change password error:", error);
     return { success: false, message: "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน" };
+  }
+}
+
+// ==========================================
+// Admin Management Functions
+// ==========================================
+
+/**
+ * Get all admins (excluding password hash)
+ */
+export async function getAllAdmins(): Promise<
+  Omit<AdminRow, "password_hash">[]
+> {
+  const admins = await query<AdminRow>(
+    "SELECT id, username, display_name, access_level, created_at FROM admins ORDER BY access_level ASC, id ASC",
+  );
+  return admins;
+}
+
+/**
+ * Get admin by ID
+ */
+export async function getAdminById(
+  id: number,
+): Promise<Omit<AdminRow, "password_hash"> | null> {
+  const admins = await query<AdminRow>(
+    "SELECT id, username, display_name, access_level, created_at FROM admins WHERE id = ?",
+    [id],
+  );
+  return admins[0] || null;
+}
+
+/**
+ * Update admin details (display name, access level)
+ * Only ROOT (level 0) can update other admins
+ */
+export async function updateAdmin(
+  adminId: number,
+  data: { displayName?: string; accessLevel?: AccessLevel },
+  editorLevel: AccessLevel,
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    // Permission check
+    if (!canEditAdmin(editorLevel)) {
+      return { success: false, message: "คุณไม่มีสิทธิ์แก้ไข Admin" };
+    }
+
+    // Build update query
+    const updates: string[] = [];
+    const params: unknown[] = [];
+
+    if (data.displayName !== undefined) {
+      updates.push("display_name = ?");
+      params.push(data.displayName || null);
+    }
+
+    if (data.accessLevel !== undefined) {
+      updates.push("access_level = ?");
+      params.push(data.accessLevel);
+    }
+
+    if (updates.length === 0) {
+      return { success: false, message: "ไม่มีข้อมูลที่ต้องอัพเดท" };
+    }
+
+    params.push(adminId);
+
+    await execute(
+      `UPDATE admins SET ${updates.join(", ")} WHERE id = ?`,
+      params,
+    );
+
+    revalidatePath("/admin/admins");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Update admin error:", error);
+    return { success: false, message: "เกิดข้อผิดพลาดในการอัพเดท" };
+  }
+}
+
+/**
+ * Delete an admin
+ * - ROOT (level 0): Can delete any admin except themselves
+ * - SYSTEM_ADMIN (level 1): Can delete level 2-3 only
+ */
+export async function deleteAdmin(
+  adminId: number,
+  deleterId: number,
+  deleterLevel: AccessLevel,
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    // Cannot delete yourself
+    if (adminId === deleterId) {
+      return { success: false, message: "ไม่สามารถลบบัญชีตัวเองได้" };
+    }
+
+    // Get target admin
+    const targetAdmins = await query<AdminRow>(
+      "SELECT id, access_level FROM admins WHERE id = ?",
+      [adminId],
+    );
+
+    if (targetAdmins.length === 0) {
+      return { success: false, message: "ไม่พบ Admin ที่ต้องการลบ" };
+    }
+
+    const targetLevel = targetAdmins[0].access_level;
+
+    // Permission check
+    if (!canDeleteAdmin(deleterLevel, targetLevel)) {
+      return { success: false, message: "คุณไม่มีสิทธิ์ลบ Admin ระดับนี้" };
+    }
+
+    // Delete sessions first
+    await execute("DELETE FROM admin_sessions WHERE admin_id = ?", [adminId]);
+
+    // Delete admin
+    await execute("DELETE FROM admins WHERE id = ?", [adminId]);
+
+    revalidatePath("/admin/admins");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Delete admin error:", error);
+    return { success: false, message: "เกิดข้อผิดพลาดในการลบ Admin" };
+  }
+}
+
+/**
+ * Reset admin password (by ROOT only)
+ */
+export async function resetAdminPassword(
+  adminId: number,
+  newPassword: string,
+  editorLevel: AccessLevel,
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    // Permission check - only ROOT can reset passwords
+    if (editorLevel !== ACCESS_LEVELS.ROOT) {
+      return { success: false, message: "คุณไม่มีสิทธิ์รีเซ็ตรหัสผ่าน" };
+    }
+
+    if (newPassword.length < 6) {
+      return { success: false, message: "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร" };
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+
+    await execute("UPDATE admins SET password_hash = ? WHERE id = ?", [
+      newHash,
+      adminId,
+    ]);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Reset password error:", error);
+    return { success: false, message: "เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน" };
   }
 }

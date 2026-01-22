@@ -1,28 +1,64 @@
 "use client";
 
+import { useAdmin } from "@/app/admin/AdminLayoutClient";
+import { adminLogoutAction } from "@/lib/actions/admin-auth";
+import {
+  ACCESS_LEVEL_LABELS,
+  ACCESS_LEVELS,
+  AccessLevel,
+} from "@/lib/admin-types";
+import { canAccessPage, PageName } from "@/lib/permissions";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 interface NavItem {
   name: string;
   href: string;
   icon: string;
+  page: PageName;
 }
 
-const navItems: NavItem[] = [
-  { name: "แดชบอร์ด", href: "/admin", icon: "dashboard" },
-  { name: "การเลือกตั้ง", href: "/admin/elections", icon: "how_to_vote" },
-  { name: "นักเรียน", href: "/admin/students", icon: "school" },
-  { name: "ผลลัพธ์", href: "/admin/results", icon: "bar_chart" },
-  { name: "ตั้งค่า", href: "/admin/settings", icon: "settings" },
+const allNavItems: NavItem[] = [
+  { name: "แดชบอร์ด", href: "/admin", icon: "dashboard", page: "dashboard" },
+  {
+    name: "การเลือกตั้ง",
+    href: "/admin/elections",
+    icon: "how_to_vote",
+    page: "elections",
+  },
+  {
+    name: "นักเรียน",
+    href: "/admin/students",
+    icon: "school",
+    page: "students",
+  },
+  {
+    name: "ผลลัพธ์",
+    href: "/admin/results",
+    icon: "bar_chart",
+    page: "results",
+  },
+  {
+    name: "จัดการ Admin",
+    href: "/admin/admins",
+    icon: "admin_panel_settings",
+    page: "adminManagement",
+  },
 ];
 
 export const AdminNavbar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
+  const admin = useAdmin();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  // Filter nav items based on access level
+  const navItems = admin
+    ? allNavItems.filter((item) => canAccessPage(item.page, admin.accessLevel))
+    : [];
 
   const isActive = (href: string) => {
     if (href === "/admin" && pathname === "/admin") return true;
@@ -31,7 +67,26 @@ export const AdminNavbar: React.FC = () => {
   };
 
   const handleLogout = () => {
-    router.push("/login");
+    startTransition(async () => {
+      await adminLogoutAction();
+      router.push("/admin/login");
+    });
+  };
+
+  // Get role badge color
+  const getRoleBadgeColor = (level: AccessLevel): string => {
+    switch (level) {
+      case ACCESS_LEVELS.ROOT:
+        return "bg-red-100 text-red-700";
+      case ACCESS_LEVELS.SYSTEM_ADMIN:
+        return "bg-blue-100 text-blue-700";
+      case ACCESS_LEVELS.TEACHER:
+        return "bg-green-100 text-green-700";
+      case ACCESS_LEVELS.OBSERVER:
+        return "bg-purple-100 text-purple-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
   };
 
   return (
@@ -101,17 +156,39 @@ export const AdminNavbar: React.FC = () => {
                       person
                     </span>
                   </div>
-                  <span className="hidden lg:inline-block text-cool-gray">
-                    ผู้ดูแลระบบ
-                  </span>
+                  <div className="hidden lg:flex flex-col items-start">
+                    <span className="text-dark-slate text-xs font-semibold">
+                      {admin?.displayName || admin?.username || "Admin"}
+                    </span>
+                    {admin && (
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full ${getRoleBadgeColor(admin.accessLevel)}`}
+                      >
+                        {ACCESS_LEVEL_LABELS[admin.accessLevel]}
+                      </span>
+                    )}
+                  </div>
                   <span className="material-symbols-outlined text-sm text-cool-gray">
                     expand_more
                   </span>
                 </button>
 
                 {profileMenuOpen && (
-                  <div className="absolute right-0 w-48 mt-2 origin-top-right glass-card rounded-xl shadow-lg ring-1 ring-black/5 focus:outline-none animate-fade-in z-50">
+                  <div className="absolute right-0 w-56 mt-2 origin-top-right glass-card rounded-xl shadow-lg ring-1 ring-black/5 focus:outline-none animate-fade-in z-50">
                     <div className="py-1">
+                      {/* Show role badge on mobile */}
+                      {admin && (
+                        <div className="px-4 py-2 border-b border-slate-100 lg:hidden">
+                          <p className="text-sm font-medium text-dark-slate">
+                            {admin.displayName || admin.username}
+                          </p>
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full ${getRoleBadgeColor(admin.accessLevel)}`}
+                          >
+                            {ACCESS_LEVEL_LABELS[admin.accessLevel]}
+                          </span>
+                        </div>
+                      )}
                       <Link
                         href="/admin/profile"
                         className="flex items-center gap-2 px-4 py-2.5 text-sm text-dark-slate hover:bg-slate-50 transition-colors"
@@ -121,24 +198,16 @@ export const AdminNavbar: React.FC = () => {
                         </span>
                         โปรไฟล์
                       </Link>
-                      <Link
-                        href="/admin/settings"
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-dark-slate hover:bg-slate-50 transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-lg text-cool-gray">
-                          settings
-                        </span>
-                        ตั้งค่า
-                      </Link>
                       <hr className="my-1 border-slate-100" />
                       <button
                         onClick={handleLogout}
-                        className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        disabled={isPending}
+                        className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
                       >
                         <span className="material-symbols-outlined text-lg">
                           logout
                         </span>
-                        ออกจากระบบ
+                        {isPending ? "กำลังออก..." : "ออกจากระบบ"}
                       </button>
                     </div>
                   </div>
@@ -192,22 +261,27 @@ export const AdminNavbar: React.FC = () => {
                 </div>
                 <div className="ml-3">
                   <div className="text-base font-medium text-dark-slate">
-                    ผู้ดูแลระบบ
+                    {admin?.displayName || admin?.username || "Admin"}
                   </div>
-                  <div className="text-sm font-medium text-cool-gray">
-                    admin@school.edu
-                  </div>
+                  {admin && (
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${getRoleBadgeColor(admin.accessLevel)}`}
+                    >
+                      {ACCESS_LEVEL_LABELS[admin.accessLevel]}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="mt-3 px-2 space-y-1">
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-base font-medium text-red-600 hover:bg-red-50 transition-colors"
+                  disabled={isPending}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-base font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
                 >
                   <span className="material-symbols-outlined text-xl">
                     logout
                   </span>
-                  ออกจากระบบ
+                  {isPending ? "กำลังออก..." : "ออกจากระบบ"}
                 </button>
               </div>
             </div>
