@@ -1,21 +1,12 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
+import { loginAction, lookupStudent } from "@/lib/actions/auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-
-interface Student {
-  classroom: string;
-  no: number;
-  id: number;
-  name: string;
-  surname: string;
-  nationalId: string;
-}
+import { useEffect, useState, useTransition } from "react";
 
 export default function Login() {
   const router = useRouter();
-  const { loginWithData } = useAuth();
+  const [isPending, startTransition] = useTransition();
 
   const [studentId, setStudentId] = useState("");
   const [nationalId, setNationalId] = useState("");
@@ -28,33 +19,31 @@ export default function Login() {
   const [isMatched, setIsMatched] = useState<boolean | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Auto-matching logic
+  // Auto-matching logic using server action
   useEffect(() => {
     const matchStudent = async () => {
-      if (studentId.trim().length === 4 && nationalId.trim().length === 13) {
+      if (studentId.trim().length >= 4 && nationalId.trim().length === 13) {
         setIsSearching(true);
         setError("");
         try {
-          const res = await fetch("/data.json");
-          if (!res.ok) throw new Error("ไม่สามารถโหลดข้อมูลนักเรียนได้");
-          const students: Student[] = await res.json();
-
-          const found = students.find(
-            (s) =>
-              String(s.id) === studentId.trim() &&
-              s.nationalId === nationalId.trim(),
+          const result = await lookupStudent(
+            studentId.trim(),
+            nationalId.trim()
           );
 
-          if (found) {
-            setName(found.name);
-            setSurname(found.surname);
+          if (result.found && result.student) {
+            setName(result.student.name);
+            setSurname(result.student.surname);
+            if (result.student.prefix) {
+              setPrefix(result.student.prefix);
+            }
             setIsMatched(true);
           } else {
             setIsMatched(false);
-            // Don't clear names if they were already typed, but we'll highlight red
           }
         } catch (err) {
           console.error(err);
+          setIsMatched(false);
         } finally {
           setIsSearching(false);
         }
@@ -71,28 +60,24 @@ export default function Login() {
     setError("");
 
     try {
-      const res = await fetch("/data.json");
-      if (!res.ok) throw new Error("ไม่สามารถโหลดข้อมูลนักเรียนได้");
-      const students: Student[] = await res.json();
+      const formData = new FormData();
+      formData.append("studentId", studentId.trim());
+      formData.append("nationalId", nationalId.trim());
 
-      const found = students.find(
-        (s) =>
-          String(s.id) === studentId.trim() &&
-          s.nationalId === nationalId.trim() &&
-          s.name.trim() === name.trim() &&
-          s.surname.trim() === surname.trim(),
-      );
+      startTransition(async () => {
+        const result = await loginAction(formData);
 
-      if (found) {
-        // Success -> Login
-        loginWithData(found);
-      } else {
-        setError("ไม่พบนักเรียนหรือข้อมูลไม่ตรงกัน กรุณาตรวจสอบข้อมูลอีกครั้ง");
-      }
+        if (result.success) {
+          router.push("/");
+          router.refresh();
+        } else {
+          setError(result.message || "เกิดข้อผิดพลาดระหว่างการเข้าสู่ระบบ");
+          setLoading(false);
+        }
+      });
     } catch (err) {
       console.error(err);
       setError("เกิดข้อผิดพลาดระหว่างการเข้าสู่ระบบ");
-    } finally {
       setLoading(false);
     }
   };

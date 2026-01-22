@@ -1,42 +1,35 @@
 "use client";
 
+import { adminLoginAction } from "@/lib/actions/admin-auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-
-// Mock admin credentials
-const MOCK_ADMIN_CREDENTIALS = {
-  username: "admin",
-  password: "admin123",
-};
+import { useState, useTransition } from "react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setError(null);
 
-    // Simulate login delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    const formData = new FormData();
+    formData.append("username", username);
+    formData.append("password", password);
 
-    // Validate credentials
-    if (
-      username === MOCK_ADMIN_CREDENTIALS.username &&
-      password === MOCK_ADMIN_CREDENTIALS.password
-    ) {
-      // Successful login - redirect to admin dashboard
-      router.push("/admin");
-    } else {
-      // Invalid credentials
-      setError("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
-      setIsSubmitting(false);
-    }
+    startTransition(async () => {
+      const result = await adminLoginAction(formData);
+
+      if (result.success) {
+        router.push("/admin");
+        router.refresh();
+      } else {
+        setError(result.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
+      }
+    });
   };
 
   return (
@@ -161,10 +154,10 @@ export default function AdminLoginPage() {
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isPending}
               className="w-full h-14 mt-4 bg-linear-to-r from-royal-blue to-cyan-500 hover:from-royal-blue/90 hover:to-cyan-500/90 text-white font-bold rounded-2xl shadow-lg shadow-royal-blue/25 transition-all active:transform active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 group"
             >
-              {isSubmitting ? (
+              {isPending ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
                 <>

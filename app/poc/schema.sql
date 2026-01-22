@@ -122,12 +122,36 @@ CREATE TABLE sessions (
     INDEX idx_expires_at (expires_at)
 );
 
+-- 8. ตาราง Admins (Admin Authentication)
+CREATE TABLE admins (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,  -- bcrypt hash
+    display_name VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 9. ตาราง Admin Sessions
+CREATE TABLE admin_sessions (
+    id VARCHAR(255) PRIMARY KEY,
+    admin_id INT NOT NULL,
+    expires_at DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE CASCADE,
+    INDEX idx_admin_expires_at (expires_at)
+);
+
 -- =====================================================
 -- Sample Data (Optional - for testing)
 -- =====================================================
 
 -- ตัวอย่างคำนำหน้าที่ใช้:
 -- 'นาย', 'นางสาว', 'เด็กชาย', 'เด็กหญิง', 'นาง'
+
+-- Default Admin (password: admin123)
+-- INSERT INTO admins (username, password_hash, display_name) VALUES
+-- ('admin', '$2a$10$rqKvPYZvTZx8t8YGqPvnHOqVPZQ5mGWkDVLFM8KMQvRJrXbZ.lR6W', 'Administrator');
 
 -- =====================================================
 -- Useful Queries

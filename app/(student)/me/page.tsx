@@ -1,11 +1,21 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
+import { useStudentUser } from "../StudentLayoutClient";
+import { logoutAction } from "@/lib/actions/auth";
 import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 
 export default function Profile() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const user = useStudentUser();
+  const [isPending, startTransition] = useTransition();
+
+  const handleLogout = () => {
+    startTransition(async () => {
+      await logoutAction();
+      router.push("/login");
+    });
+  };
 
   return (
     <div className="bg-background-light text-slate-900 min-h-screen font-display">
@@ -82,11 +92,12 @@ export default function Profile() {
             </div>
 
             <button
-              onClick={() => logout()}
-              className="bg-white w-full py-4 rounded-xl shadow-sm border border-gray-100 text-red-600 font-bold text-base hover:bg-red-50 transition-colors flex items-center justify-center gap-2 mt-4"
+              onClick={handleLogout}
+              disabled={isPending}
+              className="bg-white w-full py-4 rounded-xl shadow-sm border border-gray-100 text-red-600 font-bold text-base hover:bg-red-50 transition-colors flex items-center justify-center gap-2 mt-4 disabled:opacity-50"
             >
               <span className="material-symbols-outlined">logout</span>
-              ออกจากระบบ
+              {isPending ? "กำลังออกจากระบบ..." : "ออกจากระบบ"}
             </button>
             <p className="text-center text-xs text-gray-400 mt-2">
               เวอร์ชัน 1.0.4 (Build 202)

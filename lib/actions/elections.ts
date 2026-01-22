@@ -1,0 +1,564 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import {
+  query,
+  execute,
+  ElectionRow,
+  PositionRow,
+  CandidateRow,
+} from "@/lib/db";
+
+// ==========================================
+// Types
+// ==========================================
+
+export type ElectionStatus = "PENDING" | "OPEN" | "CLOSED";
+
+export interface ElectionWithDetails extends ElectionRow {
+  positions: PositionRow[];
+  candidates: CandidateRow[];
+}
+
+export interface CreateElectionData {
+  title: string;
+  description?: string;
+  type?: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface CreatePositionData {
+  id: string;
+  title: string;
+  icon?: string;
+  enabled?: boolean;
+  isCustom?: boolean;
+  sortOrder?: number;
+}
+
+export interface CreateCandidateData {
+  positionId: string;
+  rank: number;
+  name: string;
+  slogan?: string;
+  imageUrl?: string;
+}
+
+// Default positions for student committee
+const DEFAULT_POSITIONS: Omit<CreatePositionData, "sortOrder">[] = [
+  { id: "president", title: "ประธาน", icon: "person", enabled: true },
+  {
+    id: "vice-president",
+    title: "รองประธาน",
+    icon: "supervisor_account",
+    enabled: true,
+  },
+  { id: "secretary", title: "เลขานุการ", icon: "edit_note", enabled: true },
+  { id: "treasurer", title: "เหรัญญิก", icon: "payments", enabled: true },
+  {
+    id: "public-relations",
+    title: "ประชาสัมพันธ์",
+    icon: "campaign",
+    enabled: true,
+  },
+  {
+    id: "music-president",
+    title: "ประธานชมรมดนตรี",
+    icon: "music_note",
+    enabled: true,
+  },
+  {
+    id: "sports-president",
+    title: "ประธานชมรมกีฬา",
+    icon: "sports_soccer",
+    enabled: true,
+  },
+  {
+    id: "cheer-president",
+    title: "ประธานเชียร์",
+    icon: "celebration",
+    enabled: true,
+  },
+  {
+    id: "discipline-president",
+    title: "ประธานระเบียบ",
+    icon: "gavel",
+    enabled: true,
+  },
+];
+
+// ==========================================
+// Helper Functions
+// ==========================================
+
+/**
+ * Calculate election status based on dates
+ * Note: This is a helper function, not a server action
+ */
+function calculateStatus(
+  startDate: Date | string,
+  endDate: Date | string
+): ElectionStatus {
+  const now = new Date();
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (now < start) return "PENDING";
+  if (now >= start && now <= end) return "OPEN";
+  return "CLOSED";
+}
+
+// ==========================================
+// Read Operations
+// ==========================================
+
+/**
+ * Get all elections
+ */
+export async function getAllElections(): Promise<ElectionRow[]> {
+  return query<ElectionRow>(
+    "SELECT * FROM elections WHERE is_active = TRUE ORDER BY start_date DESC"
+  );
+}
+
+/**
+ * Get active/open elections
+ */
+export async function getActiveElections(): Promise<ElectionRow[]> {
+  // Update status based on current time
+  const elections = await query<ElectionRow>(
+    "SELECT * FROM elections WHERE is_active = TRUE ORDER BY start_date ASC"
+  );
+
+  // Filter by calculated status
+  return elections.filter((e) => {
+    const status = calculateStatus(e.start_date, e.end_date);
+    return status === "OPEN";
+  });
+}
+
+/**
+ * Get election by ID with positions and candidates
+ */
+export async function getElectionById(
+  id: number
+): Promise<ElectionWithDetails | null> {
+  const elections = await query<ElectionRow>(
+    "SELECT * FROM elections WHERE id = ?",
+    [id]
+  );
+
+  if (elections.length === 0) return null;
+
+  const positions = await query<PositionRow>(
+    "SELECT * FROM positions WHERE election_id = ? ORDER BY sort_order ASC",
+    [id]
+  );
+
+  const candidates = await query<CandidateRow>(
+    "SELECT * FROM candidates WHERE election_id = ? ORDER BY position_id, rank ASC",
+    [id]
+  );
+
+  return {
+    ...elections[0],
+    positions,
+    candidates,
+  };
+}
+
+/**
+ * Get positions for an election
+ */
+export async function getPositionsByElection(
+  electionId: number
+): Promise<PositionRow[]> {
+  return query<PositionRow>(
+    "SELECT * FROM positions WHERE election_id = ? AND enabled = TRUE ORDER BY sort_order ASC",
+    [electionId]
+  );
+}
+
+/**
+ * Get candidates for a position
+ */
+export async function getCandidatesByPosition(
+  electionId: number,
+  positionId: string
+): Promise<CandidateRow[]> {
+  return query<CandidateRow>(
+    "SELECT * FROM candidates WHERE election_id = ? AND position_id = ? ORDER BY rank ASC",
+    [electionId, positionId]
+  );
+}
+
+// ==========================================
+// Write Operations - Elections
+// ==========================================
+
+/**
+ * Create a new election with default positions
+ */
+export async function createElection(
+  data: CreateElectionData
+): Promise<{ success: boolean; electionId?: number; error?: string }> {
+  try {
+    const status = calculateStatus(data.startDate, data.endDate);
+
+    // Insert election
+    const result = await execute(
+      `INSERT INTO elections (title, description, type, start_date, end_date, status)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        data.title,
+        data.description || null,
+        data.type || "student-committee",
+        data.startDate,
+        data.endDate,
+        status,
+      ]
+    );
+
+    const electionId = result.insertId;
+
+    // Insert default positions
+    if (data.type === "student-committee" || !data.type) {
+      for (let i = 0; i < DEFAULT_POSITIONS.length; i++) {
+        const pos = DEFAULT_POSITIONS[i];
+        const posId = `${electionId}-${pos.id}`;
+        await execute(
+          `INSERT INTO positions (id, election_id, title, icon, enabled, is_custom, sort_order)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            posId,
+            electionId,
+            pos.title,
+            pos.icon || null,
+            pos.enabled ?? true,
+            pos.isCustom ?? false,
+            i,
+          ]
+        );
+      }
+    }
+
+    revalidatePath("/admin/elections");
+    return { success: true, electionId };
+  } catch (error) {
+    console.error("Create election error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาดในการสร้างการเลือกตั้ง" };
+  }
+}
+
+/**
+ * Update an election
+ */
+export async function updateElection(
+  id: number,
+  data: Partial<CreateElectionData>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const setClauses: string[] = [];
+    const values: unknown[] = [];
+
+    if (data.title !== undefined) {
+      setClauses.push("title = ?");
+      values.push(data.title);
+    }
+    if (data.description !== undefined) {
+      setClauses.push("description = ?");
+      values.push(data.description);
+    }
+    if (data.type !== undefined) {
+      setClauses.push("type = ?");
+      values.push(data.type);
+    }
+    if (data.startDate !== undefined) {
+      setClauses.push("start_date = ?");
+      values.push(data.startDate);
+    }
+    if (data.endDate !== undefined) {
+      setClauses.push("end_date = ?");
+      values.push(data.endDate);
+    }
+
+    // Recalculate status if dates changed
+    if (data.startDate || data.endDate) {
+      const election = await getElectionById(id);
+      if (election) {
+        const newStatus = calculateStatus(
+          data.startDate || election.start_date,
+          data.endDate || election.end_date
+        );
+        setClauses.push("status = ?");
+        values.push(newStatus);
+      }
+    }
+
+    if (setClauses.length === 0) {
+      return { success: false, error: "ไม่มีข้อมูลที่ต้องอัปเดต" };
+    }
+
+    values.push(id);
+    await execute(
+      `UPDATE elections SET ${setClauses.join(", ")} WHERE id = ?`,
+      values
+    );
+
+    revalidatePath("/admin/elections");
+    revalidatePath(`/admin/elections/${id}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Update election error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาดในการแก้ไข" };
+  }
+}
+
+/**
+ * Delete an election (soft delete)
+ */
+export async function deleteElection(
+  id: number
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await execute("UPDATE elections SET is_active = FALSE WHERE id = ?", [id]);
+    revalidatePath("/admin/elections");
+    return { success: true };
+  } catch (error) {
+    console.error("Delete election error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาดในการลบ" };
+  }
+}
+
+// ==========================================
+// Write Operations - Positions
+// ==========================================
+
+/**
+ * Check if election is locked (OPEN or CLOSED)
+ */
+export async function isElectionLocked(electionId: number): Promise<boolean> {
+  const election = await getElectionById(electionId);
+  if (!election) return false;
+
+  const status = calculateStatus(election.start_date, election.end_date);
+  return status === "OPEN" || status === "CLOSED";
+}
+
+/**
+ * Toggle position enabled status
+ */
+export async function togglePosition(
+  electionId: number,
+  positionId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (await isElectionLocked(electionId)) {
+      return {
+        success: false,
+        error: "ไม่สามารถแก้ไขตำแหน่งได้เมื่อการเลือกตั้งเริ่มแล้ว",
+      };
+    }
+
+    await execute(
+      "UPDATE positions SET enabled = NOT enabled WHERE id = ? AND election_id = ?",
+      [positionId, electionId]
+    );
+
+    revalidatePath(`/admin/elections/${electionId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Toggle position error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาด" };
+  }
+}
+
+/**
+ * Add a custom position
+ */
+export async function addCustomPosition(
+  electionId: number,
+  title: string,
+  icon: string = "star"
+): Promise<{ success: boolean; positionId?: string; error?: string }> {
+  try {
+    if (await isElectionLocked(electionId)) {
+      return {
+        success: false,
+        error: "ไม่สามารถเพิ่มตำแหน่งได้เมื่อการเลือกตั้งเริ่มแล้ว",
+      };
+    }
+
+    // Get max sort order
+    const positions = await query<PositionRow>(
+      "SELECT MAX(sort_order) as max_order FROM positions WHERE election_id = ?",
+      [electionId]
+    );
+    const maxOrder = (positions[0] as unknown as { max_order: number | null })
+      ?.max_order;
+    const sortOrder = (maxOrder ?? -1) + 1;
+
+    const positionId = `${electionId}-custom-${Date.now()}`;
+    await execute(
+      `INSERT INTO positions (id, election_id, title, icon, enabled, is_custom, sort_order)
+       VALUES (?, ?, ?, ?, TRUE, TRUE, ?)`,
+      [positionId, electionId, title, icon, sortOrder]
+    );
+
+    revalidatePath(`/admin/elections/${electionId}`);
+    return { success: true, positionId };
+  } catch (error) {
+    console.error("Add position error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาด" };
+  }
+}
+
+// ==========================================
+// Write Operations - Candidates
+// ==========================================
+
+/**
+ * Add a candidate
+ */
+export async function addCandidate(
+  electionId: number,
+  data: CreateCandidateData
+): Promise<{ success: boolean; candidateId?: number; error?: string }> {
+  try {
+    if (await isElectionLocked(electionId)) {
+      return {
+        success: false,
+        error: "ไม่สามารถเพิ่มผู้สมัครได้เมื่อการเลือกตั้งเริ่มแล้ว",
+      };
+    }
+
+    // Check for duplicate name in same position
+    const existing = await query<CandidateRow>(
+      "SELECT id FROM candidates WHERE election_id = ? AND position_id = ? AND LOWER(name) = LOWER(?)",
+      [electionId, data.positionId, data.name.trim()]
+    );
+
+    if (existing.length > 0) {
+      return { success: false, error: "ผู้สมัครชื่อนี้มีอยู่แล้วในตำแหน่งนี้" };
+    }
+
+    const result = await execute(
+      `INSERT INTO candidates (election_id, position_id, rank, name, slogan, image_url)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        electionId,
+        data.positionId,
+        data.rank,
+        data.name.trim(),
+        data.slogan || null,
+        data.imageUrl || null,
+      ]
+    );
+
+    revalidatePath(`/admin/elections/${electionId}`);
+    revalidatePath(`/admin/elections/${electionId}/candidates`);
+    return { success: true, candidateId: result.insertId };
+  } catch (error) {
+    console.error("Add candidate error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาดในการเพิ่มผู้สมัคร" };
+  }
+}
+
+/**
+ * Update a candidate
+ */
+export async function updateCandidate(
+  electionId: number,
+  candidateId: number,
+  data: Partial<CreateCandidateData>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (await isElectionLocked(electionId)) {
+      return {
+        success: false,
+        error: "ไม่สามารถแก้ไขผู้สมัครได้เมื่อการเลือกตั้งเริ่มแล้ว",
+      };
+    }
+
+    const setClauses: string[] = [];
+    const values: unknown[] = [];
+
+    if (data.rank !== undefined) {
+      setClauses.push("rank = ?");
+      values.push(data.rank);
+    }
+    if (data.name !== undefined) {
+      setClauses.push("name = ?");
+      values.push(data.name.trim());
+    }
+    if (data.slogan !== undefined) {
+      setClauses.push("slogan = ?");
+      values.push(data.slogan);
+    }
+    if (data.imageUrl !== undefined) {
+      setClauses.push("image_url = ?");
+      values.push(data.imageUrl);
+    }
+
+    if (setClauses.length === 0) {
+      return { success: false, error: "ไม่มีข้อมูลที่ต้องอัปเดต" };
+    }
+
+    values.push(candidateId);
+    await execute(
+      `UPDATE candidates SET ${setClauses.join(", ")} WHERE id = ?`,
+      values
+    );
+
+    revalidatePath(`/admin/elections/${electionId}`);
+    revalidatePath(`/admin/elections/${electionId}/candidates`);
+    return { success: true };
+  } catch (error) {
+    console.error("Update candidate error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาด" };
+  }
+}
+
+/**
+ * Delete a candidate
+ */
+export async function deleteCandidate(
+  electionId: number,
+  candidateId: number
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (await isElectionLocked(electionId)) {
+      return {
+        success: false,
+        error: "ไม่สามารถลบผู้สมัครได้เมื่อการเลือกตั้งเริ่มแล้ว",
+      };
+    }
+
+    await execute("DELETE FROM candidates WHERE id = ?", [candidateId]);
+
+    revalidatePath(`/admin/elections/${electionId}`);
+    revalidatePath(`/admin/elections/${electionId}/candidates`);
+    return { success: true };
+  } catch (error) {
+    console.error("Delete candidate error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาด" };
+  }
+}
+
+/**
+ * Get next candidate rank for a position
+ */
+export async function getNextCandidateRank(
+  electionId: number,
+  positionId: string
+): Promise<number> {
+  const candidates = await query<CandidateRow>(
+    "SELECT MAX(rank) as max_rank FROM candidates WHERE election_id = ? AND position_id = ?",
+    [electionId, positionId]
+  );
+
+  const maxRank = (candidates[0] as unknown as { max_rank: number | null })
+    ?.max_rank;
+  return (maxRank ?? 0) + 1;
+}

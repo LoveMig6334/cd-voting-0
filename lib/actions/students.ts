@@ -1,0 +1,451 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { query, execute, StudentRow } from "@/lib/db";
+
+// ==========================================
+// Types
+// ==========================================
+
+export interface CreateStudentData {
+  id: string;
+  nationalId: string;
+  prefix?: string;
+  name: string;
+  surname: string;
+  studentNo?: number;
+  classRoom: string;
+}
+
+export interface UpdateStudentData {
+  prefix?: string;
+  name?: string;
+  surname?: string;
+  studentNo?: number;
+  classRoom?: string;
+}
+
+export interface StudentStats {
+  total: number;
+  approved: number;
+  pending: number;
+  byClassroom: Record<string, { total: number; approved: number }>;
+}
+
+// ==========================================
+// Read Operations
+// ==========================================
+
+/**
+ * Get all students
+ */
+export async function getStudents(): Promise<StudentRow[]> {
+  return query<StudentRow>(
+    "SELECT * FROM students ORDER BY class_room, student_no"
+  );
+}
+
+/**
+ * Get student by ID
+ */
+export async function getStudentById(id: string): Promise<StudentRow | null> {
+  const students = await query<StudentRow>(
+    "SELECT * FROM students WHERE id = ?",
+    [id]
+  );
+  return students[0] || null;
+}
+
+/**
+ * Get students by classroom
+ */
+export async function getStudentsByClassroom(
+  classroom: string
+): Promise<StudentRow[]> {
+  return query<StudentRow>(
+    "SELECT * FROM students WHERE class_room = ? ORDER BY student_no",
+    [classroom]
+  );
+}
+
+/**
+ * Get unique classrooms
+ */
+export async function getUniqueClassrooms(): Promise<string[]> {
+  const results = await query<{ class_room: string } & StudentRow>(
+    "SELECT DISTINCT class_room FROM students ORDER BY class_room"
+  );
+  return results.map((r) => r.class_room);
+}
+
+/**
+ * Get student statistics
+ */
+export async function getStudentStats(): Promise<StudentStats> {
+  const students = await getStudents();
+
+  const byClassroom: Record<string, { total: number; approved: number }> = {};
+  let approved = 0;
+
+  for (const student of students) {
+    if (student.voting_approved) approved++;
+
+    if (!byClassroom[student.class_room]) {
+      byClassroom[student.class_room] = { total: 0, approved: 0 };
+    }
+    byClassroom[student.class_room].total++;
+    if (student.voting_approved) {
+      byClassroom[student.class_room].approved++;
+    }
+  }
+
+  return {
+    total: students.length,
+    approved,
+    pending: students.length - approved,
+    byClassroom,
+  };
+}
+
+// ==========================================
+// Write Operations
+// ==========================================
+
+/**
+ * Create a new student
+ */
+export async function createStudent(
+  data: CreateStudentData
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Check for duplicate ID
+    const existingId = await query<StudentRow>(
+      "SELECT id FROM students WHERE id = ?",
+      [data.id]
+    );
+    if (existingId.length > 0) {
+      return { success: false, error: "รหัสนักเรียนนี้มีอยู่แล้วในระบบ" };
+    }
+
+    // Check for duplicate national ID
+    const existingNationalId = await query<StudentRow>(
+      "SELECT id FROM students WHERE national_id = ?",
+      [data.nationalId]
+    );
+    if (existingNationalId.length > 0) {
+      return { success: false, error: "เลขประจำตัวประชาชนนี้มีอยู่แล้วในระบบ" };
+    }
+
+    // Insert student
+    await execute(
+      `INSERT INTO students (id, national_id, prefix, name, surname, student_no, class_room)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        data.id,
+        data.nationalId,
+        data.prefix || null,
+        data.name,
+        data.surname,
+        data.studentNo || null,
+        data.classRoom,
+      ]
+    );
+
+    revalidatePath("/admin/students");
+    return { success: true };
+  } catch (error) {
+    console.error("Create student error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาดในการเพิ่มนักเรียน" };
+  }
+}
+
+/**
+ * Update a student
+ */
+export async function updateStudent(
+  id: string,
+  data: UpdateStudentData
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const setClauses: string[] = [];
+    const values: unknown[] = [];
+
+    if (data.prefix !== undefined) {
+      setClauses.push("prefix = ?");
+      values.push(data.prefix);
+    }
+    if (data.name !== undefined) {
+      setClauses.push("name = ?");
+      values.push(data.name);
+    }
+    if (data.surname !== undefined) {
+      setClauses.push("surname = ?");
+      values.push(data.surname);
+    }
+    if (data.studentNo !== undefined) {
+      setClauses.push("student_no = ?");
+      values.push(data.studentNo);
+    }
+    if (data.classRoom !== undefined) {
+      setClauses.push("class_room = ?");
+      values.push(data.classRoom);
+    }
+
+    if (setClauses.length === 0) {
+      return { success: false, error: "ไม่มีข้อมูลที่ต้องอัปเดต" };
+    }
+
+    values.push(id);
+    await execute(
+      `UPDATE students SET ${setClauses.join(", ")} WHERE id = ?`,
+      values
+    );
+
+    revalidatePath("/admin/students");
+    return { success: true };
+  } catch (error) {
+    console.error("Update student error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาดในการแก้ไขข้อมูล" };
+  }
+}
+
+/**
+ * Delete a student
+ */
+export async function deleteStudent(
+  id: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const result = await execute("DELETE FROM students WHERE id = ?", [id]);
+
+    if (result.affectedRows === 0) {
+      return { success: false, error: "ไม่พบนักเรียนที่ต้องการลบ" };
+    }
+
+    revalidatePath("/admin/students");
+    return { success: true };
+  } catch (error) {
+    console.error("Delete student error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาดในการลบข้อมูล" };
+  }
+}
+
+// ==========================================
+// Voting Rights Operations
+// ==========================================
+
+/**
+ * Approve voting right for a student
+ */
+export async function approveVotingRight(
+  studentId: string,
+  approvedBy: string = "Admin"
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await execute(
+      `UPDATE students
+       SET voting_approved = TRUE, voting_approved_at = NOW(), voting_approved_by = ?
+       WHERE id = ?`,
+      [approvedBy, studentId]
+    );
+
+    revalidatePath("/admin/students");
+    return { success: true };
+  } catch (error) {
+    console.error("Approve voting error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาดในการอนุมัติสิทธิ์" };
+  }
+}
+
+/**
+ * Revoke voting right for a student
+ */
+export async function revokeVotingRight(
+  studentId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await execute(
+      `UPDATE students
+       SET voting_approved = FALSE, voting_approved_at = NULL, voting_approved_by = NULL
+       WHERE id = ?`,
+      [studentId]
+    );
+
+    revalidatePath("/admin/students");
+    return { success: true };
+  } catch (error) {
+    console.error("Revoke voting error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาดในการยกเลิกสิทธิ์" };
+  }
+}
+
+/**
+ * Bulk approve voting rights for students in a classroom
+ */
+export async function bulkApproveVotingRights(
+  classroom: string,
+  approvedBy: string = "Admin"
+): Promise<{ success: boolean; count: number; error?: string }> {
+  try {
+    const result = await execute(
+      `UPDATE students
+       SET voting_approved = TRUE, voting_approved_at = NOW(), voting_approved_by = ?
+       WHERE class_room = ? AND voting_approved = FALSE`,
+      [approvedBy, classroom]
+    );
+
+    revalidatePath("/admin/students");
+    return { success: true, count: result.affectedRows };
+  } catch (error) {
+    console.error("Bulk approve error:", error);
+    return { success: false, count: 0, error: "เกิดข้อผิดพลาดในการอนุมัติ" };
+  }
+}
+
+/**
+ * Bulk revoke voting rights for students in a classroom
+ */
+export async function bulkRevokeVotingRights(
+  classroom: string
+): Promise<{ success: boolean; count: number; error?: string }> {
+  try {
+    const result = await execute(
+      `UPDATE students
+       SET voting_approved = FALSE, voting_approved_at = NULL, voting_approved_by = NULL
+       WHERE class_room = ? AND voting_approved = TRUE`,
+      [classroom]
+    );
+
+    revalidatePath("/admin/students");
+    return { success: true, count: result.affectedRows };
+  } catch (error) {
+    console.error("Bulk revoke error:", error);
+    return { success: false, count: 0, error: "เกิดข้อผิดพลาดในการยกเลิก" };
+  }
+}
+
+// ==========================================
+// Import Operations
+// ==========================================
+
+export interface ImportStudentData {
+  id: string;
+  nationalId: string;
+  prefix?: string;
+  name: string;
+  surname: string;
+  studentNo?: number;
+  classRoom: string;
+}
+
+/**
+ * Import students from array
+ */
+/**
+ * Get vote history for a student (which elections they voted in)
+ */
+export async function getStudentVoteHistory(
+  studentId: string
+): Promise<number[]> {
+  const results = await query<{ election_id: number } & StudentRow>(
+    "SELECT election_id FROM vote_history WHERE student_id = ?",
+    [studentId]
+  );
+  return results.map((r) => r.election_id);
+}
+
+/**
+ * Get vote history for multiple students
+ */
+export async function getStudentsVoteHistory(): Promise<
+  Record<string, number[]>
+> {
+  const results = await query<{ student_id: string; election_id: number } & StudentRow>(
+    "SELECT student_id, election_id FROM vote_history"
+  );
+
+  const history: Record<string, number[]> = {};
+  for (const row of results) {
+    if (!history[row.student_id]) {
+      history[row.student_id] = [];
+    }
+    history[row.student_id].push(row.election_id);
+  }
+  return history;
+}
+
+export async function importStudents(
+  students: ImportStudentData[],
+  options: { overwrite?: boolean } = {}
+): Promise<{ imported: number; skipped: number; errors: string[] }> {
+  const result = { imported: 0, skipped: 0, errors: [] as string[] };
+
+  for (const student of students) {
+    // Validate required fields
+    if (
+      !student.id ||
+      !student.name ||
+      !student.surname ||
+      !student.classRoom ||
+      !student.nationalId
+    ) {
+      result.errors.push(
+        `ข้อมูลไม่ครบถ้วนสำหรับ ID: ${student.id || "unknown"}`
+      );
+      result.skipped++;
+      continue;
+    }
+
+    try {
+      // Check if exists
+      const existing = await query<StudentRow>(
+        "SELECT id FROM students WHERE id = ?",
+        [student.id]
+      );
+
+      if (existing.length > 0) {
+        if (options.overwrite) {
+          // Update existing
+          await execute(
+            `UPDATE students SET national_id = ?, prefix = ?, name = ?, surname = ?,
+             student_no = ?, class_room = ? WHERE id = ?`,
+            [
+              student.nationalId,
+              student.prefix || null,
+              student.name,
+              student.surname,
+              student.studentNo || null,
+              student.classRoom,
+              student.id,
+            ]
+          );
+          result.imported++;
+        } else {
+          result.skipped++;
+        }
+      } else {
+        // Insert new
+        await execute(
+          `INSERT INTO students (id, national_id, prefix, name, surname, student_no, class_room)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            student.id,
+            student.nationalId,
+            student.prefix || null,
+            student.name,
+            student.surname,
+            student.studentNo || null,
+            student.classRoom,
+          ]
+        );
+        result.imported++;
+      }
+    } catch (error) {
+      result.errors.push(`Error importing ${student.id}: ${error}`);
+      result.skipped++;
+    }
+  }
+
+  revalidatePath("/admin/students");
+  return result;
+}

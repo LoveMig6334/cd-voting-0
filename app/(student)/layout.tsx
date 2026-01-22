@@ -1,40 +1,28 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getCurrentSession } from "@/lib/actions/auth";
+import { StudentLayoutClient } from "./StudentLayoutClient";
 
-import { BottomNav } from "@/components/BottomNav";
-import { useAuth } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-
-export default function StudentLayout({
+export default async function StudentLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+  const session = await getCurrentSession();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
-  }, [user, loading, router]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background-light">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+  if (!session) {
+    redirect("/login");
   }
 
-  if (!user) {
-    return null;
-  }
+  // Pass user data to client layout wrapper
+  const user = {
+    id: session.student.id,
+    prefix: session.student.prefix,
+    name: session.student.name,
+    surname: session.student.surname,
+    classRoom: session.student.class_room,
+    studentNo: session.student.student_no,
+    votingApproved: session.student.voting_approved,
+  };
 
-  return (
-    <>
-      <div className="pb-24">{children}</div>
-      <BottomNav />
-    </>
-  );
+  return <StudentLayoutClient user={user}>{children}</StudentLayoutClient>;
 }

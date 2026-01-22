@@ -1,21 +1,17 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
-import { generateVoteToken } from "@/lib/token";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { useStudentUser } from "../StudentLayoutClient";
 
-export default function VoteSuccess() {
+function VoteSuccessContent() {
   const router = useRouter();
-  const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const user = useStudentUser();
 
-  // Capture timestamp once using lazy state initializer (runs only on mount)
-  const [voteTimestamp] = useState(() => Date.now());
-
-  // Compute token as derived state
-  const voteToken = user
-    ? generateVoteToken(`${user.name} ${user.surname}`, voteTimestamp)
-    : "VOTE-XXXX-XXXX";
+  // Get token from URL params (set by voting page)
+  const voteToken = searchParams.get("token") || "VOTE-XXXX";
+  const alreadyVoted = searchParams.get("already") === "true";
 
   return (
     <div className="mesh-gradient-bg font-display text-dark-slate min-h-screen flex flex-col items-center justify-center p-4">
@@ -38,63 +34,67 @@ export default function VoteSuccess() {
 
           <div className="text-center mb-10 space-y-2">
             <h1 className="text-3xl font-bold tracking-tight text-dark-slate">
-              ขอบคุณที่ลงคะแนน!
+              {alreadyVoted ? "คุณลงคะแนนไปแล้ว" : "ขอบคุณที่ลงคะแนน!"}
             </h1>
             <p className="text-cool-gray text-base leading-relaxed max-w-[280px] mx-auto">
-              คะแนนเสียงของคุณถูกบันทึกอย่างปลอดภัยแล้ว
+              {alreadyVoted
+                ? "คะแนนเสียงของคุณถูกบันทึกไว้แล้วก่อนหน้านี้"
+                : "คะแนนเสียงของคุณถูกบันทึกอย่างปลอดภัยแล้ว"}
             </p>
           </div>
 
           {/* Ticket */}
-          <div className="w-full max-w-[340px] relative group perspective-1000">
-            <div className="ticket-card border border-white/70 rounded-xl overflow-hidden relative shadow-md">
-              <div className="p-6 flex flex-col items-center gap-4">
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-xs font-bold text-cool-gray tracking-widest uppercase">
-                    รหัส Token
-                  </span>
-                  <div className="flex items-center gap-2 group/token cursor-pointer active:scale-95 transition-transform">
-                    <span className="font-mono text-2xl font-bold tracking-wider select-all text-dark-slate">
-                      {voteToken}
+          {!alreadyVoted && (
+            <div className="w-full max-w-[340px] relative group perspective-1000">
+              <div className="ticket-card border border-white/70 rounded-xl overflow-hidden relative shadow-md">
+                <div className="p-6 flex flex-col items-center gap-4">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-xs font-bold text-cool-gray tracking-widest uppercase">
+                      รหัส Token
                     </span>
-                    <span className="material-symbols-outlined text-royal-blue text-sm opacity-60 group-hover/token:opacity-100 transition-opacity">
-                      content_copy
-                    </span>
+                    <div className="flex items-center gap-2 group/token cursor-pointer active:scale-95 transition-transform">
+                      <span className="font-mono text-2xl font-bold tracking-wider select-all text-dark-slate">
+                        {voteToken}
+                      </span>
+                      <span className="material-symbols-outlined text-royal-blue text-sm opacity-60 group-hover/token:opacity-100 transition-opacity">
+                        content_copy
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Divider with notches */}
-                <div className="w-full relative h-px bg-transparent my-1">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t-2 border-dashed border-gray-200"></div>
+                  {/* Divider with notches */}
+                  <div className="w-full relative h-px bg-transparent my-1">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t-2 border-dashed border-gray-200"></div>
+                    </div>
+                    <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-background-light border-r border-gray-200"></div>
+                    <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-background-light border-l border-gray-200"></div>
                   </div>
-                  <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-background-light border-r border-gray-200"></div>
-                  <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-background-light border-l border-gray-200"></div>
-                </div>
 
-                <div className="text-center space-y-2 pt-1">
-                  <p className="text-xs text-cool-gray leading-relaxed">
-                    อีเมลยืนยันถูกส่งไปยัง{" "}
-                    <span className="text-dark-slate font-medium">
-                      student@school.edu
-                    </span>{" "}
-                    แล้ว
-                  </p>
-                  <div className="flex items-center justify-center gap-1.5 text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2.5 py-1 rounded-full w-fit mx-auto border border-emerald-100 backdrop-blur-sm">
-                    <span className="material-symbols-outlined text-[12px]">
-                      verified_user
-                    </span>
-                    <span>CRYPTOGRAPHICALLY VERIFIED</span>
+                  <div className="text-center space-y-2 pt-1">
+                    <p className="text-xs text-cool-gray leading-relaxed">
+                      ผู้ลงคะแนน:{" "}
+                      <span className="text-dark-slate font-medium">
+                        {user.name} {user.surname}
+                      </span>
+                    </p>
+                    <div className="flex items-center justify-center gap-1.5 text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2.5 py-1 rounded-full w-fit mx-auto border border-emerald-100 backdrop-blur-sm">
+                      <span className="material-symbols-outlined text-[12px]">
+                        verified_user
+                      </span>
+                      <span>VERIFIED</span>
+                    </div>
                   </div>
                 </div>
               </div>
+              <div className="absolute -bottom-2 inset-x-4 h-4 bg-white/40 backdrop-blur-sm rounded-b-xl -z-10 opacity-60 border border-white/50"></div>
             </div>
-            <div className="absolute -bottom-2 inset-x-4 h-4 bg-white/40 backdrop-blur-sm rounded-b-xl -z-10 opacity-60 border border-white/50"></div>
-          </div>
+          )}
 
           <p className="mt-8 text-center text-xs text-cool-gray font-medium max-w-xs">
-            กรุณาบันทึก Token นี้ไว้
-            เพราะเป็นวิธีเดียวที่ใช้ตรวจสอบว่าคะแนนของคุณถูกนับถูกต้อง
+            {alreadyVoted
+              ? "คุณสามารถดูผลการเลือกตั้งได้เมื่อการเลือกตั้งสิ้นสุด"
+              : "กรุณาบันทึก Token นี้ไว้ เพราะเป็นวิธีเดียวที่ใช้ตรวจสอบว่าคะแนนของคุณถูกนับถูกต้อง"}
           </p>
         </main>
 
@@ -105,14 +105,30 @@ export default function VoteSuccess() {
           >
             <span>กลับหน้าหลัก</span>
           </button>
-          <button className="w-full h-12 flex items-center justify-center gap-2 bg-white/80 border border-gray-200 hover:bg-gray-50 text-dark-slate font-bold rounded-xl transition-all active:scale-[0.98] shadow-sm">
-            <span className="material-symbols-outlined text-lg">
-              screenshot_monitor
-            </span>
-            <span>บันทึกภาพหน้าจอ</span>
-          </button>
+          {!alreadyVoted && (
+            <button className="w-full h-12 flex items-center justify-center gap-2 bg-white/80 border border-gray-200 hover:bg-gray-50 text-dark-slate font-bold rounded-xl transition-all active:scale-[0.98] shadow-sm">
+              <span className="material-symbols-outlined text-lg">
+                screenshot_monitor
+              </span>
+              <span>บันทึกภาพหน้าจอ</span>
+            </button>
+          )}
         </footer>
       </div>
     </div>
+  );
+}
+
+export default function VoteSuccess() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-slate-200 rounded-full animate-spin border-t-primary" />
+        </div>
+      }
+    >
+      <VoteSuccessContent />
+    </Suspense>
   );
 }
