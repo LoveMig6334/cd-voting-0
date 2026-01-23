@@ -1,17 +1,17 @@
 "use server";
 
-import { PoolConnection } from "mysql2/promise";
-import { revalidatePath } from "next/cache";
-import { RowDataPacket } from "mysql2/promise";
 import {
+  CandidateRow,
+  ElectionRow,
+  PositionRow,
   query,
-  execute,
   transaction,
   VoteHistoryRow,
   VoteRow,
-  CandidateRow,
-  PositionRow,
 } from "@/lib/db";
+import { PoolConnection, RowDataPacket } from "mysql2/promise";
+import { revalidatePath } from "next/cache";
+import { logVoteCast } from "./activities";
 import { getCurrentSession } from "./auth";
 
 // ==========================================
@@ -79,7 +79,7 @@ export interface PositionWinner {
  */
 export async function castVote(
   electionId: number,
-  choices: VoteChoice[]
+  choices: VoteChoice[],
 ): Promise<VoteResult> {
   // 1. Check session
   const session = await getCurrentSession();
@@ -95,7 +95,7 @@ export async function castVote(
       // 3. Check if already voted (with row lock)
       const [history] = await conn.execute(
         "SELECT 1 FROM vote_history WHERE student_id = ? AND election_id = ? FOR UPDATE",
-        [studentId, electionId]
+        [studentId, electionId],
       );
 
       if ((history as unknown[]).length > 0) {
@@ -105,7 +105,7 @@ export async function castVote(
       // 4. Record vote history (who voted)
       await conn.execute(
         "INSERT INTO vote_history (student_id, election_id, ip_address) VALUES (?, ?, ?)",
-        [studentId, electionId, "server"]
+        [studentId, electionId, "server"],
       );
 
       // 5. Insert votes (anonymous - no student_id)
@@ -113,12 +113,12 @@ export async function castVote(
         if (choice.candidateId) {
           await conn.execute(
             "INSERT INTO votes (election_id, position_id, candidate_id) VALUES (?, ?, ?)",
-            [electionId, choice.positionId, choice.candidateId]
+            [electionId, choice.positionId, choice.candidateId],
           );
         } else {
           await conn.execute(
             "INSERT INTO votes (election_id, position_id, is_no_vote) VALUES (?, ?, TRUE)",
-            [electionId, choice.positionId]
+            [electionId, choice.positionId],
           );
         }
       }
@@ -126,7 +126,7 @@ export async function castVote(
       // 6. Update total votes count
       await conn.execute(
         "UPDATE elections SET total_votes = total_votes + 1 WHERE id = ?",
-        [electionId]
+        [electionId],
       );
 
       // 7. Generate vote token
@@ -135,6 +135,14 @@ export async function castVote(
 
     revalidatePath(`/elections/${electionId}`);
     revalidatePath("/admin/results");
+
+    // Log activity - get election title first
+    const elections = await query<ElectionRow>(
+      "SELECT title FROM elections WHERE id = ?",
+      [electionId],
+    );
+    const electionTitle = elections[0]?.title || "(ไม่ทราบชื่อ)";
+    await logVoteCast(studentId, electionTitle);
 
     return {
       success: true,
@@ -158,7 +166,7 @@ export async function hasVoted(electionId: number): Promise<boolean> {
 
   const results = await query<VoteHistoryRow>(
     "SELECT 1 FROM vote_history WHERE student_id = ? AND election_id = ?",
-    [session.studentId, electionId]
+    [session.studentId, electionId],
   );
 
   return results.length > 0;
@@ -169,11 +177,11 @@ export async function hasVoted(electionId: number): Promise<boolean> {
  */
 export async function hasStudentVoted(
   studentId: string,
-  electionId: number
+  electionId: number,
 ): Promise<boolean> {
   const results = await query<VoteHistoryRow>(
     "SELECT 1 FROM vote_history WHERE student_id = ? AND election_id = ?",
-    [studentId, electionId]
+    [studentId, electionId],
   );
 
   return results.length > 0;
@@ -188,11 +196,11 @@ export async function hasStudentVoted(
  */
 export async function getVoterTurnout(
   electionId: number,
-  totalEligibleVoters: number
+  totalEligibleVoters: number,
 ): Promise<VoterTurnout> {
   const results = await query<{ count: number } & VoteHistoryRow>(
     "SELECT COUNT(*) as count FROM vote_history WHERE election_id = ?",
-    [electionId]
+    [electionId],
   );
 
   const totalVoted = results[0]?.count || 0;
@@ -216,27 +224,29 @@ export async function getVoterTurnout(
 export async function getPositionResults(
   electionId: number,
   positionId: string,
-  positionTitle: string
+  positionTitle: string,
 ): Promise<PositionResult> {
   // Get all candidates for this position
   const candidates = await query<CandidateRow>(
     "SELECT * FROM candidates WHERE election_id = ? AND position_id = ? ORDER BY rank",
-    [electionId, positionId]
+    [electionId, positionId],
   );
 
   // Get vote counts for each candidate
-  const voteCounts = await query<{ candidate_id: number; count: number } & VoteRow>(
+  const voteCounts = await query<
+    { candidate_id: number; count: number } & VoteRow
+  >(
     `SELECT candidate_id, COUNT(*) as count FROM votes
      WHERE election_id = ? AND position_id = ? AND candidate_id IS NOT NULL
      GROUP BY candidate_id`,
-    [electionId, positionId]
+    [electionId, positionId],
   );
 
   // Get abstain count
   const abstainResults = await query<{ count: number } & VoteRow>(
     `SELECT COUNT(*) as count FROM votes
      WHERE election_id = ? AND position_id = ? AND is_no_vote = TRUE`,
-    [electionId, positionId]
+    [electionId, positionId],
   );
 
   const abstainCount = abstainResults[0]?.count || 0;
@@ -285,9 +295,13 @@ export async function getPositionResults(
 export async function getPositionWinner(
   electionId: number,
   positionId: string,
-  positionTitle: string
+  positionTitle: string,
 ): Promise<PositionWinner> {
-  const results = await getPositionResults(electionId, positionId, positionTitle);
+  const results = await getPositionResults(
+    electionId,
+    positionId,
+    positionTitle,
+  );
 
   // No candidates
   if (results.candidates.length === 0) {
@@ -327,7 +341,7 @@ export async function getPositionWinner(
 
   // Find candidates with highest votes
   const topCandidates = results.candidates.filter(
-    (c) => c.votes === maxCandidateVotes
+    (c) => c.votes === maxCandidateVotes,
   );
 
   // Tie
@@ -364,7 +378,7 @@ export async function getElectionResults(electionId: number): Promise<{
   // Get positions
   const positions = await query<PositionRow>(
     "SELECT id, title, enabled FROM positions WHERE election_id = ? AND enabled = TRUE ORDER BY sort_order",
-    [electionId]
+    [electionId],
   );
 
   // Get total eligible voters (students with voting rights)
@@ -372,7 +386,7 @@ export async function getElectionResults(electionId: number): Promise<{
     count: number;
   }
   const eligibleResults = await query<CountResult>(
-    "SELECT COUNT(*) as count FROM students WHERE voting_approved = TRUE"
+    "SELECT COUNT(*) as count FROM students WHERE voting_approved = TRUE",
   );
   const totalEligible = eligibleResults[0]?.count || 0;
 
@@ -403,11 +417,11 @@ export async function getElectionResults(electionId: number): Promise<{
  */
 export async function getVotingLog(
   electionId: number,
-  limit: number = 10
+  limit: number = 10,
 ): Promise<{ id: number; votedAt: Date }[]> {
   const results = await query<VoteHistoryRow>(
     "SELECT id, voted_at FROM vote_history WHERE election_id = ? ORDER BY voted_at DESC LIMIT ?",
-    [electionId, limit]
+    [electionId, limit],
   );
 
   return results.map((r) => ({
@@ -425,7 +439,7 @@ export async function getTotalVotes(electionId: number): Promise<number> {
   }
   const results = await query<CountResult>(
     "SELECT COUNT(*) as count FROM vote_history WHERE election_id = ?",
-    [electionId]
+    [electionId],
   );
   return results[0]?.count || 0;
 }

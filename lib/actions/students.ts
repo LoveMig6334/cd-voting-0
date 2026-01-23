@@ -1,7 +1,8 @@
 "use server";
 
+import { execute, query, StudentRow } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { query, execute, StudentRow } from "@/lib/db";
+import { logAdminAction } from "./activities";
 
 // ==========================================
 // Types
@@ -41,7 +42,7 @@ export interface StudentStats {
  */
 export async function getStudents(): Promise<StudentRow[]> {
   return query<StudentRow>(
-    "SELECT * FROM students ORDER BY class_room, student_no"
+    "SELECT * FROM students ORDER BY class_room, student_no",
   );
 }
 
@@ -51,7 +52,7 @@ export async function getStudents(): Promise<StudentRow[]> {
 export async function getStudentById(id: string): Promise<StudentRow | null> {
   const students = await query<StudentRow>(
     "SELECT * FROM students WHERE id = ?",
-    [id]
+    [id],
   );
   return students[0] || null;
 }
@@ -60,11 +61,11 @@ export async function getStudentById(id: string): Promise<StudentRow | null> {
  * Get students by classroom
  */
 export async function getStudentsByClassroom(
-  classroom: string
+  classroom: string,
 ): Promise<StudentRow[]> {
   return query<StudentRow>(
     "SELECT * FROM students WHERE class_room = ? ORDER BY student_no",
-    [classroom]
+    [classroom],
   );
 }
 
@@ -73,7 +74,7 @@ export async function getStudentsByClassroom(
  */
 export async function getUniqueClassrooms(): Promise<string[]> {
   const results = await query<{ class_room: string } & StudentRow>(
-    "SELECT DISTINCT class_room FROM students ORDER BY class_room"
+    "SELECT DISTINCT class_room FROM students ORDER BY class_room",
   );
   return results.map((r) => r.class_room);
 }
@@ -115,13 +116,13 @@ export async function getStudentStats(): Promise<StudentStats> {
  * Create a new student
  */
 export async function createStudent(
-  data: CreateStudentData
+  data: CreateStudentData,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // Check for duplicate ID
     const existingId = await query<StudentRow>(
       "SELECT id FROM students WHERE id = ?",
-      [data.id]
+      [data.id],
     );
     if (existingId.length > 0) {
       return { success: false, error: "รหัสนักเรียนนี้มีอยู่แล้วในระบบ" };
@@ -130,7 +131,7 @@ export async function createStudent(
     // Check for duplicate national ID
     const existingNationalId = await query<StudentRow>(
       "SELECT id FROM students WHERE national_id = ?",
-      [data.nationalId]
+      [data.nationalId],
     );
     if (existingNationalId.length > 0) {
       return { success: false, error: "เลขประจำตัวประชาชนนี้มีอยู่แล้วในระบบ" };
@@ -148,10 +149,17 @@ export async function createStudent(
         data.surname,
         data.studentNo || null,
         data.classRoom,
-      ]
+      ],
     );
 
     revalidatePath("/admin/students");
+
+    // Log activity
+    await logAdminAction(
+      "เพิ่มนักเรียนใหม่",
+      `#${data.id} ${data.name} ${data.surname} (ห้อง ${data.classRoom})`,
+    );
+
     return { success: true };
   } catch (error) {
     console.error("Create student error:", error);
@@ -164,7 +172,7 @@ export async function createStudent(
  */
 export async function updateStudent(
   id: string,
-  data: UpdateStudentData
+  data: UpdateStudentData,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const setClauses: string[] = [];
@@ -198,7 +206,7 @@ export async function updateStudent(
     values.push(id);
     await execute(
       `UPDATE students SET ${setClauses.join(", ")} WHERE id = ?`,
-      values
+      values,
     );
 
     revalidatePath("/admin/students");
@@ -213,7 +221,7 @@ export async function updateStudent(
  * Delete a student
  */
 export async function deleteStudent(
-  id: string
+  id: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const result = await execute("DELETE FROM students WHERE id = ?", [id]);
@@ -223,6 +231,10 @@ export async function deleteStudent(
     }
 
     revalidatePath("/admin/students");
+
+    // Log activity
+    await logAdminAction("ลบนักเรียน", `#${id}`);
+
     return { success: true };
   } catch (error) {
     console.error("Delete student error:", error);
@@ -239,17 +251,21 @@ export async function deleteStudent(
  */
 export async function approveVotingRight(
   studentId: string,
-  approvedBy: string = "Admin"
+  approvedBy: string = "Admin",
 ): Promise<{ success: boolean; error?: string }> {
   try {
     await execute(
       `UPDATE students
        SET voting_approved = TRUE, voting_approved_at = NOW(), voting_approved_by = ?
        WHERE id = ?`,
-      [approvedBy, studentId]
+      [approvedBy, studentId],
     );
 
     revalidatePath("/admin/students");
+
+    // Log activity
+    await logAdminAction("อนุมัติสิทธิ์โหวต", `นักเรียน #${studentId}`);
+
     return { success: true };
   } catch (error) {
     console.error("Approve voting error:", error);
@@ -261,17 +277,21 @@ export async function approveVotingRight(
  * Revoke voting right for a student
  */
 export async function revokeVotingRight(
-  studentId: string
+  studentId: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     await execute(
       `UPDATE students
        SET voting_approved = FALSE, voting_approved_at = NULL, voting_approved_by = NULL
        WHERE id = ?`,
-      [studentId]
+      [studentId],
     );
 
     revalidatePath("/admin/students");
+
+    // Log activity
+    await logAdminAction("ถอนสิทธิ์โหวต", `นักเรียน #${studentId}`);
+
     return { success: true };
   } catch (error) {
     console.error("Revoke voting error:", error);
@@ -284,17 +304,26 @@ export async function revokeVotingRight(
  */
 export async function bulkApproveVotingRights(
   classroom: string,
-  approvedBy: string = "Admin"
+  approvedBy: string = "Admin",
 ): Promise<{ success: boolean; count: number; error?: string }> {
   try {
     const result = await execute(
       `UPDATE students
        SET voting_approved = TRUE, voting_approved_at = NOW(), voting_approved_by = ?
        WHERE class_room = ? AND voting_approved = FALSE`,
-      [approvedBy, classroom]
+      [approvedBy, classroom],
     );
 
     revalidatePath("/admin/students");
+
+    // Log activity
+    if (result.affectedRows > 0) {
+      await logAdminAction(
+        "อนุมัติสิทธิ์โหวตทั้งห้อง",
+        `ห้อง ${classroom} (${result.affectedRows} คน)`,
+      );
+    }
+
     return { success: true, count: result.affectedRows };
   } catch (error) {
     console.error("Bulk approve error:", error);
@@ -306,17 +335,26 @@ export async function bulkApproveVotingRights(
  * Bulk revoke voting rights for students in a classroom
  */
 export async function bulkRevokeVotingRights(
-  classroom: string
+  classroom: string,
 ): Promise<{ success: boolean; count: number; error?: string }> {
   try {
     const result = await execute(
       `UPDATE students
        SET voting_approved = FALSE, voting_approved_at = NULL, voting_approved_by = NULL
        WHERE class_room = ? AND voting_approved = TRUE`,
-      [classroom]
+      [classroom],
     );
 
     revalidatePath("/admin/students");
+
+    // Log activity
+    if (result.affectedRows > 0) {
+      await logAdminAction(
+        "ถอนสิทธิ์โหวตทั้งห้อง",
+        `ห้อง ${classroom} (${result.affectedRows} คน)`,
+      );
+    }
+
     return { success: true, count: result.affectedRows };
   } catch (error) {
     console.error("Bulk revoke error:", error);
@@ -345,11 +383,11 @@ export interface ImportStudentData {
  * Get vote history for a student (which elections they voted in)
  */
 export async function getStudentVoteHistory(
-  studentId: string
+  studentId: string,
 ): Promise<number[]> {
   const results = await query<{ election_id: number } & StudentRow>(
     "SELECT election_id FROM vote_history WHERE student_id = ?",
-    [studentId]
+    [studentId],
   );
   return results.map((r) => r.election_id);
 }
@@ -360,9 +398,9 @@ export async function getStudentVoteHistory(
 export async function getStudentsVoteHistory(): Promise<
   Record<string, number[]>
 > {
-  const results = await query<{ student_id: string; election_id: number } & StudentRow>(
-    "SELECT student_id, election_id FROM vote_history"
-  );
+  const results = await query<
+    { student_id: string; election_id: number } & StudentRow
+  >("SELECT student_id, election_id FROM vote_history");
 
   const history: Record<string, number[]> = {};
   for (const row of results) {
@@ -376,7 +414,7 @@ export async function getStudentsVoteHistory(): Promise<
 
 export async function importStudents(
   students: ImportStudentData[],
-  options: { overwrite?: boolean } = {}
+  options: { overwrite?: boolean } = {},
 ): Promise<{ imported: number; skipped: number; errors: string[] }> {
   const result = { imported: 0, skipped: 0, errors: [] as string[] };
 
@@ -390,7 +428,7 @@ export async function importStudents(
       !student.nationalId
     ) {
       result.errors.push(
-        `ข้อมูลไม่ครบถ้วนสำหรับ ID: ${student.id || "unknown"}`
+        `ข้อมูลไม่ครบถ้วนสำหรับ ID: ${student.id || "unknown"}`,
       );
       result.skipped++;
       continue;
@@ -400,7 +438,7 @@ export async function importStudents(
       // Check if exists
       const existing = await query<StudentRow>(
         "SELECT id FROM students WHERE id = ?",
-        [student.id]
+        [student.id],
       );
 
       if (existing.length > 0) {
@@ -417,7 +455,7 @@ export async function importStudents(
               student.studentNo || null,
               student.classRoom,
               student.id,
-            ]
+            ],
           );
           result.imported++;
         } else {
@@ -436,7 +474,7 @@ export async function importStudents(
             student.surname,
             student.studentNo || null,
             student.classRoom,
-          ]
+          ],
         );
         result.imported++;
       }
@@ -447,5 +485,14 @@ export async function importStudents(
   }
 
   revalidatePath("/admin/students");
+
+  // Log activity
+  if (result.imported > 0) {
+    await logAdminAction(
+      "Import นักเรียน",
+      `นำเข้า ${result.imported} คน, ข้าม ${result.skipped} คน`,
+    );
+  }
+
   return result;
 }

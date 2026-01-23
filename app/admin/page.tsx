@@ -1,6 +1,8 @@
+import { getRecentActivitiesForDisplay } from "@/lib/actions/activities";
 import { getActiveElections, getAllElections } from "@/lib/actions/elections";
 import { getStudentStats } from "@/lib/actions/students";
 import { getTotalVotes } from "@/lib/actions/votes";
+import { ActivityDisplayItem } from "@/lib/db";
 import Link from "next/link";
 
 // Stats Card Component
@@ -88,6 +90,60 @@ function StatsCard({
   return <div className={cardClassName}>{cardContent}</div>;
 }
 
+// Activity Timeline Component
+function ActivityTimeline({
+  activities,
+}: {
+  activities: ActivityDisplayItem[];
+}) {
+  if (activities.length === 0) {
+    return (
+      <div className="text-center py-8 text-cool-gray">
+        <span className="material-symbols-outlined text-4xl mb-2 block opacity-50">
+          history
+        </span>
+        <p className="text-sm">ยังไม่มีกิจกรรม</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative pl-10">
+      {/* Timeline Line */}
+      <div className="timeline-line"></div>
+
+      <ul className="space-y-6">
+        {activities.map((activity) => (
+          <li key={activity.id} className="relative">
+            {/* Timeline Badge */}
+            <div
+              className={`timeline-badge absolute -left-10 ${activity.iconBg}`}
+            >
+              <span
+                className={`material-symbols-outlined ${activity.iconColor} text-sm`}
+              >
+                {activity.icon}
+              </span>
+            </div>
+
+            <div className="glass-card rounded-xl p-4 hover:bg-white/90 transition-all">
+              <h4 className="text-sm font-semibold text-dark-slate">
+                {activity.title}
+              </h4>
+              <p className="text-xs font-normal text-cool-gray mt-1">
+                {activity.description}
+              </p>
+              <time className="block text-xs font-medium text-royal-blue/70 mt-2">
+                {activity.time}
+              </time>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 // Format date
 function formatThaiDate(date: Date | string): string {
   const d = new Date(date);
@@ -102,11 +158,13 @@ function formatThaiDate(date: Date | string): string {
 
 export default async function AdminDashboard() {
   // Fetch data from MySQL
-  const [studentStats, allElections, activeElectionsList] = await Promise.all([
-    getStudentStats(),
-    getAllElections(),
-    getActiveElections(),
-  ]);
+  const [studentStats, allElections, activeElectionsList, recentActivities] =
+    await Promise.all([
+      getStudentStats(),
+      getAllElections(),
+      getActiveElections(),
+      getRecentActivitiesForDisplay(5),
+    ]);
 
   // Get total votes for all active elections
   let totalVotes = 0;
@@ -315,69 +373,31 @@ export default async function AdminDashboard() {
           )}
         </div>
 
-        {/* Quick Links */}
+        {/* Activity Timeline */}
         <div className="lg:col-span-1">
           <div className="glass-card rounded-2xl h-full flex flex-col">
             <div className="p-6 border-b border-slate-100/50">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-royal-blue">
-                  dashboard
+                  history
                 </span>
-                <h3 className="text-lg font-bold text-dark-slate">เมนูด่วน</h3>
+                <h3 className="text-lg font-bold text-dark-slate">
+                  กิจกรรมล่าสุด
+                </h3>
               </div>
             </div>
-            <div className="p-6 grow space-y-4">
+            <div className="p-6 grow overflow-y-auto max-h-[400px] no-scrollbar">
+              <ActivityTimeline activities={recentActivities} />
+            </div>
+            <div className="p-4 border-t border-slate-100/50 text-center">
               <Link
-                href="/admin/students"
-                className="glass-card rounded-xl p-4 flex items-center gap-4 hover:bg-white/90 transition-all"
+                href="/admin/activity"
+                className="text-sm font-semibold text-royal-blue hover:text-cyan-600 transition-colors flex items-center gap-1 justify-center"
               >
-                <div className="p-2 bg-royal-blue/10 rounded-lg">
-                  <span className="material-symbols-outlined text-royal-blue">
-                    person_add
-                  </span>
-                </div>
-                <div>
-                  <p className="font-semibold text-dark-slate">
-                    จัดการนักเรียน
-                  </p>
-                  <p className="text-xs text-cool-gray">
-                    เพิ่ม/แก้ไข/อนุมัติสิทธิ์
-                  </p>
-                </div>
-              </Link>
-
-              <Link
-                href="/admin/elections"
-                className="glass-card rounded-xl p-4 flex items-center gap-4 hover:bg-white/90 transition-all"
-              >
-                <div className="p-2 bg-emerald-500/10 rounded-lg">
-                  <span className="material-symbols-outlined text-emerald-500">
-                    ballot
-                  </span>
-                </div>
-                <div>
-                  <p className="font-semibold text-dark-slate">
-                    จัดการการเลือกตั้ง
-                  </p>
-                  <p className="text-xs text-cool-gray">สร้าง/แก้ไข/เปิด-ปิด</p>
-                </div>
-              </Link>
-
-              <Link
-                href="/admin/results"
-                className="glass-card rounded-xl p-4 flex items-center gap-4 hover:bg-white/90 transition-all"
-              >
-                <div className="p-2 bg-violet-500/10 rounded-lg">
-                  <span className="material-symbols-outlined text-violet-500">
-                    analytics
-                  </span>
-                </div>
-                <div>
-                  <p className="font-semibold text-dark-slate">
-                    ดูผลการเลือกตั้ง
-                  </p>
-                  <p className="text-xs text-cool-gray">สถิติและรายงาน</p>
-                </div>
+                ดูกิจกรรมทั้งหมด
+                <span className="material-symbols-outlined text-sm">
+                  chevron_right
+                </span>
               </Link>
             </div>
           </div>

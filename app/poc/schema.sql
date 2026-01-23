@@ -143,6 +143,19 @@ CREATE TABLE admin_sessions (
     INDEX idx_admin_expires_at (expires_at)
 );
 
+-- 10. ตารางบันทึกกิจกรรม (Activity Log)
+CREATE TABLE activities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    type ENUM('vote_cast', 'system_check', 'admin_action', 'election_change') NOT NULL,
+    title VARCHAR(255) NOT NULL,           -- หัวข้อกิจกรรม
+    description TEXT NOT NULL,              -- รายละเอียด
+    metadata JSON,                          -- ข้อมูลเพิ่มเติม (optional)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_type (type),
+    INDEX idx_created_at (created_at)
+);
+
 -- =====================================================
 -- Sample Data (Optional - for testing)
 -- =====================================================
@@ -177,3 +190,15 @@ CREATE TABLE admin_sessions (
 -- v2.1: Add Admin Access Levels
 -- ALTER TABLE admins ADD COLUMN access_level TINYINT DEFAULT 1 AFTER display_name;
 -- UPDATE admins SET access_level = 0 WHERE id = 1;
+
+-- v2.2: Add Activities Table for Activity Logging
+-- CREATE TABLE activities (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     type ENUM('vote_cast', 'system_check', 'admin_action', 'election_change') NOT NULL,
+--     title VARCHAR(255) NOT NULL,
+--     description TEXT NOT NULL,
+--     metadata JSON,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     INDEX idx_type (type),
+--     INDEX idx_created_at (created_at)
+-- );

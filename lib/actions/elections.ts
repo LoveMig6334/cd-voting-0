@@ -1,13 +1,14 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { logAdminAction, logElectionChange } from "@/lib/actions/activities";
 import {
-  query,
-  execute,
-  ElectionRow,
-  PositionRow,
   CandidateRow,
+  ElectionRow,
+  execute,
+  PositionRow,
+  query,
 } from "@/lib/db";
+import { revalidatePath } from "next/cache";
 
 // ==========================================
 // Types
@@ -98,7 +99,7 @@ const DEFAULT_POSITIONS: Omit<CreatePositionData, "sortOrder">[] = [
  */
 function calculateStatus(
   startDate: Date | string,
-  endDate: Date | string
+  endDate: Date | string,
 ): ElectionStatus {
   const now = new Date();
   const start = new Date(startDate);
@@ -118,7 +119,7 @@ function calculateStatus(
  */
 export async function getAllElections(): Promise<ElectionRow[]> {
   return query<ElectionRow>(
-    "SELECT * FROM elections WHERE is_active = TRUE ORDER BY start_date DESC"
+    "SELECT * FROM elections WHERE is_active = TRUE ORDER BY start_date DESC",
   );
 }
 
@@ -128,7 +129,7 @@ export async function getAllElections(): Promise<ElectionRow[]> {
 export async function getActiveElections(): Promise<ElectionRow[]> {
   // Update status based on current time
   const elections = await query<ElectionRow>(
-    "SELECT * FROM elections WHERE is_active = TRUE ORDER BY start_date ASC"
+    "SELECT * FROM elections WHERE is_active = TRUE ORDER BY start_date ASC",
   );
 
   // Filter by calculated status
@@ -142,23 +143,23 @@ export async function getActiveElections(): Promise<ElectionRow[]> {
  * Get election by ID with positions and candidates
  */
 export async function getElectionById(
-  id: number
+  id: number,
 ): Promise<ElectionWithDetails | null> {
   const elections = await query<ElectionRow>(
     "SELECT * FROM elections WHERE id = ?",
-    [id]
+    [id],
   );
 
   if (elections.length === 0) return null;
 
   const positions = await query<PositionRow>(
     "SELECT * FROM positions WHERE election_id = ? ORDER BY sort_order ASC",
-    [id]
+    [id],
   );
 
   const candidates = await query<CandidateRow>(
     "SELECT * FROM candidates WHERE election_id = ? ORDER BY position_id, rank ASC",
-    [id]
+    [id],
   );
 
   return {
@@ -172,11 +173,11 @@ export async function getElectionById(
  * Get positions for an election
  */
 export async function getPositionsByElection(
-  electionId: number
+  electionId: number,
 ): Promise<PositionRow[]> {
   return query<PositionRow>(
     "SELECT * FROM positions WHERE election_id = ? AND enabled = TRUE ORDER BY sort_order ASC",
-    [electionId]
+    [electionId],
   );
 }
 
@@ -185,11 +186,11 @@ export async function getPositionsByElection(
  */
 export async function getCandidatesByPosition(
   electionId: number,
-  positionId: string
+  positionId: string,
 ): Promise<CandidateRow[]> {
   return query<CandidateRow>(
     "SELECT * FROM candidates WHERE election_id = ? AND position_id = ? ORDER BY rank ASC",
-    [electionId, positionId]
+    [electionId, positionId],
   );
 }
 
@@ -201,7 +202,7 @@ export async function getCandidatesByPosition(
  * Create a new election with default positions
  */
 export async function createElection(
-  data: CreateElectionData
+  data: CreateElectionData,
 ): Promise<{ success: boolean; electionId?: number; error?: string }> {
   try {
     const status = calculateStatus(data.startDate, data.endDate);
@@ -217,7 +218,7 @@ export async function createElection(
         data.startDate,
         data.endDate,
         status,
-      ]
+      ],
     );
 
     const electionId = result.insertId;
@@ -238,12 +239,16 @@ export async function createElection(
             pos.enabled ?? true,
             pos.isCustom ?? false,
             i,
-          ]
+          ],
         );
       }
     }
 
     revalidatePath("/admin/elections");
+
+    // Log activity
+    await logElectionChange("สร้างการเลือกตั้งใหม่", data.title);
+
     return { success: true, electionId };
   } catch (error) {
     console.error("Create election error:", error);
@@ -256,7 +261,7 @@ export async function createElection(
  */
 export async function updateElection(
   id: number,
-  data: Partial<CreateElectionData>
+  data: Partial<CreateElectionData>,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const setClauses: string[] = [];
@@ -289,7 +294,7 @@ export async function updateElection(
       if (election) {
         const newStatus = calculateStatus(
           data.startDate || election.start_date,
-          data.endDate || election.end_date
+          data.endDate || election.end_date,
         );
         setClauses.push("status = ?");
         values.push(newStatus);
@@ -303,11 +308,15 @@ export async function updateElection(
     values.push(id);
     await execute(
       `UPDATE elections SET ${setClauses.join(", ")} WHERE id = ?`,
-      values
+      values,
     );
 
     revalidatePath("/admin/elections");
     revalidatePath(`/admin/elections/${id}`);
+
+    // Log activity
+    await logElectionChange("แก้ไขการเลือกตั้ง", data.title || "(ไม่ระบุชื่อ)");
+
     return { success: true };
   } catch (error) {
     console.error("Update election error:", error);
@@ -319,11 +328,20 @@ export async function updateElection(
  * Delete an election (soft delete)
  */
 export async function deleteElection(
-  id: number
+  id: number,
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    // Get election title before delete
+    const election = await getElectionById(id);
+
     await execute("UPDATE elections SET is_active = FALSE WHERE id = ?", [id]);
     revalidatePath("/admin/elections");
+
+    // Log activity
+    if (election) {
+      await logElectionChange("ลบการเลือกตั้ง", election.title);
+    }
+
     return { success: true };
   } catch (error) {
     console.error("Delete election error:", error);
@@ -351,7 +369,7 @@ export async function isElectionLocked(electionId: number): Promise<boolean> {
  */
 export async function togglePosition(
   electionId: number,
-  positionId: string
+  positionId: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     if (await isElectionLocked(electionId)) {
@@ -363,7 +381,7 @@ export async function togglePosition(
 
     await execute(
       "UPDATE positions SET enabled = NOT enabled WHERE id = ? AND election_id = ?",
-      [positionId, electionId]
+      [positionId, electionId],
     );
 
     revalidatePath(`/admin/elections/${electionId}`);
@@ -380,7 +398,7 @@ export async function togglePosition(
 export async function addCustomPosition(
   electionId: number,
   title: string,
-  icon: string = "star"
+  icon: string = "star",
 ): Promise<{ success: boolean; positionId?: string; error?: string }> {
   try {
     if (await isElectionLocked(electionId)) {
@@ -393,7 +411,7 @@ export async function addCustomPosition(
     // Get max sort order
     const positions = await query<PositionRow>(
       "SELECT MAX(sort_order) as max_order FROM positions WHERE election_id = ?",
-      [electionId]
+      [electionId],
     );
     const maxOrder = (positions[0] as unknown as { max_order: number | null })
       ?.max_order;
@@ -403,7 +421,7 @@ export async function addCustomPosition(
     await execute(
       `INSERT INTO positions (id, election_id, title, icon, enabled, is_custom, sort_order)
        VALUES (?, ?, ?, ?, TRUE, TRUE, ?)`,
-      [positionId, electionId, title, icon, sortOrder]
+      [positionId, electionId, title, icon, sortOrder],
     );
 
     revalidatePath(`/admin/elections/${electionId}`);
@@ -423,7 +441,7 @@ export async function addCustomPosition(
  */
 export async function addCandidate(
   electionId: number,
-  data: CreateCandidateData
+  data: CreateCandidateData,
 ): Promise<{ success: boolean; candidateId?: number; error?: string }> {
   try {
     if (await isElectionLocked(electionId)) {
@@ -436,7 +454,7 @@ export async function addCandidate(
     // Check for duplicate name in same position
     const existing = await query<CandidateRow>(
       "SELECT id FROM candidates WHERE election_id = ? AND position_id = ? AND LOWER(name) = LOWER(?)",
-      [electionId, data.positionId, data.name.trim()]
+      [electionId, data.positionId, data.name.trim()],
     );
 
     if (existing.length > 0) {
@@ -453,11 +471,15 @@ export async function addCandidate(
         data.name.trim(),
         data.slogan || null,
         data.imageUrl || null,
-      ]
+      ],
     );
 
     revalidatePath(`/admin/elections/${electionId}`);
     revalidatePath(`/admin/elections/${electionId}/candidates`);
+
+    // Log activity
+    await logAdminAction("เพิ่มผู้สมัคร", `${data.name} (เบอร์ ${data.rank})`);
+
     return { success: true, candidateId: result.insertId };
   } catch (error) {
     console.error("Add candidate error:", error);
@@ -471,7 +493,7 @@ export async function addCandidate(
 export async function updateCandidate(
   electionId: number,
   candidateId: number,
-  data: Partial<CreateCandidateData>
+  data: Partial<CreateCandidateData>,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     if (await isElectionLocked(electionId)) {
@@ -508,11 +530,17 @@ export async function updateCandidate(
     values.push(candidateId);
     await execute(
       `UPDATE candidates SET ${setClauses.join(", ")} WHERE id = ?`,
-      values
+      values,
     );
 
     revalidatePath(`/admin/elections/${electionId}`);
     revalidatePath(`/admin/elections/${electionId}/candidates`);
+
+    // Log activity
+    if (data.name) {
+      await logAdminAction("แก้ไขผู้สมัคร", data.name);
+    }
+
     return { success: true };
   } catch (error) {
     console.error("Update candidate error:", error);
@@ -525,7 +553,7 @@ export async function updateCandidate(
  */
 export async function deleteCandidate(
   electionId: number,
-  candidateId: number
+  candidateId: number,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     if (await isElectionLocked(electionId)) {
@@ -535,10 +563,21 @@ export async function deleteCandidate(
       };
     }
 
+    // Get candidate name before delete
+    const candidates = await query<CandidateRow>(
+      "SELECT name FROM candidates WHERE id = ?",
+      [candidateId],
+    );
+    const candidateName = candidates[0]?.name || "(ไม่ทราบชื่อ)";
+
     await execute("DELETE FROM candidates WHERE id = ?", [candidateId]);
 
     revalidatePath(`/admin/elections/${electionId}`);
     revalidatePath(`/admin/elections/${electionId}/candidates`);
+
+    // Log activity
+    await logAdminAction("ลบผู้สมัคร", candidateName);
+
     return { success: true };
   } catch (error) {
     console.error("Delete candidate error:", error);
@@ -551,11 +590,11 @@ export async function deleteCandidate(
  */
 export async function getNextCandidateRank(
   electionId: number,
-  positionId: string
+  positionId: string,
 ): Promise<number> {
   const candidates = await query<CandidateRow>(
     "SELECT MAX(rank) as max_rank FROM candidates WHERE election_id = ? AND position_id = ?",
-    [electionId, positionId]
+    [electionId, positionId],
   );
 
   const maxRank = (candidates[0] as unknown as { max_rank: number | null })

@@ -6,6 +6,7 @@ import {
   AdminRow,
   AdminSessionRow,
   execute,
+  getAccessLevelLabel,
   query,
 } from "@/lib/db";
 import {
@@ -16,6 +17,7 @@ import {
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { logSystemCheck } from "./activities";
 
 // ==========================================
 // Types
@@ -94,6 +96,9 @@ export async function adminLoginAction(
       maxAge: 8 * 3600, // 8 hours
     });
 
+    // Log activity
+    await logSystemCheck(`Admin "${admin.username}" เข้าสู่ระบบ`);
+
     return {
       success: true,
       admin: {
@@ -117,8 +122,22 @@ export async function adminLogoutAction(): Promise<{ success: boolean }> {
   const sessionId = cookieStore.get("admin_session_id");
 
   if (sessionId) {
+    // Get admin info before deleting session
+    const sessions = await query<AdminSessionRow>(
+      "SELECT admin_id FROM admin_sessions WHERE id = ?",
+      [sessionId.value],
+    );
+
     await execute("DELETE FROM admin_sessions WHERE id = ?", [sessionId.value]);
     cookieStore.delete("admin_session_id");
+
+    // Log activity
+    if (sessions.length > 0) {
+      const admin = await getAdminById(sessions[0].admin_id);
+      if (admin) {
+        await logSystemCheck(`Admin "${admin.username}" ออกจากระบบ`);
+      }
+    }
   }
 
   return { success: true };
@@ -209,6 +228,11 @@ export async function createAdmin(
 
     revalidatePath("/admin/admins");
 
+    // Log activity
+    await logSystemCheck(
+      `สร้างผู้ดูแลระบบ "${username}" (ระดับ: ${getAccessLevelLabel(accessLevel)})`,
+    );
+
     return { success: true, adminId: result.insertId };
   } catch (error) {
     console.error("Create admin error:", error);
@@ -251,6 +275,12 @@ export async function changeAdminPassword(
       newHash,
       adminId,
     ]);
+
+    // Log activity
+    const admin = await getAdminById(adminId);
+    await logSystemCheck(
+      `Admin "${admin?.username || "(ไม่ทราบชื่อ)"}" เปลี่ยนรหัสผ่าน`,
+    );
 
     return { success: true };
   } catch (error) {
@@ -330,6 +360,12 @@ export async function updateAdmin(
 
     revalidatePath("/admin/admins");
 
+    // Log activity
+    const admin = await getAdminById(adminId);
+    await logSystemCheck(
+      `แก้ไขข้อมูลผู้ดูแลระบบ "${admin?.username || "(ไม่ทราบชื่อ)"}"`,
+    );
+
     return { success: true };
   } catch (error) {
     console.error("Update admin error:", error);
@@ -378,6 +414,9 @@ export async function deleteAdmin(
 
     revalidatePath("/admin/admins");
 
+    // Log activity
+    await logSystemCheck(`ลบผู้ดูแลระบบ ID: ${adminId}`);
+
     return { success: true };
   } catch (error) {
     console.error("Delete admin error:", error);
@@ -409,6 +448,12 @@ export async function resetAdminPassword(
       newHash,
       adminId,
     ]);
+
+    // Log activity
+    const admin = await getAdminById(adminId);
+    await logSystemCheck(
+      `รีเซ็ตรหัสผ่าน Admin "${admin?.username || "(ไม่ทราบชื่อ)"}"`,
+    );
 
     return { success: true };
   } catch (error) {

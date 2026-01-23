@@ -263,6 +263,35 @@ export interface AdminSessionRow extends RowDataPacket {
   created_at: Date;
 }
 
+// Activity Types
+export type ActivityType =
+  | "vote_cast"
+  | "system_check"
+  | "admin_action"
+  | "election_change";
+
+export interface ActivityRow extends RowDataPacket {
+  id: number;
+  type: ActivityType;
+  title: string;
+  description: string;
+  metadata: Record<string, unknown> | null;
+  created_at: Date;
+}
+
+/**
+ * Activity display format for UI
+ */
+export interface ActivityDisplayItem {
+  id: number;
+  icon: string;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  description: string;
+  time: string;
+}
+
 // ============================================
 // Export db object for compatibility
 // ============================================
