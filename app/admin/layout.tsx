@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { getCurrentAdmin } from "@/lib/actions/admin-auth";
 import { AdminLayoutClient } from "./AdminLayoutClient";
 

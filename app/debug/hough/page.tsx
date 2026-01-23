@@ -10,6 +10,7 @@ import {
   Point,
   QuadContour,
 } from "@/lib/ocr/debug-visualizer";
+import Image from "next/image";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export default function HoughDebugPage() {
@@ -63,12 +64,12 @@ export default function HoughDebugPage() {
       try {
         const result = await extractHoughDebugData(
           originalImage,
-          customThreshold
+          customThreshold,
         );
         if (result) {
           setDebugData(result);
           console.log(
-            `🔍 Found ${result.lines.length} Hough lines and ${result.intersections.length} intersections (threshold: ${result.threshold})`
+            `🔍 Found ${result.lines.length} Hough lines and ${result.intersections.length} intersections (threshold: ${result.threshold})`,
           );
         } else {
           setError("Failed to extract Hough data");
@@ -80,7 +81,7 @@ export default function HoughDebugPage() {
         setIsProcessing(false);
       }
     },
-    [originalImage, opencvReady]
+    [originalImage, opencvReady],
   );
 
   // Run analysis with all thresholds from constants
@@ -100,7 +101,7 @@ export default function HoughDebugPage() {
         if (result) {
           results.push(result);
           console.log(
-            `🔍 Threshold ${thresh}: ${result.lines.length} lines, ${result.intersections.length} intersections`
+            `🔍 Threshold ${thresh}: ${result.lines.length} lines, ${result.intersections.length} intersections`,
           );
         }
       }
@@ -135,7 +136,7 @@ export default function HoughDebugPage() {
         }, 200);
       }
     },
-    [originalImage, opencvReady, runHoughAnalysis]
+    [originalImage, opencvReady, runHoughAnalysis],
   );
 
   // Draw overlay when debug data changes
@@ -226,11 +227,14 @@ export default function HoughDebugPage() {
 
           <div className="aspect-4/3 bg-slate-900 rounded-xl border-2 border-dashed border-slate-600 overflow-hidden flex items-center justify-center">
             {originalImage ? (
-              <img
-                ref={imageRef}
+              <Image
+                ref={imageRef as React.RefObject<HTMLImageElement>}
                 src={originalImage}
                 alt="Original"
                 className="w-full h-full object-contain"
+                width={500}
+                height={500}
+                unoptimized
               />
             ) : (
               <span className="text-slate-600 text-sm">
@@ -293,7 +297,7 @@ export default function HoughDebugPage() {
                   : "bg-emerald-600 hover:bg-emerald-500 shadow-lg"
               }`}
               title={`Runs all thresholds: ${CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS.join(
-                ", "
+                ", ",
               )}`}
             >
               {isProcessing
@@ -309,7 +313,7 @@ export default function HoughDebugPage() {
                 Threshold Comparison
               </h4>
               <div className="grid grid-cols-2 gap-2">
-                {allThresholdResults.map((result, idx) => (
+                {allThresholdResults.map((result) => (
                   <button
                     key={result.threshold}
                     onClick={() => setDebugData(result)}
@@ -633,8 +637,8 @@ function QuadrilateralCard({
         isBest
           ? "bg-emerald-900/30 border-emerald-500"
           : quad.isValid
-          ? "bg-slate-900/50 border-slate-600"
-          : "bg-red-900/20 border-red-700/50"
+            ? "bg-slate-900/50 border-slate-600"
+            : "bg-red-900/20 border-red-700/50"
       }`}
     >
       <div className="flex items-center justify-between mb-2">

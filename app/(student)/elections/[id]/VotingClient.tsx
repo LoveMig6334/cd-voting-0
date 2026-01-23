@@ -67,7 +67,8 @@ export function VotingClient({ election }: VotingClientProps) {
       const currentVote = prev[currentPosition.id];
       if (currentVote === candidateId) {
         // Unvote
-        const { [currentPosition.id]: _, ...rest } = prev;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [currentPosition.id]: _removed, ...rest } = prev;
         return rest;
       } else {
         // Vote (null = abstain)

@@ -1,11 +1,11 @@
 "use client";
 
-import { ElectionRow, PositionRow, CandidateRow } from "@/lib/db";
 import {
-  VoterTurnout,
   PositionWinner,
+  VoterTurnout,
   WinnerStatus,
 } from "@/lib/actions/votes";
+import { CandidateRow, ElectionRow, PositionRow } from "@/lib/db";
 import Link from "next/link";
 
 // ============================================
@@ -32,7 +32,11 @@ interface AdminResultsClientProps {
 // Helper Functions
 // ============================================
 
-function calculateStatus(startDate: Date, endDate: Date): "draft" | "open" | "closed" {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function calculateStatus(
+  startDate: Date,
+  endDate: Date,
+): "draft" | "open" | "closed" {
   const now = new Date();
   if (now < startDate) return "draft";
   if (now >= startDate && now <= endDate) return "open";
@@ -141,7 +145,9 @@ function getWinnerText(winner: PositionWinner): string {
 // Main Component
 // ============================================
 
-export default function AdminResultsClient({ summaries }: AdminResultsClientProps) {
+export default function AdminResultsClient({
+  summaries,
+}: AdminResultsClientProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -181,9 +187,7 @@ export default function AdminResultsClient({ summaries }: AdminResultsClientProp
               <div className="p-6">
                 {/* Title and Status */}
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="font-bold text-slate-900">
-                    {election.title}
-                  </h3>
+                  <h3 className="font-bold text-slate-900">{election.title}</h3>
                   <span
                     className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase ${statusBadge.className}`}
                   >
@@ -218,7 +222,9 @@ export default function AdminResultsClient({ summaries }: AdminResultsClientProp
                 {/* Winner or End Date */}
                 {status === "closed" && primaryWinner ? (
                   (() => {
-                    const winnerDisplay = getWinnerDisplay(primaryWinner.status);
+                    const winnerDisplay = getWinnerDisplay(
+                      primaryWinner.status,
+                    );
                     return (
                       <div
                         className={`flex items-center gap-3 ${winnerDisplay.bgColor} rounded-lg p-3`}
@@ -250,7 +256,9 @@ export default function AdminResultsClient({ summaries }: AdminResultsClientProp
                     <span className="material-symbols-outlined text-slate-400">
                       schedule
                     </span>
-                    <span>สิ้นสุด: {formatEndDate(new Date(election.end_date))}</span>
+                    <span>
+                      สิ้นสุด: {formatEndDate(new Date(election.end_date))}
+                    </span>
                   </div>
                 )}
               </div>

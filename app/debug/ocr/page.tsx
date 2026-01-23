@@ -17,6 +17,7 @@ import {
   validateParsedData,
 } from "@/lib/ocr/parser";
 import { StudentData } from "@/lib/student-data";
+import Image from "next/image";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Tesseract from "tesseract.js";
 
@@ -33,7 +34,7 @@ type PipelineStage = "idle" | "detecting" | "cropping" | "ocr" | "complete";
 export default function OCRDebugPage() {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [pipelineResult, setPipelineResult] = useState<PipelineResult | null>(
-    null
+    null,
   );
   const [rawText, setRawText] = useState<string>("");
   const [parsedData, setParsedData] = useState<ParseResult>({
@@ -112,7 +113,7 @@ export default function OCRDebugPage() {
       enableCrop: true,
       enableEnhancement: true,
       enableOcrPreprocessing: true,
-    }
+    },
   );
 
   // Derived state for backward compatibility
@@ -323,7 +324,7 @@ export default function OCRDebugPage() {
 
     console.log(
       "📸 Manual capture",
-      lastDetection?.success ? "(card detected)" : "(no card detected)"
+      lastDetection?.success ? "(card detected)" : "(no card detected)",
     );
 
     // Stop camera and set image for pipeline
@@ -368,7 +369,7 @@ export default function OCRDebugPage() {
       // Process image with full diagnostics
       const result = await processImageWithDiagnostics(
         originalImage,
-        processingOptions
+        processingOptions,
       );
       setPipelineResult(result);
 
@@ -400,7 +401,7 @@ export default function OCRDebugPage() {
           "tha",
           {
             logger: (m) => loggerRef.current?.(m),
-          }
+          },
         );
         text = result.data.text;
       }
@@ -543,12 +544,12 @@ export default function OCRDebugPage() {
                   cameraStatus === "scanning"
                     ? "bg-green-500 animate-pulse"
                     : cameraStatus === "initializing"
-                    ? "bg-yellow-500 animate-pulse"
-                    : cameraStatus === "found"
-                    ? "bg-emerald-500"
-                    : cameraStatus === "error"
-                    ? "bg-red-500"
-                    : "bg-slate-500"
+                      ? "bg-yellow-500 animate-pulse"
+                      : cameraStatus === "found"
+                        ? "bg-emerald-500"
+                        : cameraStatus === "error"
+                          ? "bg-red-500"
+                          : "bg-slate-500"
                 }`}
               />
               <span className="text-slate-400">
@@ -604,23 +605,29 @@ export default function OCRDebugPage() {
                   >
                     {lastDetection?.success
                       ? `✓ Card detected (${lastDetection.confidence.toFixed(
-                          0
+                          0,
                         )}%)`
                       : "Position card in frame"}
                   </span>
                 </div>
               </>
             ) : processedImages?.originalWithOverlay ? (
-              <img
+              <Image
                 src={processedImages.originalWithOverlay}
                 alt="Detected Card"
                 className="w-full h-full object-contain"
+                width={500}
+                height={500}
+                unoptimized
               />
             ) : originalImage ? (
-              <img
+              <Image
                 src={originalImage}
                 alt="Original"
                 className="w-full h-full object-contain opacity-60"
+                width={500}
+                height={500}
+                unoptimized
               />
             ) : (
               <div className="text-center text-slate-600">
@@ -641,8 +648,8 @@ export default function OCRDebugPage() {
                     processedImages.detectionResult.confidence >= 70
                       ? "text-emerald-400"
                       : processedImages.detectionResult.confidence >= 50
-                      ? "text-yellow-400"
-                      : "text-red-400"
+                        ? "text-yellow-400"
+                        : "text-red-400"
                   }
                 >
                   {processedImages.detectionResult.confidence.toFixed(1)}%
@@ -665,7 +672,7 @@ export default function OCRDebugPage() {
                 <span
                   className="text-blue-400 truncate max-w-[150px]"
                   title={getMethodDescription(
-                    processedImages.detectionResult.method
+                    processedImages.detectionResult.method,
                   )}
                 >
                   {processedImages.detectionResult.method}
@@ -675,7 +682,7 @@ export default function OCRDebugPage() {
                 <span>Aspect Ratio:</span>
                 <span className="text-purple-400">
                   {processedImages.detectionResult.detectedAspectRatio.toFixed(
-                    3
+                    3,
                   )}
                 </span>
               </div>
@@ -761,7 +768,7 @@ export default function OCRDebugPage() {
           <div className="aspect-4/3 bg-slate-900 rounded-xl border border-slate-700 overflow-hidden relative group flex items-center justify-center">
             {processedImages?.croppedCard ? (
               <>
-                <img
+                <Image
                   src={
                     showThreshold && processedImages.thresholdedCard
                       ? processedImages.thresholdedCard
@@ -769,6 +776,9 @@ export default function OCRDebugPage() {
                   }
                   alt="Cropped Card"
                   className="w-full h-full object-contain"
+                  width={500}
+                  height={500}
+                  unoptimized
                 />
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
@@ -803,10 +813,10 @@ export default function OCRDebugPage() {
             {processingOptions.enableCrop && processingOptions.enableEnhancement
               ? "Cropped & enhanced image for OCR"
               : processingOptions.enableCrop
-              ? "Cropped image (no enhancement)"
-              : processingOptions.enableEnhancement
-              ? "Full image with enhancement"
-              : "Raw image (no preprocessing)"}
+                ? "Cropped image (no enhancement)"
+                : processingOptions.enableEnhancement
+                  ? "Full image with enhancement"
+                  : "Raw image (no preprocessing)"}
           </p>
         </section>
 
@@ -871,8 +881,8 @@ export default function OCRDebugPage() {
                 validation.matchType === "exact"
                   ? "bg-emerald-900/30 border-emerald-500/50"
                   : validation.matchType === "partial"
-                  ? "bg-yellow-900/30 border-yellow-500/50"
-                  : "bg-red-900/30 border-red-500/50"
+                    ? "bg-yellow-900/30 border-yellow-500/50"
+                    : "bg-red-900/30 border-red-500/50"
               }`}
             >
               <div className="flex items-center gap-2 mb-2">
@@ -881,22 +891,22 @@ export default function OCRDebugPage() {
                     validation.matchType === "exact"
                       ? "text-emerald-400"
                       : validation.matchType === "partial"
-                      ? "text-yellow-400"
-                      : "text-red-400"
+                        ? "text-yellow-400"
+                        : "text-red-400"
                   }`}
                 >
                   {validation.matchType === "none"
                     ? "error"
                     : validation.matchType === "exact"
-                    ? "check_circle"
-                    : "warning"}
+                      ? "check_circle"
+                      : "warning"}
                 </span>
                 <span className="font-semibold">
                   {validation.matchType === "exact"
                     ? "Exact Match"
                     : validation.matchType === "partial"
-                    ? "Partial Match"
-                    : "No Match"}
+                      ? "Partial Match"
+                      : "No Match"}
                 </span>
               </div>
               {validation.matchedStudent && (
@@ -998,8 +1008,8 @@ function PipelineStep({
           status === "complete"
             ? "bg-emerald-600"
             : status === "active"
-            ? "bg-blue-600 animate-pulse"
-            : "bg-slate-700"
+              ? "bg-blue-600 animate-pulse"
+              : "bg-slate-700"
         }`}
       >
         {status === "complete" ? (

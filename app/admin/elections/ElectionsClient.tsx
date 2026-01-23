@@ -1,11 +1,11 @@
 "use client";
 
-import { ElectionRow, CandidateRow } from "@/lib/db";
 import {
   createElection,
-  updateElection,
   deleteElection,
+  updateElection,
 } from "@/lib/actions/elections";
+import { ElectionRow } from "@/lib/db";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -159,14 +159,14 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
   };
 
   const handleToggleStatus = (
-    election: ElectionWithCandidates & { status: ElectionStatus }
+    election: ElectionWithCandidates & { status: ElectionStatus },
   ) => {
     const isOpening = election.status !== "OPEN";
     const action = isOpening ? "เปิด" : "ปิด";
 
     if (
       confirm(
-        `คุณต้องการ${action}การเลือกตั้ง "${election.title}" ทันทีหรือไม่?\n\nการดำเนินการนี้จะปรับเปลี่ยนเวลาเริ่มต้น/สิ้นสุดของการเลือกตั้งโดยอัตโนมัติ`
+        `คุณต้องการ${action}การเลือกตั้ง "${election.title}" ทันทีหรือไม่?\n\nการดำเนินการนี้จะปรับเปลี่ยนเวลาเริ่มต้น/สิ้นสุดของการเลือกตั้งโดยอัตโนมัติ`,
       )
     ) {
       startTransition(async () => {
@@ -197,7 +197,6 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
   };
 
   const handleDeleteElection = (id: number) => {
-    const election = electionsWithStatus.find((e) => e.id === id);
     if (confirm("คุณต้องการลบการเลือกตั้งนี้หรือไม่?")) {
       startTransition(async () => {
         await deleteElection(id);

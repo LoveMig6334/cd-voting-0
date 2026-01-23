@@ -1,0 +1,41 @@
+
+> cd-voting-0@0.1.0 lint
+> eslint
+
+
+C:\Users\thatt\Documents\Coding Project\Web Projects\cd-voting-0\app\(auth)\login\page.tsx
+   9:10  warning  'isPending' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  20:10  warning  'isSearching' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\thatt\Documents\Coding Project\Web Projects\cd-voting-0\app\(student)\elections\[id]\VotingClient.tsx
+  70:39  warning  '_' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\thatt\Documents\Coding Project\Web Projects\cd-voting-0\app\admin\elections\ElectionsClient.tsx
+    3:23  warning  'CandidateRow' is defined but never used       @typescript-eslint/no-unused-vars
+  200:11  warning  'election' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\thatt\Documents\Coding Project\Web Projects\cd-voting-0\app\admin\elections\[id]\candidates\CandidatesClient.tsx
+   11:3  warning  'getNextCandidateRank' is defined but never used  @typescript-eslint/no-unused-vars
+  324:3  warning  'positionId' is defined but never used            @typescript-eslint/no-unused-vars
+
+C:\Users\thatt\Documents\Coding Project\Web Projects\cd-voting-0\app\admin\layout.tsx
+  1:10  warning  'redirect' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\thatt\Documents\Coding Project\Web Projects\cd-voting-0\app\admin\results\AdminResultsClient.tsx
+  35:10  warning  'calculateStatus' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\thatt\Documents\Coding Project\Web Projects\cd-voting-0\app\debug\hough\page.tsx
+  229:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  312:51  warning  'idx' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+
+C:\Users\thatt\Documents\Coding Project\Web Projects\cd-voting-0\app\debug\ocr\page.tsx
+  614:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  620:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  764:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\thatt\Documents\Coding Project\Web Projects\cd-voting-0\coverage\lcov-report\block-navigation.js
+  1:1  warning  Unused eslint-disable directive (no problems were reported)
+
+✖ 15 problems (0 errors, 15 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

@@ -1,15 +1,14 @@
 "use client";
 
-import { ElectionRow, PositionRow, CandidateRow } from "@/lib/db";
 import {
-  updateElection,
-  togglePosition,
-  addCustomPosition,
   addCandidate,
-  updateCandidate,
+  addCustomPosition,
   deleteCandidate,
-  getNextCandidateRank,
+  togglePosition,
+  updateCandidate,
+  updateElection,
 } from "@/lib/actions/elections";
+import { CandidateRow, ElectionRow, PositionRow } from "@/lib/db";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -18,7 +17,8 @@ import { useState, useTransition } from "react";
 // Types
 // ============================================
 
-const DEFAULT_AVATAR_URL = "https://api.dicebear.com/7.x/avataaars/svg?seed=default";
+const DEFAULT_AVATAR_URL =
+  "https://api.dicebear.com/7.x/avataaars/svg?seed=default";
 
 export interface ElectionWithDetails extends ElectionRow {
   positions: PositionRow[];
@@ -33,7 +33,10 @@ interface CandidatesClientProps {
 // Helper Functions
 // ============================================
 
-function calculateStatus(startDate: Date, endDate: Date): "draft" | "open" | "closed" {
+function calculateStatus(
+  startDate: Date,
+  endDate: Date,
+): "draft" | "open" | "closed" {
   const now = new Date();
   if (now < startDate) return "draft";
   if (now >= startDate && now <= endDate) return "open";
@@ -79,10 +82,10 @@ function EditElectionModal({
   const [title, setTitle] = useState(election.title);
   const [description, setDescription] = useState(election.description || "");
   const [startDate, setStartDate] = useState(
-    new Date(election.start_date).toISOString().slice(0, 16)
+    new Date(election.start_date).toISOString().slice(0, 16),
   );
   const [endDate, setEndDate] = useState(
-    new Date(election.end_date).toISOString().slice(0, 16)
+    new Date(election.end_date).toISOString().slice(0, 16),
   );
   const [error, setError] = useState("");
 
@@ -207,7 +210,12 @@ function EditCandidateModal({
 }: {
   candidate: CandidateRow;
   onClose: () => void;
-  onSave: (data: { name?: string; slogan?: string; imageUrl?: string; rank?: number }) => void;
+  onSave: (data: {
+    name?: string;
+    slogan?: string;
+    imageUrl?: string;
+    rank?: number;
+  }) => void;
   isPending: boolean;
 }) {
   const [name, setName] = useState(candidate.name);
@@ -242,7 +250,9 @@ function EditCandidateModal({
           <div className="flex justify-center mb-4">
             <div
               className="w-20 h-20 rounded-full bg-cover bg-center border-4 border-slate-100"
-              style={{ backgroundImage: `url(${imageUrl || DEFAULT_AVATAR_URL})` }}
+              style={{
+                backgroundImage: `url(${imageUrl || DEFAULT_AVATAR_URL})`,
+              }}
             />
           </div>
 
@@ -321,18 +331,21 @@ function EditCandidateModal({
 // ============================================
 
 function AddCandidateModal({
-  positionId,
   positionTitle,
   initialRank,
   onClose,
   onAdd,
   isPending,
 }: {
-  positionId: string;
   positionTitle: string;
   initialRank: number;
   onClose: () => void;
-  onAdd: (data: { name: string; slogan: string; imageUrl: string; rank: number }) => void;
+  onAdd: (data: {
+    name: string;
+    slogan: string;
+    imageUrl: string;
+    rank: number;
+  }) => void;
   isPending: boolean;
 }) {
   const [name, setName] = useState("");
@@ -588,7 +601,9 @@ function PositionCard({
                 : "bg-slate-100 text-slate-400"
             }`}
           >
-            <span className="material-symbols-outlined">{position.icon || "star"}</span>
+            <span className="material-symbols-outlined">
+              {position.icon || "star"}
+            </span>
           </div>
           <div>
             <h4 className="font-semibold text-slate-900">{position.title}</h4>
@@ -634,7 +649,9 @@ function PositionCard({
                 >
                   <div
                     className="w-10 h-10 rounded-full bg-cover bg-center shrink-0"
-                    style={{ backgroundImage: `url(${candidate.image_url || DEFAULT_AVATAR_URL})` }}
+                    style={{
+                      backgroundImage: `url(${candidate.image_url || DEFAULT_AVATAR_URL})`,
+                    }}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -735,17 +752,25 @@ export default function CandidatesClient({ election }: CandidatesClientProps) {
   } | null>(null);
   const [showAddPosition, setShowAddPosition] = useState(false);
   const [showEditElection, setShowEditElection] = useState(false);
-  const [editingCandidate, setEditingCandidate] = useState<CandidateRow | null>(null);
+  const [editingCandidate, setEditingCandidate] = useState<CandidateRow | null>(
+    null,
+  );
 
   // Check if election is locked (open or closed status)
-  const status = calculateStatus(new Date(election.start_date), new Date(election.end_date));
+  const status = calculateStatus(
+    new Date(election.start_date),
+    new Date(election.end_date),
+  );
   const isLocked = status !== "draft";
 
   const getCandidatesForPosition = (positionId: string) => {
     return election.candidates.filter((c) => c.position_id === positionId);
   };
 
-  const handleAddCandidate = async (positionId: string, data: { name: string; slogan: string; imageUrl: string; rank: number }) => {
+  const handleAddCandidate = async (
+    positionId: string,
+    data: { name: string; slogan: string; imageUrl: string; rank: number },
+  ) => {
     startTransition(async () => {
       const result = await addCandidate(election.id, {
         positionId,
@@ -762,7 +787,10 @@ export default function CandidatesClient({ election }: CandidatesClientProps) {
     });
   };
 
-  const handleEditCandidate = async (candidateId: number, data: { name?: string; slogan?: string; imageUrl?: string; rank?: number }) => {
+  const handleEditCandidate = async (
+    candidateId: number,
+    data: { name?: string; slogan?: string; imageUrl?: string; rank?: number },
+  ) => {
     startTransition(async () => {
       const result = await updateCandidate(election.id, candidateId, data);
 
@@ -883,13 +911,17 @@ export default function CandidatesClient({ election }: CandidatesClientProps) {
                   <span className="material-symbols-outlined text-lg">
                     calendar_today
                   </span>
-                  <span>เริ่ม: {formatDate(new Date(election.start_date))}</span>
+                  <span>
+                    เริ่ม: {formatDate(new Date(election.start_date))}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-lg">
                     event_busy
                   </span>
-                  <span>สิ้นสุด: {formatDate(new Date(election.end_date))}</span>
+                  <span>
+                    สิ้นสุด: {formatDate(new Date(election.end_date))}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-lg">
@@ -962,11 +994,14 @@ export default function CandidatesClient({ election }: CandidatesClientProps) {
       {/* Modals */}
       {showAddCandidate && (
         <AddCandidateModal
-          positionId={showAddCandidate.positionId}
           positionTitle={showAddCandidate.positionTitle}
-          initialRank={getCandidatesForPosition(showAddCandidate.positionId).length + 1}
+          initialRank={
+            getCandidatesForPosition(showAddCandidate.positionId).length + 1
+          }
           onClose={() => setShowAddCandidate(null)}
-          onAdd={(data) => handleAddCandidate(showAddCandidate.positionId, data)}
+          onAdd={(data) =>
+            handleAddCandidate(showAddCandidate.positionId, data)
+          }
           isPending={isPending}
         />
       )}

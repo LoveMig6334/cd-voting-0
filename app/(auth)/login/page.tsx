@@ -6,7 +6,7 @@ import { useEffect, useState, useTransition } from "react";
 
 export default function Login() {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   const [studentId, setStudentId] = useState("");
   const [nationalId, setNationalId] = useState("");
@@ -17,18 +17,16 @@ export default function Login() {
   const [error, setError] = useState("");
 
   const [isMatched, setIsMatched] = useState<boolean | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
 
   // Auto-matching logic using server action
   useEffect(() => {
     const matchStudent = async () => {
       if (studentId.trim().length >= 4 && nationalId.trim().length === 13) {
-        setIsSearching(true);
         setError("");
         try {
           const result = await lookupStudent(
             studentId.trim(),
-            nationalId.trim()
+            nationalId.trim(),
           );
 
           if (result.found && result.student) {
@@ -44,8 +42,6 @@ export default function Login() {
         } catch (err) {
           console.error(err);
           setIsMatched(false);
-        } finally {
-          setIsSearching(false);
         }
       } else {
         setIsMatched(null);
