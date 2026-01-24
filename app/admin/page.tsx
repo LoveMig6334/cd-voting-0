@@ -257,7 +257,7 @@ export default async function AdminDashboard() {
         <div className="lg:col-span-2">
           {primaryActiveElection ? (
             <div className="ticket-card rounded-2xl overflow-hidden">
-              <div className="p-6 border-b border-slate-100/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-linear-to-r from-royal-blue/5 to-transparent">
+              <div className="p-6 border-b border-slate-100/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
@@ -337,7 +337,7 @@ export default async function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="bg-linear-to-r from-royal-blue/5 via-transparent to-cyan-500/5 px-6 py-4 border-t border-slate-100/50 flex justify-center">
+              <div className="px-6 py-4 border-t border-slate-100/50 flex justify-center">
                 <Link
                   href={`/admin/results`}
                   className="text-royal-blue hover:text-cyan-600 text-sm font-semibold flex items-center gap-1 transition-colors"
