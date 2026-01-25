@@ -1,16 +1,18 @@
 "use client";
 
 import { useAdmin } from "@/app/admin/AdminLayoutClient";
+import { getRecentActivitiesForDisplay } from "@/lib/actions/activities";
 import { adminLogoutAction } from "@/lib/actions/admin-auth";
 import {
   ACCESS_LEVEL_LABELS,
   ACCESS_LEVELS,
   AccessLevel,
 } from "@/lib/admin-types";
+import { ActivityDisplayItem } from "@/lib/db";
 import { canAccessPage, PageName } from "@/lib/permissions";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 interface NavItem {
   name: string;
@@ -53,7 +55,49 @@ export const AdminNavbar: React.FC = () => {
   const admin = useAdmin();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [activities, setActivities] = useState<ActivityDisplayItem[]>([]);
+  const [hasUnread, setHasUnread] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  // Load activities and check for unread
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        const data = await getRecentActivitiesForDisplay(5);
+        setActivities(data);
+
+        // Check unread status
+        if (data.length > 0) {
+          const lastReadId = localStorage.getItem("lastCheckedActivityId");
+          const latestId = data[0].id.toString();
+          if (lastReadId !== latestId) {
+            setHasUnread(true);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+      }
+    };
+
+    fetchActivities();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchActivities, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const toggleNotifications = () => {
+    if (!notificationsOpen && activities.length > 0) {
+      // Mark as read when opening
+      localStorage.setItem(
+        "lastCheckedActivityId",
+        activities[0].id.toString(),
+      );
+      setHasUnread(false);
+    }
+    setNotificationsOpen(!notificationsOpen);
+    setProfileMenuOpen(false);
+  };
 
   // Filter nav items based on access level
   const navItems = admin
@@ -137,10 +181,94 @@ export const AdminNavbar: React.FC = () => {
             {/* Right side - Profile & Logout */}
             <div className="hidden md:flex items-center gap-3">
               {/* Notification Badge */}
-              <button className="relative p-2 text-cool-gray hover:text-royal-blue hover:bg-royal-blue/5 rounded-xl transition-colors">
-                <span className="material-symbols-outlined">notifications</span>
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-vivid-yellow rounded-full"></span>
-              </button>
+              <div className="relative">
+                <button
+                  onClick={toggleNotifications}
+                  className={`relative p-2 rounded-xl transition-all duration-200 ${
+                    notificationsOpen
+                      ? "bg-royal-blue/10 text-royal-blue shadow-sm"
+                      : "text-cool-gray hover:text-royal-blue hover:bg-royal-blue/5"
+                  }`}
+                >
+                  <span className="material-symbols-outlined">
+                    notifications
+                  </span>
+                  {hasUnread && (
+                    <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-vivid-yellow rounded-full ring-2 ring-white animate-pulse shadow-[0_0_8px_rgba(255,191,0,0.6)]"></span>
+                  )}
+                </button>
+
+                {/* Notifications Dropdown */}
+                {notificationsOpen && (
+                  <div className="absolute right-0 w-80 mt-2 origin-top-right glass-card rounded-2xl shadow-xl ring-1 ring-black/5 focus:outline-none animate-fade-in z-50 overflow-hidden flex flex-col">
+                    <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                      <h3 className="text-sm font-bold text-dark-slate flex items-center gap-2">
+                        <span className="material-symbols-outlined text-royal-blue text-lg">
+                          history
+                        </span>
+                        กิจกรรมล่าสุด
+                      </h3>
+                      {hasUnread && (
+                        <span className="text-[10px] font-bold text-vivid-yellow uppercase tracking-wider bg-vivid-yellow/10 px-2 py-0.5 rounded-full">
+                          ใหม่
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="p-2 max-h-[350px] overflow-y-auto no-scrollbar">
+                      {activities.length === 0 ? (
+                        <div className="py-8 text-center">
+                          <span className="material-symbols-outlined text-3xl text-cool-gray/30 mb-1 block">
+                            notifications_off
+                          </span>
+                          <p className="text-xs text-cool-gray">
+                            ยังไม่มีกิจกรรม
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          {activities.map((activity) => (
+                            <div
+                              key={activity.id}
+                              className="flex items-start gap-3 p-3 hover:bg-slate-50 rounded-xl transition-colors group cursor-default"
+                            >
+                              <div className="shrink-0 mt-1">
+                                <div
+                                  className={`w-2 h-2 rounded-full ${activity.iconBg} shadow-[0_0_8px]`}
+                                  style={{
+                                    boxShadow: `0 0 8px ${activity.iconBg.replace("bg-", "rgba(").replace("-500", ", 0.5)")}`,
+                                  }}
+                                ></div>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[13px] font-medium text-dark-slate leading-tight mb-1">
+                                  {activity.title}
+                                </p>
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-[11px] text-cool-gray truncate">
+                                    {activity.description}
+                                  </p>
+                                  <span className="text-[10px] font-medium text-cool-gray/50 whitespace-nowrap">
+                                    {activity.time}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <Link
+                      href="/admin/activity"
+                      onClick={() => setNotificationsOpen(false)}
+                      className="p-3 text-center border-t border-slate-100 text-xs font-bold text-royal-blue hover:text-cyan-600 transition-colors bg-slate-50/30"
+                    >
+                      ดูกิจกรรมทั้งหมด
+                    </Link>
+                  </div>
+                )}
+              </div>
 
               {/* Profile Dropdown */}
               <div className="relative">
