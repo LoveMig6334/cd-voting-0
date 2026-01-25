@@ -1,4 +1,6 @@
+import { ElectionControlButtons } from "@/components/ElectionControlButtons";
 import { getRecentActivitiesForDisplay } from "@/lib/actions/activities";
+import { getCurrentAdmin } from "@/lib/actions/admin-auth";
 import { getActiveElections, getAllElections } from "@/lib/actions/elections";
 import { getStudentStats } from "@/lib/actions/students";
 import { getTotalVotes } from "@/lib/actions/votes";
@@ -107,39 +109,44 @@ function ActivityTimeline({
     );
   }
 
+  // Helper to extract hex-ish color from iconBg class for the shadow
+  const getGlowColor = (bgClass: string) => {
+    if (bgClass.includes("emerald")) return "rgba(16, 185, 129, 0.6)";
+    if (bgClass.includes("royal-blue")) return "rgba(15, 95, 194, 0.6)";
+    if (bgClass.includes("orange")) return "rgba(249, 115, 22, 0.6)";
+    if (bgClass.includes("violet")) return "rgba(139, 92, 246, 0.6)";
+    if (bgClass.includes("vivid-yellow") || bgClass.includes("yellow"))
+      return "rgba(234, 179, 8, 0.6)";
+    return "rgba(100, 116, 139, 0.6)";
+  };
+
   return (
-    <div className="relative pl-10">
-      {/* Timeline Line */}
-      <div className="timeline-line"></div>
-
-      <ul className="space-y-6">
-        {activities.map((activity) => (
-          <li key={activity.id} className="relative">
-            {/* Timeline Badge */}
+    <div className="space-y-3">
+      {activities.map((activity) => (
+        <div
+          key={activity.id}
+          className="flex items-center gap-3 py-1.5 px-2 hover:bg-slate-50/50 rounded-lg transition-colors group"
+        >
+          {/* Glowing Status Dot */}
+          <div className="shrink-0">
             <div
-              className={`timeline-badge absolute -left-10 ${activity.iconBg}`}
-            >
-              <span
-                className={`material-symbols-outlined ${activity.iconColor} text-sm`}
-              >
-                {activity.icon}
-              </span>
-            </div>
+              className={`w-2 h-2 rounded-full ${activity.iconBg} transition-all duration-300 group-hover:scale-110`}
+              style={{
+                boxShadow: `0 0 10px ${getGlowColor(activity.iconBg)}`,
+              }}
+            ></div>
+          </div>
 
-            <div className="glass-card rounded-xl p-4 hover:bg-white/90 transition-all">
-              <h4 className="text-sm font-semibold text-dark-slate">
-                {activity.title}
-              </h4>
-              <p className="text-xs font-normal text-cool-gray mt-1">
-                {activity.description}
-              </p>
-              <time className="block text-xs font-medium text-royal-blue/70 mt-2">
-                {activity.time}
-              </time>
-            </div>
-          </li>
-        ))}
-      </ul>
+          <div className="flex flex-1 items-baseline justify-between gap-4 min-w-0">
+            <h4 className="text-[13px] font-medium text-dark-slate truncate">
+              {activity.title}
+            </h4>
+            <time className="text-[11px] font-medium text-cool-gray/60 whitespace-nowrap">
+              {activity.time}
+            </time>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -158,13 +165,22 @@ function formatThaiDate(date: Date | string): string {
 
 export default async function AdminDashboard() {
   // Fetch data from MySQL
-  const [studentStats, allElections, activeElectionsList, recentActivities] =
-    await Promise.all([
-      getStudentStats(),
-      getAllElections(),
-      getActiveElections(),
-      getRecentActivitiesForDisplay(5),
-    ]);
+  const [
+    adminData,
+    studentStats,
+    allElections,
+    activeElectionsList,
+    recentActivities,
+  ] = await Promise.all([
+    getCurrentAdmin(),
+    getStudentStats(),
+    getAllElections(),
+    getActiveElections(),
+    getRecentActivitiesForDisplay(5),
+  ]);
+
+  const adminName =
+    adminData?.admin.display_name || adminData?.admin.username || "ผู้ดูแลระบบ";
 
   // Get total votes for all active elections
   let totalVotes = 0;
@@ -189,7 +205,7 @@ export default async function AdminDashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold text-dark-slate">
-            ยินดีต้อนรับกลับ, ผู้ดูแลระบบ
+            ยินดีต้อนรับกลับ, {adminName}
           </h2>
           <p className="text-cool-gray mt-1">
             นี่คือภาพรวมล่าสุดของการเลือกตั้งโรงเรียน
@@ -211,7 +227,6 @@ export default async function AdminDashboard() {
         <StatsCard
           title="นักเรียนทั้งหมด"
           value={studentStats.total.toLocaleString()}
-          subtitle={`อนุมัติแล้ว ${studentStats.approved} คน`}
           icon="school"
           iconColor="text-royal-blue"
           href="/admin/students"
@@ -252,11 +267,11 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
         {/* Active Election Card */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 flex">
           {primaryActiveElection ? (
-            <div className="ticket-card rounded-2xl overflow-hidden">
+            <div className="ticket-card rounded-2xl overflow-hidden w-full flex flex-col">
               <div className="p-6 border-b border-slate-100/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -350,7 +365,7 @@ export default async function AdminDashboard() {
               </div>
             </div>
           ) : (
-            <div className="ticket-card rounded-2xl overflow-hidden">
+            <div className="ticket-card rounded-2xl overflow-hidden w-full flex flex-col justify-center">
               <div className="p-12 text-center">
                 <span className="material-symbols-outlined text-6xl text-cool-gray/30 mb-4 block">
                   how_to_vote
@@ -374,8 +389,8 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Activity Timeline */}
-        <div className="lg:col-span-1">
-          <div className="glass-card rounded-2xl h-full flex flex-col">
+        <div className="lg:col-span-1 flex">
+          <div className="glass-card rounded-2xl w-full flex flex-col">
             <div className="p-6 border-b border-slate-100/50">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-royal-blue">
@@ -437,7 +452,8 @@ export default async function AdminDashboard() {
                   <th className="pb-3 pr-4">วันเริ่ม</th>
                   <th className="pb-3 pr-4">วันสิ้นสุด</th>
                   <th className="pb-3 pr-4">สถานะ</th>
-                  <th className="pb-3">คะแนน</th>
+                  <th className="pb-3 pr-4">คะแนน</th>
+                  <th className="pb-3">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -469,8 +485,14 @@ export default async function AdminDashboard() {
                             : "รอเปิด"}
                       </span>
                     </td>
-                    <td className="py-4 text-sm font-semibold text-dark-slate">
+                    <td className="py-4 pr-4 text-sm font-semibold text-dark-slate">
                       {election.total_votes}
+                    </td>
+                    <td className="py-4">
+                      <ElectionControlButtons
+                        electionId={election.id}
+                        currentStatus={election.status}
+                      />
                     </td>
                   </tr>
                 ))}

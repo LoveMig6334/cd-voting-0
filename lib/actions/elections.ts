@@ -349,6 +349,61 @@ export async function deleteElection(
   }
 }
 
+/**
+ * Manually update election status (OPEN / CLOSED)
+ * Adjusts dates to ensure status is reflected
+ */
+export async function updateElectionStatus(
+  id: number,
+  newStatus: "OPEN" | "CLOSED",
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const election = await getElectionById(id);
+    if (!election) return { success: false, error: "ไม่พบการเลือกตั้ง" };
+
+    const now = new Date();
+    const setClauses: string[] = ["status = ?"];
+    const values: unknown[] = [newStatus];
+
+    if (newStatus === "OPEN") {
+      setClauses.push("start_date = ?");
+      values.push(now);
+      // Ensure end_date is in the future if it's already passed
+      if (new Date(election.end_date) <= now) {
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        setClauses.push("end_date = ?");
+        values.push(tomorrow);
+      }
+    } else {
+      // CLOSED
+      setClauses.push("end_date = ?");
+      values.push(now);
+    }
+
+    values.push(id);
+    await execute(
+      `UPDATE elections SET ${setClauses.join(", ")} WHERE id = ?`,
+      values,
+    );
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/elections");
+    revalidatePath(`/admin/elections/${id}`);
+
+    // Log activity
+    await logElectionChange(
+      `${newStatus === "OPEN" ? "เปิด" : "ปิด"}การเลือกตั้งด้วยตนเอง`,
+      election.title,
+    );
+
+    return { success: true };
+  } catch (error) {
+    console.error("Update status error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาดในการปรับสถานะ" };
+  }
+}
+
 // ==========================================
 // Write Operations - Positions
 // ==========================================
