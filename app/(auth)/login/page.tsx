@@ -10,7 +10,7 @@ export default function Login() {
 
   const [studentId, setStudentId] = useState("");
   const [nationalId, setNationalId] = useState("");
-  const [prefix, setPrefix] = useState("นาย");
+  const [prefix, setPrefix] = useState("เด็กชาย");
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
   const [loading, setLoading] = useState(false);
@@ -224,34 +224,44 @@ export default function Login() {
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-500">
-                  ชื่อ-นามสกุล
+                  ชื่อ-นามสกุล{" "}
+                  <span className="text-xs text-slate-400 font-normal">
+                    (กรอกอัตโนมัติจากระบบ)
+                  </span>
                 </label>
                 <div className="flex gap-2">
                   <div className="w-1/3">
                     <select
                       value={prefix}
-                      onChange={(e) => setPrefix(e.target.value)}
-                      className="block w-full rounded-lg border-slate-200 bg-white/70 p-3.5 text-base focus:bg-white focus:border-primary focus:ring-primary transition-colors appearance-none cursor-pointer"
+                      disabled
+                      className={`block w-full rounded-lg p-3.5 text-base transition-colors appearance-none cursor-not-allowed ${
+                        isMatched === true
+                          ? "border-green-500 ring-1 ring-green-500 text-green-700 font-medium bg-green-50/50"
+                          : "border-slate-200 bg-slate-100 text-slate-400"
+                      }`}
                     >
-                      <option value="นาย">นาย</option>
-                      <option value="นางสาว">นางสาว</option>
                       <option value="เด็กชาย">เด็กชาย</option>
                       <option value="เด็กหญิง">เด็กหญิง</option>
+                      <option value="นาย">นาย</option>
+                      <option value="นางสาว">นางสาว</option>
+                      <option value="นาง">นาง</option>
                     </select>
                   </div>
                   <div className="relative flex-1">
                     <input
-                      className={`block w-full rounded-lg border-slate-200 bg-white/70 p-3.5 pr-10 text-base focus:bg-white focus:border-primary focus:ring-primary transition-colors ${
+                      className={`block w-full rounded-lg p-3.5 pr-10 text-base transition-colors cursor-not-allowed ${
                         isMatched === true
-                          ? "border-green-500 ring-1 ring-green-500 text-green-700 font-medium"
-                          : ""
+                          ? "border-green-500 ring-1 ring-green-500 text-green-700 font-medium bg-green-50/50"
+                          : "border-slate-200 bg-slate-100 text-slate-400"
                       }`}
-                      placeholder="ชื่อ"
+                      placeholder="รอข้อมูลจากระบบ..."
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      disabled
                     />
-                    <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">
-                      person
+                    <span
+                      className={`material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-[20px] ${isMatched === true ? "text-green-500" : "text-slate-300"}`}
+                    >
+                      {isMatched === true ? "check_circle" : "person"}
                     </span>
                   </div>
                 </div>
@@ -260,17 +270,19 @@ export default function Login() {
               <div className="space-y-1.5">
                 <div className="relative">
                   <input
-                    className={`block w-full rounded-lg border-slate-200 bg-white/70 p-3.5 pr-10 text-base focus:bg-white focus:border-primary focus:ring-primary transition-colors ${
+                    className={`block w-full rounded-lg p-3.5 pr-10 text-base transition-colors cursor-not-allowed ${
                       isMatched === true
-                        ? "border-green-500 ring-1 ring-green-500 text-green-700 font-medium"
-                        : ""
+                        ? "border-green-500 ring-1 ring-green-500 text-green-700 font-medium bg-green-50/50"
+                        : "border-slate-200 bg-slate-100 text-slate-400"
                     }`}
-                    placeholder="นามสกุล"
+                    placeholder="รอข้อมูลจากระบบ..."
                     value={surname}
-                    onChange={(e) => setSurname(e.target.value)}
+                    disabled
                   />
-                  <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">
-                    person
+                  <span
+                    className={`material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-[20px] ${isMatched === true ? "text-green-500" : "text-slate-300"}`}
+                  >
+                    {isMatched === true ? "check_circle" : "person"}
                   </span>
                 </div>
               </div>
