@@ -450,6 +450,20 @@ export function AdminManagementClient({
               </div>
               <div>
                 <label className="block text-sm font-medium text-dark-slate mb-1">
+                  ชื่อที่แสดง
+                </label>
+                <input
+                  type="text"
+                  value={formData.displayName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, displayName: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="ชื่อที่แสดง (ไม่บังคับ)"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-dark-slate mb-1">
                   รหัสผ่าน
                 </label>
                 <div className="flex gap-2">
@@ -487,20 +501,6 @@ export function AdminManagementClient({
                     </span>
                   </button>
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-dark-slate mb-1">
-                  ชื่อที่แสดง
-                </label>
-                <input
-                  type="text"
-                  value={formData.displayName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, displayName: e.target.value })
-                  }
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="ชื่อที่แสดง (ไม่บังคับ)"
-                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-dark-slate mb-1">
