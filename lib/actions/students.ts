@@ -1,8 +1,10 @@
 "use server";
 
 import { execute, query, StudentRow } from "@/lib/db";
+import { canManageStudents } from "@/lib/permissions";
 import { revalidatePath } from "next/cache";
 import { logAdminAction } from "./activities";
+import { getCurrentAdmin } from "./admin-auth";
 
 // ==========================================
 // Types
@@ -119,6 +121,11 @@ export async function createStudent(
   data: CreateStudentData,
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const adminSession = await getCurrentAdmin();
+    if (!adminSession || !canManageStudents(adminSession.admin.access_level)) {
+      return { success: false, error: "ไม่มีสิทธิ์ดำเนินการนี้" };
+    }
+
     // Check for duplicate ID
     const existingId = await query<StudentRow>(
       "SELECT id FROM students WHERE id = ?",
@@ -175,6 +182,11 @@ export async function updateStudent(
   data: UpdateStudentData,
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const adminSession = await getCurrentAdmin();
+    if (!adminSession || !canManageStudents(adminSession.admin.access_level)) {
+      return { success: false, error: "ไม่มีสิทธิ์ดำเนินการนี้" };
+    }
+
     const setClauses: string[] = [];
     const values: unknown[] = [];
 
@@ -224,6 +236,11 @@ export async function deleteStudent(
   id: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const adminSession = await getCurrentAdmin();
+    if (!adminSession || !canManageStudents(adminSession.admin.access_level)) {
+      return { success: false, error: "ไม่มีสิทธิ์ดำเนินการนี้" };
+    }
+
     const result = await execute("DELETE FROM students WHERE id = ?", [id]);
 
     if (result.affectedRows === 0) {
@@ -417,6 +434,15 @@ export async function importStudents(
   options: { overwrite?: boolean } = {},
 ): Promise<{ imported: number; skipped: number; errors: string[] }> {
   const result = { imported: 0, skipped: 0, errors: [] as string[] };
+
+  const adminSession = await getCurrentAdmin();
+  if (!adminSession || !canManageStudents(adminSession.admin.access_level)) {
+    return {
+      imported: 0,
+      skipped: students.length,
+      errors: ["ไม่มีสิทธิ์ดำเนินการนี้"],
+    };
+  }
 
   for (const student of students) {
     // Validate required fields

@@ -135,3 +135,14 @@ export function canEditAdmin(editorLevel: AccessLevel): boolean {
 export function canViewAdminManagement(level: AccessLevel): boolean {
   return level === ACCESS_LEVELS.ROOT || level === ACCESS_LEVELS.SYSTEM_ADMIN;
 }
+
+/**
+ * Check if user can manage students (add, edit, delete, import)
+ * - ROOT (0): Yes
+ * - SYSTEM_ADMIN (1): Yes
+ * - TEACHER (2): No
+ * - OBSERVER (3): No
+ */
+export function canManageStudents(level: AccessLevel): boolean {
+  return level === ACCESS_LEVELS.ROOT || level === ACCESS_LEVELS.SYSTEM_ADMIN;
+}

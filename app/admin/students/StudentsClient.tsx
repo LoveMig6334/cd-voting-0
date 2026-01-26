@@ -11,8 +11,8 @@ import {
   revokeVotingRight,
   StudentStats,
 } from "@/lib/actions/students";
-import { ACCESS_LEVELS } from "@/lib/admin-types";
 import { StudentRow } from "@/lib/db";
+import { canManageStudents } from "@/lib/permissions";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { useRequireAdmin } from "../AdminLayoutClient";
@@ -816,10 +816,8 @@ export default function StudentsClient({
     });
   };
 
-  // Check if current admin can delete students (only levels 0 and 1)
-  const canDeleteStudents =
-    admin.accessLevel === ACCESS_LEVELS.ROOT ||
-    admin.accessLevel === ACCESS_LEVELS.SYSTEM_ADMIN;
+  // Check if current admin can manage students (only levels 0 and 1)
+  const userCanManageStudents = canManageStudents(admin.accessLevel);
 
   return (
     <div className="space-y-6">
@@ -834,24 +832,28 @@ export default function StudentsClient({
           </p>
         </div>
         <div className="flex gap-3 self-start sm:self-auto">
-          <button
-            onClick={() => setShowImportModal(true)}
-            className="bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2"
-          >
-            <span className="material-symbols-outlined text-xl">
-              upload_file
-            </span>
-            นำเข้า JSON
-          </button>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
-          >
-            <span className="material-symbols-outlined text-xl">
-              person_add
-            </span>
-            เพิ่มนักเรียน
-          </button>
+          {userCanManageStudents && (
+            <>
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-xl">
+                  upload_file
+                </span>
+                นำเข้า JSON
+              </button>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-xl">
+                  person_add
+                </span>
+                เพิ่มนักเรียน
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -1070,7 +1072,7 @@ export default function StudentsClient({
                       >
                         ดูประวัติ
                       </button>
-                      {canDeleteStudents && (
+                      {userCanManageStudents && (
                         <button
                           onClick={() =>
                             setDeleteConfirmModal({ isOpen: true, student })
