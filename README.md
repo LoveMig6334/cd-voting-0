@@ -2345,7 +2345,6 @@ cd-voting-0/
 │   └── student-data.ts                 # Mock Data Utils (Development)
 │
 ├── hooks/                              # Custom React Hooks
-│   └── useDashboardData.ts             # Dashboard Data Hook
 │
 ├── types.ts                            # Global TypeScript Types
 │
@@ -2398,7 +2397,8 @@ cd-voting-0/
 | File                      | Description                                      |
 | ------------------------- | ------------------------------------------------ |
 | `lib/ocr/pipeline.ts`     | OCR Image Processing Pipeline (Prototype)        |
-| `hooks/useDashboardData.ts` | Dashboard Data Hook                            |
+| `lib/actions/*.ts`        | Server Actions for all data operations (MySQL)   |
+| `lib/db.ts`               | MySQL connection pool with query/execute/transaction |
 | `types.ts`                | Global TypeScript Interfaces                     |
 
 ### Configuration
@@ -2489,12 +2489,12 @@ cd-voting-0/
 
 ### Database Migration
 
-- [~] **Migrate from localStorage to MySQL** - POC completed, need to integrate into main app
+- [x] **Migrate from localStorage to MySQL** - All localStorage stores removed, fully using Server Actions
   - [x] POC implementation (app/poc/)
   - [x] Server Actions tested
   - [x] Replace useAuth hook with session-based auth
-  - [ ] Migrate all pages to use Server Actions
-  - [ ] Remove localStorage dependencies
+  - [x] Migrate all pages to use Server Actions
+  - [x] Remove localStorage dependencies
 
 ### Deployment Preparation
 
@@ -2511,11 +2511,11 @@ cd-voting-0/
 
 #### Backend Integration
 
-- [ ] **Replace localStorage with MySQL** (High Priority)
+- [x] **Replace localStorage with MySQL** (High Priority)
   - [x] Create `lib/db.ts` (copy from app/poc/lib/db.ts)
   - [x] Migrate `hooks/useAuth.ts` to session-based auth (`lib/actions/auth.ts`)
-  - [ ] Update all pages to use Server Actions
-  - [ ] Remove mock data dependencies
+  - [x] Update all pages to use Server Actions
+  - [x] Remove mock data dependencies (localStorage stores deleted)
 
 - [ ] **API Routes Implementation**
   - [ ] POST `/api/auth/register` - Student registration

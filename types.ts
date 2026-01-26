@@ -40,10 +40,3 @@ export interface OCRResponse {
   classRoom: string;
   rawText: string;
 }
-
-// Re-export student types from student-store for convenience
-export type {
-  CreateStudentData,
-  RawStudentData,
-  StudentRecord,
-} from "./lib/student-store";

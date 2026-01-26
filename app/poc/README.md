@@ -27,10 +27,10 @@ Migrate ระบบ CD Voting จาก **localStorage-based mock** ไปใ�
 
 | ไฟล์เดิม                | ต้องเปลี่ยนเป็น                       | Priority |
 | ----------------------- | ------------------------------------- | -------- |
-| `lib/student-store.ts`  | ใช้ `query()` จาก `app/poc/lib/db.ts` | 🔴 High  |
-| `lib/election-store.ts` | ใช้ `query()` + `execute()`           | 🔴 High  |
-| `lib/vote-store.ts`     | ใช้ `transaction()`                   | 🔴 High  |
-| ~~`hooks/useAuth.ts`~~  | ✅ แทนที่ด้วย `lib/actions/auth.ts` แล้ว | ✅ Done  |
+| ~~`lib/student-store.ts`~~  | ✅ แทนที่ด้วย `lib/actions/students.ts` แล้ว | ✅ Done  |
+| ~~`lib/election-store.ts`~~ | ✅ แทนที่ด้วย `lib/actions/elections.ts` แล้ว | ✅ Done  |
+| ~~`lib/vote-store.ts`~~     | ✅ แทนที่ด้วย `lib/actions/votes.ts` แล้ว    | ✅ Done  |
+| ~~`hooks/useAuth.ts`~~      | ✅ แทนที่ด้วย `lib/actions/auth.ts` แล้ว     | ✅ Done  |
 
 ### 2. Pages ที่ต้องแก้ไข
 
@@ -177,4 +177,4 @@ if (!session) {
 - DB Connection: `app/poc/lib/db.ts`
 - Server Actions: `app/poc/actions.ts`
 - Types: `types.ts` + Row types ใน `db.ts`
-- Current localStorage stores: `lib/student-store.ts`, `lib/election-store.ts`, `lib/vote-store.ts`
+- ~~Current localStorage stores~~: ✅ ทั้งหมดถูกแทนที่ด้วย Server Actions ใน `lib/actions/` แล้ว

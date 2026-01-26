@@ -10,10 +10,10 @@ import {
   type PublicDisplaySettings,
 } from "@/lib/actions/public-display";
 import {
-  getElectionWinners,
+  getElectionResults,
   type PositionWinner,
   type WinnerStatus,
-} from "@/lib/vote-store";
+} from "@/lib/actions/votes";
 import { useCallback, useEffect, useState } from "react";
 
 // ============================================
@@ -258,22 +258,16 @@ export default function PublicDisplayModal({
       const positionIds = positions.filter((p) => p.enabled).map((p) => p.id);
       const electionIdNum = parseInt(electionId, 10);
 
-      // Load settings from database (async)
-      getOrCreateDisplaySettings(electionIdNum, positionIds).then(
-        (loadedSettings) => {
-          setSettings(loadedSettings);
-        },
-      );
-
-      // Calculate winners (sync - from localStorage vote-store)
-      const calculatedWinners = getElectionWinners(
-        electionId,
-        positions,
-        candidates,
-      );
-      setWinners(calculatedWinners);
+      // Load settings and winners from database (async)
+      Promise.all([
+        getOrCreateDisplaySettings(electionIdNum, positionIds),
+        getElectionResults(electionIdNum),
+      ]).then(([loadedSettings, results]) => {
+        setSettings(loadedSettings);
+        setWinners(results.winners);
+      });
     }
-  }, [isOpen, electionId, positions, candidates]);
+  }, [isOpen, electionId, positions]);
 
   // Handle global settings change
   const handleGlobalChange = useCallback(

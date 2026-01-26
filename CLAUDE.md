@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-CD Voting 0 is a Next.js-based school election system for online voting. Features include role-based access (Student/Admin), manual student login with National ID auto-fill, and real-time vote tracking. Currently uses mock data with no backend implementation.
+CD Voting 0 is a Next.js-based school election system for online voting. Features include role-based access (Student/Admin), manual student login with National ID auto-fill, and real-time vote tracking. Uses MySQL database with Server Actions for all data operations.
 
 ## Development Commands
 
@@ -33,8 +33,8 @@ npm run lint     # Run ESLint
 ### Key Directories
 
 - `components/` - Reusable UI components (BottomNav, AdminNavbar, ElectionCard)
-- `hooks/` - Custom React hooks (useDashboardData)
-- `lib/` - Utilities (student-data.ts for mock data fetching)
+- `lib/actions/` - Server Actions for all data operations (auth, elections, votes, students, activities, public-display)
+- `lib/db.ts` - MySQL connection pool with query/execute/transaction helpers
 - `types.ts` - TypeScript interfaces for Candidate, Election, VoteRecord, Student, OCRResponse
 
 ### Data Flow
@@ -92,9 +92,9 @@ See [`docs/practices/ANIMATION_AND_MODAL_BEST_PRACTICES.md`](docs/practices/ANIM
 
 ## Current State
 
-- **Auth:** Fully migrated to MySQL session-based auth (Server Actions + httpOnly cookies)
-- **Data:** Partially migrated — auth, students, votes use MySQL; elections, activity log, public display still use localStorage stores
-- **Legacy:** `public/data.json` and localStorage stores (`lib/*-store.ts`) remain for unmigrated features
+- **Data layer:** Fully migrated to MySQL via Server Actions (`lib/actions/`) — no localStorage stores remain
+- **Auth:** Session-based auth with httpOnly cookies (`session_id`, `admin_session_id`)
+- **Pattern:** Server Components fetch data → pass to Client Components via props
 - Tesseract.js is integrated into debug laboratory pages (`app/debug/`)
 - TanStack Table used for Admin results and student management
 - README.md contains extensive Thai documentation with API design specs and TODO list
