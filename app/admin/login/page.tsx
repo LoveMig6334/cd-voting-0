@@ -101,11 +101,6 @@ export default function AdminLoginPage() {
                 ชื่อผู้ใช้
               </label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-cool-gray group-focus-within:text-royal-blue transition-colors">
-                  <span className="material-symbols-outlined text-xl">
-                    person
-                  </span>
-                </div>
                 <input
                   type="text"
                   required
@@ -117,6 +112,11 @@ export default function AdminLoginPage() {
                   placeholder="กรอกชื่อผู้ใช้ผู้ดูแล"
                   className="w-full h-14 pl-12 pr-4 bg-white/50 border border-white/60 rounded-2xl outline-none focus:ring-2 focus:ring-royal-blue/20 focus:border-royal-blue/50 focus:bg-white/70 transition-all text-dark-slate placeholder:text-cool-gray font-medium backdrop-blur-sm"
                 />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-cool-gray group-focus-within:text-royal-blue transition-colors">
+                  <span className="material-symbols-outlined text-xl">
+                    person
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -133,11 +133,6 @@ export default function AdminLoginPage() {
                 </button>
               </div>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-cool-gray group-focus-within:text-royal-blue transition-colors">
-                  <span className="material-symbols-outlined text-xl">
-                    lock
-                  </span>
-                </div>
                 <input
                   type="password"
                   required
@@ -149,6 +144,11 @@ export default function AdminLoginPage() {
                   placeholder="••••••••"
                   className="w-full h-14 pl-12 pr-4 bg-white/50 border border-white/60 rounded-2xl outline-none focus:ring-2 focus:ring-royal-blue/20 focus:border-royal-blue/50 focus:bg-white/70 transition-all text-dark-slate placeholder:text-cool-gray backdrop-blur-sm"
                 />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-cool-gray group-focus-within:text-royal-blue transition-colors">
+                  <span className="material-symbols-outlined text-xl">
+                    lock
+                  </span>
+                </div>
               </div>
             </div>
 
