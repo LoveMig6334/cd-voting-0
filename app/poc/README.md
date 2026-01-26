@@ -72,7 +72,7 @@ flowchart TB
         end
     end
 
-    subgraph SCHOOL_NET["🏫 School Network / Hamachi"]
+    subgraph SCHOOL_NET["🏫 School Network"]
         subgraph DB["MySQL Server"]
             TBL_STU[("students")]
             TBL_ELEC[("elections")]

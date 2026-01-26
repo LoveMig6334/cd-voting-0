@@ -183,6 +183,38 @@ CREATE TABLE activities (
 -- ตรวจสอบว่านักเรียนโหวตแล้วหรือยัง:
 -- SELECT * FROM vote_history WHERE student_id = ? AND election_id = ?;
 
+-- 11. ตารางการตั้งค่าแสดงผลสาธารณะ (Public Display Settings)
+CREATE TABLE public_display_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    election_id INT NOT NULL,
+    is_published BOOLEAN DEFAULT FALSE,           -- เผยแพร่ผลหรือยัง
+    published_at DATETIME,                         -- วันเวลาที่เผยแพร่
+    global_show_raw_score BOOLEAN DEFAULT TRUE,   -- แสดงคะแนนดิบทุกตำแหน่ง
+    global_show_winner_only BOOLEAN DEFAULT FALSE, -- แสดงเฉพาะผู้ชนะทุกตำแหน่ง
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (election_id) REFERENCES elections(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_election (election_id)
+);
+
+-- 12. ตารางการตั้งค่าแสดงผลแต่ละตำแหน่ง (Position Display Config)
+CREATE TABLE position_display_configs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    election_id INT NOT NULL,
+    position_id VARCHAR(50) NOT NULL,
+    show_raw_score BOOLEAN DEFAULT TRUE,          -- แสดงคะแนนดิบ
+    show_winner_only BOOLEAN DEFAULT FALSE,        -- แสดงเฉพาะผู้ชนะ
+    skip BOOLEAN DEFAULT FALSE,                    -- ข้ามการแสดงผล
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (election_id) REFERENCES elections(id) ON DELETE CASCADE,
+    FOREIGN KEY (position_id) REFERENCES positions(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_election_position (election_id, position_id),
+    INDEX idx_election_id (election_id)
+);
+
 -- =====================================================
 -- Migration Scripts
 -- =====================================================
@@ -201,4 +233,33 @@ CREATE TABLE activities (
 --     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 --     INDEX idx_type (type),
 --     INDEX idx_created_at (created_at)
+-- );
+
+-- v2.3: Add Public Display Settings Tables (for Post-Election Results Display)
+-- CREATE TABLE public_display_settings (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     election_id INT NOT NULL,
+--     is_published BOOLEAN DEFAULT FALSE,
+--     published_at DATETIME,
+--     global_show_raw_score BOOLEAN DEFAULT TRUE,
+--     global_show_winner_only BOOLEAN DEFAULT FALSE,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+--     FOREIGN KEY (election_id) REFERENCES elections(id) ON DELETE CASCADE,
+--     UNIQUE KEY unique_election (election_id)
+-- );
+--
+-- CREATE TABLE position_display_configs (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     election_id INT NOT NULL,
+--     position_id VARCHAR(50) NOT NULL,
+--     show_raw_score BOOLEAN DEFAULT TRUE,
+--     show_winner_only BOOLEAN DEFAULT FALSE,
+--     skip BOOLEAN DEFAULT FALSE,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+--     FOREIGN KEY (election_id) REFERENCES elections(id) ON DELETE CASCADE,
+--     FOREIGN KEY (position_id) REFERENCES positions(id) ON DELETE CASCADE,
+--     UNIQUE KEY unique_election_position (election_id, position_id),
+--     INDEX idx_election_id (election_id)
 -- );

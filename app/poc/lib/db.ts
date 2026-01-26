@@ -2,7 +2,7 @@
  * Database Connection Layer for CD Voting System
  *
  * สำหรับ Development: ใช้ MySQL จาก XAMPP (localhost:3306)
- * สำหรับ Production: ใช้ MySQL ของ รร. (ผ่าน Hamachi/LAN)
+ * สำหรับ Production: ใช้ MySQL ของ รร. (ผ่าน LAN)
  *
  * การใช้งาน:
  * 1. ติดตั้ง mysql2: `npm install mysql2`

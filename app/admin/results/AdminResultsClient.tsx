@@ -6,7 +6,9 @@ import {
   WinnerStatus,
 } from "@/lib/actions/votes";
 import { CandidateRow, ElectionRow, PositionRow } from "@/lib/db";
+import PublicDisplayModal from "@/components/PublicDisplayModal";
 import Link from "next/link";
+import { useState } from "react";
 
 // ============================================
 // Types
@@ -148,6 +150,29 @@ function getWinnerText(winner: PositionWinner): string {
 export default function AdminResultsClient({
   summaries,
 }: AdminResultsClientProps) {
+  // State for Public Display Modal
+  const [selectedElection, setSelectedElection] =
+    useState<ElectionResultSummary | null>(null);
+
+  // Handler to open Public Display Modal
+  const handleOpenDisplaySettings = (summary: ElectionResultSummary) => {
+    setSelectedElection(summary);
+  };
+
+  // Handler to close Public Display Modal
+  const handleCloseDisplaySettings = () => {
+    setSelectedElection(null);
+  };
+
+  // Transform candidates data for modal props
+  const transformCandidatesForModal = (candidates: CandidateRow[]) => {
+    return candidates.map((c) => ({
+      id: c.id.toString(),
+      name: c.name,
+      positionId: c.position_id,
+    }));
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -265,6 +290,28 @@ export default function AdminResultsClient({
 
               {/* Footer with Actions */}
               <div className="border-t border-slate-200 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {/* Show public display button for open/closed elections */}
+                  {status !== "draft" && (
+                    <button
+                      onClick={() =>
+                        handleOpenDisplaySettings({
+                          election,
+                          turnout,
+                          primaryWinner,
+                          status,
+                        })
+                      }
+                      className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors group"
+                      title="ตั้งค่าการแสดงผลสาธารณะ"
+                    >
+                      <span className="material-symbols-outlined">
+                        settings
+                      </span>
+                    </button>
+                  )}
+                </div>
+
                 <Link
                   href={`/admin/elections/${election.id}/results`}
                   className="text-primary hover:text-primary-dark text-sm font-medium flex items-center gap-1"
@@ -279,6 +326,25 @@ export default function AdminResultsClient({
           );
         })}
       </div>
+
+      {/* Public Display Modal */}
+      {selectedElection && (
+        <PublicDisplayModal
+          isOpen={true}
+          onClose={handleCloseDisplaySettings}
+          electionId={selectedElection.election.id.toString()}
+          electionTitle={selectedElection.election.title}
+          positions={selectedElection.election.positions.map((p) => ({
+            id: p.id,
+            title: p.title,
+            enabled: p.enabled,
+            icon: p.icon || "person",
+          }))}
+          candidates={transformCandidatesForModal(
+            selectedElection.election.candidates,
+          )}
+        />
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@
  * Database Connection Layer for CD Voting System
  *
  * สำหรับ Development: ใช้ MySQL จาก XAMPP (localhost:3306)
- * สำหรับ Production: ใช้ MySQL ของ รร. (ผ่าน Hamachi/LAN)
+ * สำหรับ Production: ใช้ MySQL ของ รร. (ผ่าน LAN)
  *
  * การใช้งาน:
  * 1. ติดตั้ง mysql2: `npm install mysql2`
@@ -290,6 +290,32 @@ export interface ActivityDisplayItem {
   title: string;
   description: string;
   time: string;
+}
+
+// ============================================
+// Public Display Settings Types
+// ============================================
+
+export interface PublicDisplaySettingsRow extends RowDataPacket {
+  id: number;
+  election_id: number;
+  is_published: boolean;
+  published_at: Date | null;
+  global_show_raw_score: boolean;
+  global_show_winner_only: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface PositionDisplayConfigRow extends RowDataPacket {
+  id: number;
+  election_id: number;
+  position_id: string;
+  show_raw_score: boolean;
+  show_winner_only: boolean;
+  skip: boolean;
+  created_at: Date;
+  updated_at: Date;
 }
 
 // ============================================

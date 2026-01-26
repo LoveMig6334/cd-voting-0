@@ -8,7 +8,7 @@ import {
   updatePositionConfig,
   type PositionDisplayConfig,
   type PublicDisplaySettings,
-} from "@/lib/public-display-store";
+} from "@/lib/actions/public-display";
 import {
   getElectionWinners,
   type PositionWinner,
@@ -118,7 +118,11 @@ interface PositionConfigCardProps {
   position: { id: string; title: string; icon: string };
   winner: PositionWinner;
   config: PositionDisplayConfig;
-  onConfigChange: (updates: Partial<PositionDisplayConfig>) => void;
+  onConfigChange: (updates: {
+    showRawScore?: boolean;
+    showWinnerOnly?: boolean;
+    skip?: boolean;
+  }) => void;
   globalShowRawScore: boolean;
   globalShowWinnerOnly: boolean;
 }
@@ -252,12 +256,16 @@ export default function PublicDisplayModal({
   useEffect(() => {
     if (isOpen) {
       const positionIds = positions.filter((p) => p.enabled).map((p) => p.id);
-      const loadedSettings = getOrCreateDisplaySettings(
-        electionId,
-        positionIds,
-      );
-      setSettings(loadedSettings);
+      const electionIdNum = parseInt(electionId, 10);
 
+      // Load settings from database (async)
+      getOrCreateDisplaySettings(electionIdNum, positionIds).then(
+        (loadedSettings) => {
+          setSettings(loadedSettings);
+        },
+      );
+
+      // Calculate winners (sync - from localStorage vote-store)
       const calculatedWinners = getElectionWinners(
         electionId,
         positions,
@@ -269,10 +277,16 @@ export default function PublicDisplayModal({
 
   // Handle global settings change
   const handleGlobalChange = useCallback(
-    (field: "globalShowRawScore" | "globalShowWinnerOnly", value: boolean) => {
+    async (
+      field: "globalShowRawScore" | "globalShowWinnerOnly",
+      value: boolean,
+    ) => {
       if (!settings) return;
 
-      const updated = updateDisplaySettings(electionId, { [field]: value });
+      const electionIdNum = parseInt(electionId, 10);
+      const updated = await updateDisplaySettings(electionIdNum, {
+        [field]: value,
+      });
       if (updated) setSettings(updated);
     },
     [settings, electionId],
@@ -280,10 +294,22 @@ export default function PublicDisplayModal({
 
   // Handle position config change
   const handlePositionChange = useCallback(
-    (positionId: string, updates: Partial<PositionDisplayConfig>) => {
+    async (
+      positionId: string,
+      updates: {
+        showRawScore?: boolean;
+        showWinnerOnly?: boolean;
+        skip?: boolean;
+      },
+    ) => {
       if (!settings) return;
 
-      const updated = updatePositionConfig(electionId, positionId, updates);
+      const electionIdNum = parseInt(electionId, 10);
+      const updated = await updatePositionConfig(
+        electionIdNum,
+        positionId,
+        updates,
+      );
       if (updated) setSettings(updated);
     },
     [settings, electionId],
@@ -293,7 +319,8 @@ export default function PublicDisplayModal({
   const handlePublish = async () => {
     setSaving(true);
     try {
-      const published = publishResults(electionId);
+      const electionIdNum = parseInt(electionId, 10);
+      const published = await publishResults(electionIdNum);
       if (published) {
         setSettings(published);
         onClose();
@@ -307,7 +334,8 @@ export default function PublicDisplayModal({
   const handleUnpublish = async () => {
     setSaving(true);
     try {
-      const unpublished = unpublishResults(electionId);
+      const electionIdNum = parseInt(electionId, 10);
+      const unpublished = await unpublishResults(electionIdNum);
       if (unpublished) {
         setSettings(unpublished);
       }
