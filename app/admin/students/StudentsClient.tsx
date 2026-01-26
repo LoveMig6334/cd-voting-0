@@ -309,6 +309,7 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
 interface RawStudentData {
   id: string | number;
   no?: number;
+  prefix?: string;
   name: string;
   surname: string;
   classroom: string;
@@ -382,6 +383,7 @@ function ImportJsonModal({ isOpen, onClose }: ImportJsonModalProps) {
         const formattedData = rawData.map((d) => ({
           id: String(d.id),
           nationalId: d.nationalId,
+          prefix: d.prefix,
           name: d.name,
           surname: d.surname,
           studentNo: d.no,
@@ -436,8 +438,11 @@ function ImportJsonModal({ isOpen, onClose }: ImportJsonModalProps) {
           <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg text-sm">
             <p className="font-medium mb-1">รูปแบบ JSON ที่รองรับ:</p>
             <code className="text-xs bg-blue-100 px-2 py-1 rounded block overflow-x-auto">
-              {`[{ "classroom": "3/1", "no": 1, "id": 6308, "name": "ชื่อ", "surname": "นามสกุล", "nationalId": "1234567890123" }]`}
+              {`[{ "classroom": "3/1", "no": 1, "id": 6308, "prefix": "เด็กชาย", "name": "ชื่อ", "surname": "นามสกุล", "nationalId": "1234567890123" }]`}
             </code>
+            <p className="mt-2 text-xs text-blue-600">
+              คำนำหน้า (prefix) รองรับ: เด็กชาย, เด็กหญิง, นาย, นางสาว, นาง
+            </p>
           </div>
 
           {/* File Upload */}
