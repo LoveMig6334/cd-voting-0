@@ -180,95 +180,97 @@ export const AdminNavbar: React.FC = () => {
 
             {/* Right side - Profile & Logout */}
             <div className="hidden md:flex items-center gap-3">
-              {/* Notification Badge */}
-              <div className="relative">
-                <button
-                  onClick={toggleNotifications}
-                  className={`relative p-2 rounded-xl transition-all duration-200 ${
-                    notificationsOpen
-                      ? "bg-royal-blue/10 text-royal-blue shadow-sm"
-                      : "text-cool-gray hover:text-royal-blue hover:bg-royal-blue/5"
-                  }`}
-                >
-                  <span className="material-symbols-outlined">
-                    notifications
-                  </span>
-                  {hasUnread && (
-                    <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-vivid-yellow rounded-full ring-2 ring-white animate-pulse shadow-[0_0_8px_rgba(255,191,0,0.6)]"></span>
-                  )}
-                </button>
+              {/* Notification Badge - Only for Root/System Admin */}
+              {admin && admin.accessLevel <= ACCESS_LEVELS.SYSTEM_ADMIN && (
+                <div className="relative">
+                  <button
+                    onClick={toggleNotifications}
+                    className={`relative p-2 rounded-xl transition-all duration-200 ${
+                      notificationsOpen
+                        ? "bg-royal-blue/10 text-royal-blue shadow-sm"
+                        : "text-cool-gray hover:text-royal-blue hover:bg-royal-blue/5"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined">
+                      notifications
+                    </span>
+                    {hasUnread && (
+                      <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-vivid-yellow rounded-full ring-2 ring-white animate-pulse shadow-[0_0_8px_rgba(255,191,0,0.6)]"></span>
+                    )}
+                  </button>
 
-                {/* Notifications Dropdown */}
-                {notificationsOpen && (
-                  <div className="absolute right-0 w-80 mt-2 origin-top-right glass-card rounded-2xl shadow-xl ring-1 ring-black/5 focus:outline-none animate-fade-in z-50 overflow-hidden flex flex-col">
-                    <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                      <h3 className="text-sm font-bold text-dark-slate flex items-center gap-2">
-                        <span className="material-symbols-outlined text-royal-blue text-lg">
-                          history
-                        </span>
-                        กิจกรรมล่าสุด
-                      </h3>
-                      {hasUnread && (
-                        <span className="text-[10px] font-bold text-vivid-yellow uppercase tracking-wider bg-vivid-yellow/10 px-2 py-0.5 rounded-full">
-                          ใหม่
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="p-2 max-h-[350px] overflow-y-auto no-scrollbar">
-                      {activities.length === 0 ? (
-                        <div className="py-8 text-center">
-                          <span className="material-symbols-outlined text-3xl text-cool-gray/30 mb-1 block">
-                            notifications_off
+                  {/* Notifications Dropdown */}
+                  {notificationsOpen && (
+                    <div className="absolute right-0 w-80 mt-2 origin-top-right glass-card rounded-2xl shadow-xl ring-1 ring-black/5 focus:outline-none animate-fade-in z-50 overflow-hidden flex flex-col">
+                      <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <h3 className="text-sm font-bold text-dark-slate flex items-center gap-2">
+                          <span className="material-symbols-outlined text-royal-blue text-lg">
+                            history
                           </span>
-                          <p className="text-xs text-cool-gray">
-                            ยังไม่มีกิจกรรม
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-1">
-                          {activities.map((activity) => (
-                            <div
-                              key={activity.id}
-                              className="flex items-start gap-3 p-3 hover:bg-slate-50 rounded-xl transition-colors group cursor-default"
-                            >
-                              <div className="shrink-0 mt-1">
-                                <div
-                                  className={`w-2 h-2 rounded-full ${activity.iconBg} shadow-[0_0_8px]`}
-                                  style={{
-                                    boxShadow: `0 0 8px ${activity.iconBg.replace("bg-", "rgba(").replace("-500", ", 0.5)")}`,
-                                  }}
-                                ></div>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[13px] font-medium text-dark-slate leading-tight mb-1">
-                                  {activity.title}
-                                </p>
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className="text-[11px] text-cool-gray truncate">
-                                    {activity.description}
+                          กิจกรรมล่าสุด
+                        </h3>
+                        {hasUnread && (
+                          <span className="text-[10px] font-bold text-vivid-yellow uppercase tracking-wider bg-vivid-yellow/10 px-2 py-0.5 rounded-full">
+                            ใหม่
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="p-2 max-h-[350px] overflow-y-auto no-scrollbar">
+                        {activities.length === 0 ? (
+                          <div className="py-8 text-center">
+                            <span className="material-symbols-outlined text-3xl text-cool-gray/30 mb-1 block">
+                              notifications_off
+                            </span>
+                            <p className="text-xs text-cool-gray">
+                              ยังไม่มีกิจกรรม
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            {activities.map((activity) => (
+                              <div
+                                key={activity.id}
+                                className="flex items-start gap-3 p-3 hover:bg-slate-50 rounded-xl transition-colors group cursor-default"
+                              >
+                                <div className="shrink-0 mt-1">
+                                  <div
+                                    className={`w-2 h-2 rounded-full ${activity.iconBg} shadow-[0_0_8px]`}
+                                    style={{
+                                      boxShadow: `0 0 8px ${activity.iconBg.replace("bg-", "rgba(").replace("-500", ", 0.5)")}`,
+                                    }}
+                                  ></div>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[13px] font-medium text-dark-slate leading-tight mb-1">
+                                    {activity.title}
                                   </p>
-                                  <span className="text-[10px] font-medium text-cool-gray/50 whitespace-nowrap">
-                                    {activity.time}
-                                  </span>
+                                  <div className="flex items-center justify-between gap-2">
+                                    <p className="text-[11px] text-cool-gray truncate">
+                                      {activity.description}
+                                    </p>
+                                    <span className="text-[10px] font-medium text-cool-gray/50 whitespace-nowrap">
+                                      {activity.time}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
 
-                    <Link
-                      href="/admin/activity"
-                      onClick={() => setNotificationsOpen(false)}
-                      className="p-3 text-center border-t border-slate-100 text-xs font-bold text-royal-blue hover:text-cyan-600 transition-colors bg-slate-50/30"
-                    >
-                      ดูกิจกรรมทั้งหมด
-                    </Link>
-                  </div>
-                )}
-              </div>
+                      <Link
+                        href="/admin/activity"
+                        onClick={() => setNotificationsOpen(false)}
+                        className="p-3 text-center border-t border-slate-100 text-xs font-bold text-royal-blue hover:text-cyan-600 transition-colors bg-slate-50/30"
+                      >
+                        ดูกิจกรรมทั้งหมด
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Profile Dropdown */}
               <div className="relative">

@@ -4,6 +4,7 @@ import { getCurrentAdmin } from "@/lib/actions/admin-auth";
 import { getActiveElections, getAllElections } from "@/lib/actions/elections";
 import { getStudentStats } from "@/lib/actions/students";
 import { getTotalVotes } from "@/lib/actions/votes";
+import { ACCESS_LEVELS } from "@/lib/admin-types";
 import { ActivityDisplayItem } from "@/lib/db";
 import Link from "next/link";
 
@@ -404,17 +405,20 @@ export default async function AdminDashboard() {
             <div className="p-6 grow overflow-y-auto max-h-[400px] no-scrollbar">
               <ActivityTimeline activities={recentActivities} />
             </div>
-            <div className="p-4 border-t border-slate-100/50 text-center">
-              <Link
-                href="/admin/activity"
-                className="text-sm font-semibold text-royal-blue hover:text-cyan-600 transition-colors flex items-center gap-1 justify-center"
-              >
-                ดูกิจกรรมทั้งหมด
-                <span className="material-symbols-outlined text-sm">
-                  chevron_right
-                </span>
-              </Link>
-            </div>
+            {adminData?.admin &&
+              adminData.admin.access_level <= ACCESS_LEVELS.SYSTEM_ADMIN && (
+                <div className="p-4 border-t border-slate-100/50 text-center">
+                  <Link
+                    href="/admin/activity"
+                    className="text-sm font-semibold text-royal-blue hover:text-cyan-600 transition-colors flex items-center gap-1 justify-center"
+                  >
+                    ดูกิจกรรมทั้งหมด
+                    <span className="material-symbols-outlined text-sm">
+                      chevron_right
+                    </span>
+                  </Link>
+                </div>
+              )}
           </div>
         </div>
       </div>
