@@ -1,17 +1,20 @@
 "use client";
 
-import { useTransition, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { StudentRow } from "@/lib/db";
-import { StudentStats } from "@/lib/actions/students";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import {
-  createStudent,
   approveVotingRight,
-  revokeVotingRight,
   bulkApproveVotingRights,
   bulkRevokeVotingRights,
+  createStudent,
+  deleteStudent,
   importStudents,
+  revokeVotingRight,
+  StudentStats,
 } from "@/lib/actions/students";
+import { ACCESS_LEVELS } from "@/lib/admin-types";
+import { StudentRow } from "@/lib/db";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, useTransition } from "react";
 import { useRequireAdmin } from "../AdminLayoutClient";
 
 // ============================================
@@ -64,9 +67,10 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
   const [formData, setFormData] = useState({
     id: "",
     no: "",
+    prefix: "เด็กชาย",
     name: "",
     surname: "",
-    classroom: "3/1",
+    classroom: "",
     nationalId: "",
   });
   const [error, setError] = useState("");
@@ -80,9 +84,20 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
       !formData.id ||
       !formData.name ||
       !formData.surname ||
+      !formData.classroom ||
       !formData.nationalId
     ) {
       setError("กรุณากรอกข้อมูลให้ครบถ้วน");
+      return;
+    }
+
+    if (!/^\d{4}$/.test(formData.id)) {
+      setError("รหัสนักเรียนต้องเป็นตัวเลข 4 หลักเท่านั้น");
+      return;
+    }
+
+    if (!/^\d+\/\d+$/.test(formData.classroom)) {
+      setError("ห้องเรียนต้องอยู่ในรูปแบบ ตัวเลข/ตัวเลข (เช่น 3/1)");
       return;
     }
 
@@ -95,6 +110,7 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
       const result = await createStudent({
         id: formData.id,
         nationalId: formData.nationalId,
+        prefix: formData.prefix,
         name: formData.name,
         surname: formData.surname,
         studentNo: parseInt(formData.no) || undefined,
@@ -105,9 +121,10 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
         setFormData({
           id: "",
           no: "",
+          prefix: "เด็กชาย",
           name: "",
           surname: "",
-          classroom: "3/1",
+          classroom: "",
           nationalId: "",
         });
         onClose();
@@ -149,11 +166,13 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
               </label>
               <input
                 type="text"
+                maxLength={4}
                 value={formData.id}
-                onChange={(e) =>
-                  setFormData({ ...formData, id: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "");
+                  setFormData({ ...formData, id: value });
+                }}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono"
                 placeholder="เช่น 6367"
               />
             </div>
@@ -163,14 +182,37 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
               </label>
               <input
                 type="number"
+                min="1"
                 value={formData.no}
-                onChange={(e) =>
-                  setFormData({ ...formData, no: e.target.value })
-                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === "" || parseInt(value) >= 1) {
+                    setFormData({ ...formData, no: value });
+                  }
+                }}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 placeholder="เช่น 1"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              คำนำหน้า <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={formData.prefix}
+              onChange={(e) =>
+                setFormData({ ...formData, prefix: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            >
+              <option value="เด็กชาย">เด็กชาย</option>
+              <option value="เด็กหญิง">เด็กหญิง</option>
+              <option value="นาย">นาย</option>
+              <option value="นางสาว">นางสาว</option>
+              <option value="นาง">นาง</option>
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -206,19 +248,17 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              ห้อง
+              ห้อง <span className="text-red-500">*</span>
             </label>
-            <select
+            <input
+              type="text"
               value={formData.classroom}
               onChange={(e) =>
                 setFormData({ ...formData, classroom: e.target.value })
               }
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            >
-              <option value="3/1">ม.3/1</option>
-              <option value="3/2">ม.3/2</option>
-              <option value="3/3">ม.3/3</option>
-            </select>
+              placeholder="เช่น 3/1 หรือ 6/2"
+            />
           </div>
 
           <div>
@@ -601,7 +641,7 @@ function StudentDetailModal({ student, onClose }: StudentDetailModalProps) {
                     day: "numeric",
                     hour: "2-digit",
                     minute: "2-digit",
-                  }
+                  },
                 )}
                 {student.voting_approved_by &&
                   ` โดย ${student.voting_approved_by}`}
@@ -689,6 +729,10 @@ export default function StudentsClient({
   const [filterStatus, setFilterStatus] = useState<
     "all" | "approved" | "pending"
   >("all");
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    isOpen: boolean;
+    student: StudentWithHistory | null;
+  }>({ isOpen: false, student: null });
 
   // Filtered students
   const filteredStudents = useMemo(() => {
@@ -743,7 +787,7 @@ export default function StudentsClient({
     startTransition(async () => {
       await bulkApproveVotingRights(
         filterClassroom,
-        admin.displayName || admin.username
+        admin.displayName || admin.username,
       );
       router.refresh();
     });
@@ -756,6 +800,21 @@ export default function StudentsClient({
       router.refresh();
     });
   };
+
+  const handleDeleteStudent = () => {
+    const studentToDelete = deleteConfirmModal.student;
+    if (!studentToDelete) return;
+    startTransition(async () => {
+      await deleteStudent(studentToDelete.id);
+      setDeleteConfirmModal({ isOpen: false, student: null });
+      router.refresh();
+    });
+  };
+
+  // Check if current admin can delete students (only levels 0 and 1)
+  const canDeleteStudents =
+    admin.accessLevel === ACCESS_LEVELS.ROOT ||
+    admin.accessLevel === ACCESS_LEVELS.SYSTEM_ADMIN;
 
   return (
     <div className="space-y-6">
@@ -1006,6 +1065,20 @@ export default function StudentsClient({
                       >
                         ดูประวัติ
                       </button>
+                      {canDeleteStudents && (
+                        <button
+                          onClick={() =>
+                            setDeleteConfirmModal({ isOpen: true, student })
+                          }
+                          disabled={isPending}
+                          className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          title="ลบนักเรียน"
+                        >
+                          <span className="material-symbols-outlined text-lg">
+                            delete
+                          </span>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -1038,6 +1111,21 @@ export default function StudentsClient({
       <StudentDetailModal
         student={selectedStudent}
         onClose={() => setSelectedStudent(null)}
+      />
+
+      <ConfirmModal
+        isOpen={deleteConfirmModal.isOpen}
+        onClose={() => setDeleteConfirmModal({ isOpen: false, student: null })}
+        onConfirm={handleDeleteStudent}
+        title="ยืนยันการลบนักเรียน"
+        message={
+          deleteConfirmModal.student
+            ? `คุณต้องการลบนักเรียน ${deleteConfirmModal.student.name} ${deleteConfirmModal.student.surname} (รหัส: ${deleteConfirmModal.student.id}) ออกจากระบบหรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้`
+            : ""
+        }
+        confirmText="ลบนักเรียน"
+        cancelText="ยกเลิก"
+        variant="danger"
       />
     </div>
   );
