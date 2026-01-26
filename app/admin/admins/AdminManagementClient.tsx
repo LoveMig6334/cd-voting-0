@@ -63,6 +63,24 @@ export function AdminManagementClient({
 
   const creatableLevels = getCreatableAccessLevels(currentAccessLevel);
 
+  const generatePassword = () => {
+    const length = 16;
+    const charset =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_+={}[]|;:"<>,./?';
+    let retVal = "";
+    for (let i = 0, n = charset.length; i < length; ++i) {
+      retVal += charset.charAt(Math.floor(Math.random() * n));
+    }
+    return retVal;
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setMessage({ type: "success", text: "คัดลอกรหัสผ่านแล้ว" });
+    // Clear success message after 2 seconds
+    setTimeout(() => setMessage(null), 2000);
+  };
+
   const resetForm = () => {
     setFormData({
       username: "",
@@ -434,15 +452,41 @@ export function AdminManagementClient({
                 <label className="block text-sm font-medium text-dark-slate mb-1">
                   รหัสผ่าน
                 </label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="อย่างน้อย 6 ตัวอักษร"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                    className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary font-mono text-sm"
+                    placeholder="อย่างน้อย 6 ตัวอักษร"
+                  />
+                  <button
+                    onClick={() => {
+                      const pass = generatePassword();
+                      setFormData({ ...formData, password: pass });
+                    }}
+                    className="px-3 py-2 bg-slate-100 text-dark-slate rounded-xl hover:bg-slate-200 transition-colors"
+                    title="สุ่มรหัสผ่าน"
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-xl">
+                      autorenew
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => copyToClipboard(formData.password)}
+                    disabled={!formData.password}
+                    className="px-3 py-2 bg-slate-100 text-dark-slate rounded-xl hover:bg-slate-200 transition-colors disabled:opacity-50"
+                    title="คัดลอก"
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-xl">
+                      content_copy
+                    </span>
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-dark-slate mb-1">
@@ -523,6 +567,7 @@ export function AdminManagementClient({
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-dark-slate mb-1">
                   ระดับสิทธิ์
@@ -535,7 +580,11 @@ export function AdminManagementClient({
                       accessLevel: Number(e.target.value) as AccessLevel,
                     })
                   }
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={
+                    selectedAdmin.id === currentAdminId &&
+                    currentAccessLevel === ACCESS_LEVELS.ROOT
+                  }
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:bg-slate-100"
                 >
                   {[
                     ACCESS_LEVELS.ROOT,
@@ -548,6 +597,15 @@ export function AdminManagementClient({
                     </option>
                   ))}
                 </select>
+                {selectedAdmin.id === currentAdminId &&
+                  currentAccessLevel === ACCESS_LEVELS.ROOT && (
+                    <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">
+                        lock
+                      </span>
+                      ไม่สามารถลดระดับสิทธิ์ตัวเองได้
+                    </p>
+                  )}
               </div>
             </div>
             <div className="flex gap-3 mt-6">
@@ -632,13 +690,36 @@ export function AdminManagementClient({
                 <label className="block text-sm font-medium text-dark-slate mb-1">
                   รหัสผ่านใหม่
                 </label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="อย่างน้อย 6 ตัวอักษร"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary font-mono text-sm"
+                    placeholder="อย่างน้อย 6 ตัวอักษร"
+                  />
+                  <button
+                    onClick={() => setNewPassword(generatePassword())}
+                    className="px-3 py-2 bg-slate-100 text-dark-slate rounded-xl hover:bg-slate-200 transition-colors"
+                    title="สุ่มรหัสผ่าน"
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-xl">
+                      autorenew
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => copyToClipboard(newPassword)}
+                    disabled={!newPassword}
+                    className="px-3 py-2 bg-slate-100 text-dark-slate rounded-xl hover:bg-slate-200 transition-colors disabled:opacity-50"
+                    title="คัดลอก"
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-xl">
+                      content_copy
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
             <div className="flex gap-3 mt-6">
