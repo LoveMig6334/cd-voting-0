@@ -2345,7 +2345,7 @@ cd-voting-0/
 │   └── student-data.ts                 # Mock Data Utils (Development)
 │
 ├── hooks/                              # Custom React Hooks
-│   └── useAuth.ts                      # Authentication Hook (localStorage-based)
+│   └── useDashboardData.ts             # Dashboard Data Hook
 │
 ├── types.ts                            # Global TypeScript Types
 │
@@ -2398,7 +2398,7 @@ cd-voting-0/
 | File                      | Description                                      |
 | ------------------------- | ------------------------------------------------ |
 | `lib/ocr/pipeline.ts`     | OCR Image Processing Pipeline (Prototype)        |
-| `hooks/useAuth.ts`        | Authentication Hook (localStorage-based)         |
+| `hooks/useDashboardData.ts` | Dashboard Data Hook                            |
 | `types.ts`                | Global TypeScript Interfaces                     |
 
 ### Configuration
@@ -2492,7 +2492,7 @@ cd-voting-0/
 - [~] **Migrate from localStorage to MySQL** - POC completed, need to integrate into main app
   - [x] POC implementation (app/poc/)
   - [x] Server Actions tested
-  - [ ] Replace useAuth hook with session-based auth
+  - [x] Replace useAuth hook with session-based auth
   - [ ] Migrate all pages to use Server Actions
   - [ ] Remove localStorage dependencies
 
@@ -2512,8 +2512,8 @@ cd-voting-0/
 #### Backend Integration
 
 - [ ] **Replace localStorage with MySQL** (High Priority)
-  - [ ] Create `lib/db.ts` (copy from app/poc/lib/db.ts)
-  - [ ] Migrate `hooks/useAuth.ts` to use sessions
+  - [x] Create `lib/db.ts` (copy from app/poc/lib/db.ts)
+  - [x] Migrate `hooks/useAuth.ts` to session-based auth (`lib/actions/auth.ts`)
   - [ ] Update all pages to use Server Actions
   - [ ] Remove mock data dependencies
 

@@ -31,14 +31,15 @@ This file provides context and instructions for AI agents (Gemini) working on th
 
 ### Key Logic Flows
 
-#### Authentication (Mock)
+#### Authentication (Session-based)
 
-- **Implementation:** `hooks/useAuth.ts`
-- **Mechanism:** Uses `localStorage` to simulate session management.
+- **Implementation:** `lib/actions/auth.ts` (Student), `lib/actions/admin-auth.ts` (Admin)
+- **Mechanism:** Server-side sessions stored in MySQL with httpOnly cookies (`session_id`, `admin_session_id`).
 - **Credentials:**
-  - Admin: `admin` / `admin123`
-  - Student: Authenticated by matching Student ID and National ID against `public/data.json`.
+  - Admin: Stored in MySQL `admins` table with bcryptjs password hashing.
+  - Student: Authenticated by matching Student ID and National ID against MySQL `students` table.
   - Auto-fill: Entering 4-digit Student ID and 13-digit National ID automatically retrieves and fills student name/surname.
+- **Route Protection:** Server Components check `getCurrentSession()` / `getCurrentAdmin()` in layout files.
 
 #### OCR Laboratory (`lib/ocr` & `app/debug`)
 
@@ -81,8 +82,12 @@ This file provides context and instructions for AI agents (Gemini) working on th
 
 ## 4. Pending Tasks (Context)
 
-The project is currently a "Client-side Mock". Future work involves:
+The project has **partially migrated** from client-side mock to MySQL. Completed:
+- Session-based auth with MySQL (Student + Admin)
+- Server Actions for auth, students, and votes
+- Role-based access control (4 levels)
 
-- Implementing a real Backend API (Node.js/Python).
-- Database integration (Firebase/PostgreSQL).
-- Replacing mock auth with secure session/JWT handling.
+Remaining work:
+- Migrate remaining localStorage stores (elections, activity log, public display) to MySQL + Server Actions
+- Remove legacy localStorage dependencies
+- Production deployment configuration

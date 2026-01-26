@@ -30,7 +30,7 @@ Migrate ระบบ CD Voting จาก **localStorage-based mock** ไปใ�
 | `lib/student-store.ts`  | ใช้ `query()` จาก `app/poc/lib/db.ts` | 🔴 High  |
 | `lib/election-store.ts` | ใช้ `query()` + `execute()`           | 🔴 High  |
 | `lib/vote-store.ts`     | ใช้ `transaction()`                   | 🔴 High  |
-| `hooks/useAuth.ts`      | ใช้ Session-based auth จาก POC        | 🔴 High  |
+| ~~`hooks/useAuth.ts`~~  | ✅ แทนที่ด้วย `lib/actions/auth.ts` แล้ว | ✅ Done  |
 
 ### 2. Pages ที่ต้องแก้ไข
 

@@ -33,15 +33,15 @@ npm run lint     # Run ESLint
 ### Key Directories
 
 - `components/` - Reusable UI components (BottomNav, AdminNavbar, ElectionCard)
-- `hooks/` - Custom React hooks (useAuth for localStorage-based auth)
+- `hooks/` - Custom React hooks (useDashboardData)
 - `lib/` - Utilities (student-data.ts for mock data fetching)
 - `types.ts` - TypeScript interfaces for Candidate, Election, VoteRecord, Student, OCRResponse
 
 ### Data Flow
 
-- Authentication: `useAuth` hook stores user in localStorage (`currentUser` key)
-- Mock admin credentials: `admin`/`admin123`
-- Student data: Mock database in `public/data.json` (Thai language content)
+- Authentication: Session-based auth via Server Actions (`lib/actions/auth.ts`, `lib/actions/admin-auth.ts`) with MySQL-backed sessions and httpOnly cookies
+- Admin credentials: Stored in MySQL `admins` table with bcryptjs password hashing
+- Student data: MySQL `students` table (some legacy mock data still in `public/data.json`)
 
 ## Code Conventions
 
@@ -92,7 +92,9 @@ See [`docs/practices/ANIMATION_AND_MODAL_BEST_PRACTICES.md`](docs/practices/ANIM
 
 ## Current State
 
-- All data is mock/client-side (no backend API implemented)
+- **Auth:** Fully migrated to MySQL session-based auth (Server Actions + httpOnly cookies)
+- **Data:** Partially migrated — auth, students, votes use MySQL; elections, activity log, public display still use localStorage stores
+- **Legacy:** `public/data.json` and localStorage stores (`lib/*-store.ts`) remain for unmigrated features
 - Tesseract.js is integrated into debug laboratory pages (`app/debug/`)
 - TanStack Table used for Admin results and student management
 - README.md contains extensive Thai documentation with API design specs and TODO list
