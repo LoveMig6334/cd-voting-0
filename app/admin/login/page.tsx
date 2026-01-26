@@ -10,6 +10,7 @@ export default function AdminLoginPage() {
   const [isPending, startTransition] = useTransition();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,7 +135,7 @@ export default function AdminLoginPage() {
               </div>
               <div className="relative group">
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => {
@@ -142,13 +143,22 @@ export default function AdminLoginPage() {
                     if (error) setError(null);
                   }}
                   placeholder="••••••••"
-                  className="w-full h-14 pl-12 pr-4 bg-white/50 border border-white/60 rounded-2xl outline-none focus:ring-2 focus:ring-royal-blue/20 focus:border-royal-blue/50 focus:bg-white/70 transition-all text-dark-slate placeholder:text-cool-gray backdrop-blur-sm"
+                  className="w-full h-14 pl-12 pr-12 bg-white/50 border border-white/60 rounded-2xl outline-none focus:ring-2 focus:ring-royal-blue/20 focus:border-royal-blue/50 focus:bg-white/70 transition-all text-dark-slate placeholder:text-cool-gray backdrop-blur-sm"
                 />
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-cool-gray group-focus-within:text-royal-blue transition-colors">
                   <span className="material-symbols-outlined text-xl">
                     lock
                   </span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-cool-gray hover:text-royal-blue transition-colors focus:outline-none"
+                >
+                  <span className="material-symbols-outlined text-xl">
+                    {showPassword ? "visibility_off" : "visibility"}
+                  </span>
+                </button>
               </div>
             </div>
 
