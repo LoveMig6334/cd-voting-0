@@ -56,8 +56,39 @@ npm run lint     # Run ESLint
 Custom CSS in `globals.css` includes:
 
 - Glassmorphism utilities with backdrop blur
-- Custom animations: scan, fadeIn, slideUp, float, pulse-glow, neon-pulse
+- Custom animations: scan, fadeIn, slideUp, float, pulse-glow, neon-pulse, modalBackdrop, modalContent
 - Color palette: primary (#137fec), royal-blue (#1a56db), vivid-yellow (#fbbf24)
+
+### Animation Guidelines (Tailwind CSS v4)
+
+**IMPORTANT:** Always use Tailwind utility classes for animations, NOT inline styles.
+
+**Correct:**
+
+```tsx
+<div className="animate-modal-backdrop">
+```
+
+**Wrong:**
+
+```tsx
+<div style={{ animation: "modalBackdrop 0.3s ease-out" }}>
+```
+
+**Best Practices:**
+
+- Animate only `opacity` and `transform` (GPU-accelerated)
+- Avoid animating `backdrop-filter`, `filter`, `width`, `height`, or layout properties
+- Keep durations between 0.2s - 0.4s for optimal UX
+- Define animations in `@theme` block in `globals.css`
+
+**Modal Components:**
+
+- Always handle scrollbar jump by calculating `window.innerWidth - document.documentElement.clientWidth`
+- Add padding-right to body equal to scrollbar width when modal opens
+- Reset styles on cleanup
+
+See [`docs/practices/ANIMATION_AND_MODAL_BEST_PRACTICES.md`](docs/practices/ANIMATION_AND_MODAL_BEST_PRACTICES.md) for complete guide.
 
 ## Current State
 
