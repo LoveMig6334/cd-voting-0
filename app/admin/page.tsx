@@ -4,9 +4,11 @@ import { getCurrentAdmin } from "@/lib/actions/admin-auth";
 import { getActiveElections, getAllElections } from "@/lib/actions/elections";
 import { getStudentStats } from "@/lib/actions/students";
 import { getTotalVotes } from "@/lib/actions/votes";
-import { ACCESS_LEVELS } from "@/lib/admin-types";
+import { ACCESS_LEVELS, AccessLevel } from "@/lib/admin-types";
 import { ActivityDisplayItem } from "@/lib/db";
+import { canAccessPage, getDefaultPage } from "@/lib/permissions";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 // Stats Card Component
 interface StatsCardProps {
@@ -165,20 +167,29 @@ function formatThaiDate(date: Date | string): string {
 }
 
 export default async function AdminDashboard() {
-  // Fetch data from MySQL
-  const [
-    adminData,
-    studentStats,
-    allElections,
-    activeElectionsList,
-    recentActivities,
-  ] = await Promise.all([
-    getCurrentAdmin(),
-    getStudentStats(),
-    getAllElections(),
-    getActiveElections(),
-    getRecentActivitiesForDisplay(5),
-  ]);
+  // 1. Check Admin Session & Permissions First
+  const adminData = await getCurrentAdmin();
+
+  if (!adminData) {
+    redirect("/admin/login");
+  }
+
+  // Check if admin has access to dashboard
+  if (
+    !canAccessPage("dashboard", adminData.admin.access_level as AccessLevel)
+  ) {
+    // Redirect to their default page (e.g., Teacher -> Students, Observer -> Results)
+    redirect(getDefaultPage(adminData.admin.access_level as AccessLevel));
+  }
+
+  // 2. Fetch Dashboard Data (Only if allowed)
+  const [studentStats, allElections, activeElectionsList, recentActivities] =
+    await Promise.all([
+      getStudentStats(),
+      getAllElections(),
+      getActiveElections(),
+      getRecentActivitiesForDisplay(5),
+    ]);
 
   const adminName =
     adminData?.admin.display_name || adminData?.admin.username || "ผู้ดูแลระบบ";
