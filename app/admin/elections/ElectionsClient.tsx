@@ -9,6 +9,7 @@ import { ElectionRow } from "@/lib/db";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { ConfirmModal } from "@/components/ConfirmModal";
 
 // ============================================
 // Types
@@ -89,6 +90,16 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
   >("all");
   const [showModal, setShowModal] = useState(false);
 
+  // Confirm modals state
+  const [toggleConfirm, setToggleConfirm] = useState<{
+    election: ElectionWithCandidates & { status: ElectionStatus };
+    isOpening: boolean;
+  } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+
   // Form state
   const [formData, setFormData] = useState({
     title: "",
@@ -162,47 +173,50 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
     election: ElectionWithCandidates & { status: ElectionStatus },
   ) => {
     const isOpening = election.status !== "OPEN";
-    const action = isOpening ? "เปิด" : "ปิด";
-
-    if (
-      confirm(
-        `คุณต้องการ${action}การเลือกตั้ง "${election.title}" ทันทีหรือไม่?\n\nการดำเนินการนี้จะปรับเปลี่ยนเวลาเริ่มต้น/สิ้นสุดของการเลือกตั้งโดยอัตโนมัติ`,
-      )
-    ) {
-      startTransition(async () => {
-        const now = new Date();
-        const updates: { startDate?: string; endDate?: string } = {};
-
-        if (isOpening) {
-          // Opening: Set start date to now
-          updates.startDate = now.toISOString();
-
-          // Ensure end date is in the future
-          const currentEnd = new Date(election.end_date);
-          if (currentEnd <= now) {
-            // Default to 24 hours from now if end date is passed
-            const tomorrow = new Date(now);
-            tomorrow.setHours(tomorrow.getHours() + 24);
-            updates.endDate = tomorrow.toISOString();
-          }
-        } else {
-          // Closing: Set end date to now
-          updates.endDate = now.toISOString();
-        }
-
-        await updateElection(election.id, updates);
-        router.refresh();
-      });
-    }
+    setToggleConfirm({ election, isOpening });
   };
 
-  const handleDeleteElection = (id: number) => {
-    if (confirm("คุณต้องการลบการเลือกตั้งนี้หรือไม่?")) {
-      startTransition(async () => {
-        await deleteElection(id);
-        router.refresh();
-      });
-    }
+  const confirmToggleStatus = () => {
+    if (!toggleConfirm) return;
+
+    const { election, isOpening } = toggleConfirm;
+
+    startTransition(async () => {
+      const now = new Date();
+      const updates: { startDate?: string; endDate?: string } = {};
+
+      if (isOpening) {
+        // Opening: Set start date to now
+        updates.startDate = now.toISOString();
+
+        // Ensure end date is in the future
+        const currentEnd = new Date(election.end_date);
+        if (currentEnd <= now) {
+          // Default to 24 hours from now if end date is passed
+          const tomorrow = new Date(now);
+          tomorrow.setHours(tomorrow.getHours() + 24);
+          updates.endDate = tomorrow.toISOString();
+        }
+      } else {
+        // Closing: Set end date to now
+        updates.endDate = now.toISOString();
+      }
+
+      await updateElection(election.id, updates);
+      router.refresh();
+    });
+  };
+
+  const handleDeleteElection = (id: number, title: string) => {
+    setDeleteConfirm({ id, title });
+  };
+
+  const confirmDeleteElection = () => {
+    if (!deleteConfirm) return;
+    startTransition(async () => {
+      await deleteElection(deleteConfirm.id);
+      router.refresh();
+    });
   };
 
   return (
@@ -361,7 +375,7 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
                         </span>
                       </button>
                       <button
-                        onClick={() => handleDeleteElection(election.id)}
+                        onClick={() => handleDeleteElection(election.id, election.title)}
                         disabled={isPending}
                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                         title="ลบ"
@@ -530,6 +544,30 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
           </div>
         </div>
       )}
+
+      {/* Toggle Status Confirmation */}
+      <ConfirmModal
+        isOpen={!!toggleConfirm}
+        onClose={() => setToggleConfirm(null)}
+        onConfirm={confirmToggleStatus}
+        title={`ยืนยันการ${toggleConfirm?.isOpening ? "เปิด" : "ปิด"}การเลือกตั้ง`}
+        message={`คุณแน่ใจหรือไม่ที่จะ${toggleConfirm?.isOpening ? "เปิด" : "ปิด"}การเลือกตั้ง "${toggleConfirm?.election.title}" ทันที?\n\nการดำเนินการนี้จะปรับเปลี่ยนเวลาเริ่มต้น/สิ้นสุดของการเลือกตั้งโดยอัตโนมัติ`}
+        confirmText={toggleConfirm?.isOpening ? "เปิดเลย" : "ปิดเลย"}
+        cancelText="ยกเลิก"
+        variant={toggleConfirm?.isOpening ? "success" : "default"}
+      />
+
+      {/* Delete Election Confirmation */}
+      <ConfirmModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDeleteElection}
+        title="ยืนยันการลบการเลือกตั้ง"
+        message={`คุณแน่ใจหรือไม่ที่จะลบการเลือกตั้ง "${deleteConfirm?.title}"? การดำเนินการนี้จะลบผู้สมัคร คะแนนโหวต และข้อมูลทั้งหมดที่เกี่ยวข้อง และไม่สามารถย้อนกลับได้`}
+        confirmText="ลบ"
+        cancelText="ยกเลิก"
+        variant="danger"
+      />
     </div>
   );
 }

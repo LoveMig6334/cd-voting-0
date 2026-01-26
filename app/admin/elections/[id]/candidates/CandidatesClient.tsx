@@ -12,6 +12,7 @@ import { CandidateRow, ElectionRow, PositionRow } from "@/lib/db";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { ConfirmModal } from "@/components/ConfirmModal";
 
 // ============================================
 // Types
@@ -583,7 +584,7 @@ function PositionCard({
   onToggle: () => void;
   onAddCandidate: () => void;
   onEditCandidate: (candidate: CandidateRow) => void;
-  onDeleteCandidate: (candidateId: number) => void;
+  onDeleteCandidate: (candidateId: number, candidateName: string) => void;
 }) {
   return (
     <div
@@ -688,7 +689,7 @@ function PositionCard({
                       </span>
                     </button>
                     <button
-                      onClick={() => onDeleteCandidate(candidate.id)}
+                      onClick={() => onDeleteCandidate(candidate.id, candidate.name)}
                       disabled={isLocked || isPending}
                       title={
                         isLocked
@@ -755,6 +756,10 @@ export default function CandidatesClient({ election }: CandidatesClientProps) {
   const [editingCandidate, setEditingCandidate] = useState<CandidateRow | null>(
     null,
   );
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    candidateId: number;
+    candidateName: string;
+  } | null>(null);
 
   // Check if election is locked (open or closed status)
   const status = calculateStatus(
@@ -801,13 +806,16 @@ export default function CandidatesClient({ election }: CandidatesClientProps) {
     });
   };
 
-  const handleDeleteCandidate = (candidateId: number) => {
-    if (confirm("ต้องการลบผู้สมัครนี้หรือไม่?")) {
-      startTransition(async () => {
-        await deleteCandidate(election.id, candidateId);
-        router.refresh();
-      });
-    }
+  const handleDeleteCandidate = (candidateId: number, candidateName: string) => {
+    setDeleteConfirm({ candidateId, candidateName });
+  };
+
+  const confirmDeleteCandidate = () => {
+    if (!deleteConfirm) return;
+    startTransition(async () => {
+      await deleteCandidate(election.id, deleteConfirm.candidateId);
+      router.refresh();
+    });
   };
 
   const handleTogglePosition = (positionId: string) => {
@@ -1031,6 +1039,18 @@ export default function CandidatesClient({ election }: CandidatesClientProps) {
           isPending={isPending}
         />
       )}
+
+      {/* Delete Candidate Confirmation */}
+      <ConfirmModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDeleteCandidate}
+        title="ยืนยันการลบผู้สมัคร"
+        message={`คุณแน่ใจหรือไม่ที่จะลบผู้สมัคร "${deleteConfirm?.candidateName}"? การดำเนินการนี้ไม่สามารถย้อนกลับได้`}
+        confirmText="ลบ"
+        cancelText="ยกเลิก"
+        variant="danger"
+      />
     </div>
   );
 }
