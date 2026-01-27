@@ -98,3 +98,76 @@ See [`docs/practices/ANIMATION_AND_MODAL_BEST_PRACTICES.md`](docs/practices/ANIM
 - Tesseract.js is integrated into debug laboratory pages (`app/debug/`)
 - TanStack Table used for Admin results and student management
 - README.md contains extensive Thai documentation with API design specs and TODO list
+
+## Common Mistakes to Avoid
+
+### 1. React Components Inside Render
+
+**Wrong:** Defining components inside another component's body
+
+```tsx
+function ParentComponent() {
+  const ChildComponent = ({ label }: { label: string }) => (
+    <button>{label}</button>
+  );
+  return <ChildComponent label="Click" />;
+}
+```
+
+**Correct:** Define components outside or use useMemo/useCallback
+
+```tsx
+function ChildComponent({ label }: { label: string }) {
+  return <button>{label}</button>;
+}
+
+function ParentComponent() {
+  return <ChildComponent label="Click" />;
+}
+```
+
+> ESLint error: `react-hooks/static-components` - "Cannot create components during render"
+
+### 2. Function Signature Mismatch
+
+Always check existing function signatures before calling. Common mistakes:
+
+- `getVoterTurnout(electionId)` → actually requires `getVoterTurnout(electionId, totalEligible)`
+- `getPositionResults(electionId, positionId)` → actually requires `getPositionResults(electionId, positionId, positionTitle)`
+
+**Tip:** Use `view_code_item` or hover in IDE to check function parameters before calling.
+
+### 3. Mock Session Data Structure
+
+When mocking `getCurrentSession()` in tests, use the correct `SessionData` interface:
+
+**Wrong:**
+
+```ts
+mockedGetCurrentSession.mockResolvedValue({
+  studentId: "1234",
+  name: "Test", // ❌ 'name' does not exist in SessionData
+  classRoom: "3/1", // ❌ 'classRoom' does not exist in SessionData
+});
+```
+
+**Correct:**
+
+```ts
+mockedGetCurrentSession.mockResolvedValue({
+  studentId: "1234",
+  student: {
+    id: "1234",
+    name: "Test",
+    class_room: "3/1",
+    // ... other StudentRow fields
+  } as StudentRow,
+});
+```
+
+### 4. Tailwind CSS v4 Gradient Syntax
+
+**Wrong:** `bg-gradient-to-br`
+**Correct:** `bg-linear-to-br`
+
+Tailwind CSS v4 uses `bg-linear-*` instead of `bg-gradient-*`.
