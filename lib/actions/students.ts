@@ -2,6 +2,11 @@
 
 import { execute, query, StudentRow } from "@/lib/db";
 import { canManageStudents } from "@/lib/permissions";
+import {
+  isValidStudentId,
+  isValidNationalId,
+  sanitizeInput,
+} from "@/lib/validation";
 import { revalidatePath } from "next/cache";
 import { logAdminAction } from "./activities";
 import { getCurrentAdmin } from "./admin-auth";
@@ -124,6 +129,25 @@ export async function createStudent(
     const adminSession = await getCurrentAdmin();
     if (!adminSession || !canManageStudents(adminSession.admin.access_level)) {
       return { success: false, error: "ไม่มีสิทธิ์ดำเนินการนี้" };
+    }
+
+    // Sanitize inputs
+    data.id = sanitizeInput(data.id);
+    data.nationalId = sanitizeInput(data.nationalId);
+    data.name = sanitizeInput(data.name);
+    data.surname = sanitizeInput(data.surname);
+    if (data.prefix) data.prefix = sanitizeInput(data.prefix);
+    if (data.classRoom) data.classRoom = sanitizeInput(data.classRoom);
+
+    // Validate ID formats
+    if (!isValidStudentId(data.id)) {
+      return { success: false, error: "รหัสนักเรียนต้องเป็นตัวเลข 4 หลัก" };
+    }
+    if (!isValidNationalId(data.nationalId)) {
+      return {
+        success: false,
+        error: "เลขประจำตัวประชาชนต้องเป็นตัวเลข 13 หลัก",
+      };
     }
 
     // Check for duplicate ID
@@ -445,6 +469,14 @@ export async function importStudents(
   }
 
   for (const student of students) {
+    // Sanitize all text fields
+    student.id = sanitizeInput(student.id ?? "");
+    student.nationalId = sanitizeInput(student.nationalId ?? "");
+    student.name = sanitizeInput(student.name ?? "");
+    student.surname = sanitizeInput(student.surname ?? "");
+    if (student.prefix) student.prefix = sanitizeInput(student.prefix);
+    if (student.classRoom) student.classRoom = sanitizeInput(student.classRoom);
+
     // Validate required fields
     if (
       !student.id ||
@@ -455,6 +487,22 @@ export async function importStudents(
     ) {
       result.errors.push(
         `ข้อมูลไม่ครบถ้วนสำหรับ ID: ${student.id || "unknown"}`,
+      );
+      result.skipped++;
+      continue;
+    }
+
+    // Validate ID formats
+    if (!isValidStudentId(student.id)) {
+      result.errors.push(
+        `รหัสนักเรียนไม่ถูกต้อง (ต้องเป็นตัวเลข 4 หลัก): ${student.id}`,
+      );
+      result.skipped++;
+      continue;
+    }
+    if (!isValidNationalId(student.nationalId)) {
+      result.errors.push(
+        `เลขประจำตัวประชาชนไม่ถูกต้อง (ต้องเป็นตัวเลข 13 หลัก): ID ${student.id}`,
       );
       result.skipped++;
       continue;

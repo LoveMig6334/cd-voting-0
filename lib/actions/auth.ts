@@ -2,6 +2,11 @@
 
 import { cookies } from "next/headers";
 import { query, execute, SessionRow, StudentRow } from "@/lib/db";
+import {
+  isValidStudentId,
+  isValidNationalId,
+  sanitizeInput,
+} from "@/lib/validation";
 
 // ==========================================
 // Types
@@ -34,19 +39,34 @@ export interface SessionData {
  * Validates student ID + national ID against database
  */
 export async function loginAction(formData: FormData): Promise<LoginResult> {
-  const studentId = formData.get("studentId") as string;
-  const nationalId = formData.get("nationalId") as string;
+  const rawStudentId = formData.get("studentId") as string;
+  const rawNationalId = formData.get("nationalId") as string;
 
   // 1. Basic validation
-  if (!studentId || !nationalId) {
+  if (!rawStudentId || !rawNationalId) {
     return { success: false, message: "กรุณากรอกข้อมูลให้ครบถ้วน" };
   }
 
+  // 2. Sanitize inputs
+  const studentId = sanitizeInput(rawStudentId);
+  const nationalId = sanitizeInput(rawNationalId);
+
+  // 3. Format validation
+  if (!isValidStudentId(studentId)) {
+    return { success: false, message: "รหัสนักเรียนต้องเป็นตัวเลข 4 หลัก" };
+  }
+  if (!isValidNationalId(nationalId)) {
+    return {
+      success: false,
+      message: "เลขประจำตัวประชาชนต้องเป็นตัวเลข 13 หลัก",
+    };
+  }
+
   try {
-    // 2. Query database
+    // 4. Query database
     const users = await query<StudentRow>(
       "SELECT * FROM students WHERE id = ? AND national_id = ?",
-      [studentId.trim(), nationalId.trim()]
+      [studentId, nationalId]
     );
 
     if (users.length === 0) {
@@ -166,10 +186,18 @@ export async function lookupStudent(
   found: boolean;
   student?: { prefix: string | null; name: string; surname: string };
 }> {
+  // Sanitize and validate inputs
+  const cleanStudentId = sanitizeInput(studentId);
+  const cleanNationalId = sanitizeInput(nationalId);
+
+  if (!isValidStudentId(cleanStudentId) || !isValidNationalId(cleanNationalId)) {
+    return { found: false };
+  }
+
   try {
     const students = await query<StudentRow>(
       "SELECT prefix, name, surname FROM students WHERE id = ? AND national_id = ?",
-      [studentId, nationalId]
+      [cleanStudentId, cleanNationalId]
     );
 
     if (students.length === 0) {
