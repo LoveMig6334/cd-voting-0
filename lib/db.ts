@@ -213,6 +213,14 @@ export interface VoteRow extends RowDataPacket {
   created_at: Date;
 }
 
+export interface VoteTokenRow extends RowDataPacket {
+  id: number;
+  student_id: string;
+  election_id: number;
+  token: string;
+  created_at: Date;
+}
+
 export interface SessionRow extends RowDataPacket {
   id: string;
   student_id: string;

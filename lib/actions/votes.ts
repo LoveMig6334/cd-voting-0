@@ -9,6 +9,7 @@ import {
   VoteHistoryRow,
   VoteRow,
 } from "@/lib/db";
+import { generateVoteToken } from "@/lib/token";
 import { PoolConnection, RowDataPacket } from "mysql2/promise";
 import { revalidatePath } from "next/cache";
 import { logVoteCast } from "./activities";
@@ -129,8 +130,15 @@ export async function castVote(
         [electionId],
       );
 
-      // 7. Generate vote token
-      return crypto.randomUUID().slice(0, 8).toUpperCase();
+      // 7. Generate and persist vote token
+      const token = generateVoteToken(`${studentId}:${electionId}`, Date.now());
+
+      await conn.execute(
+        "INSERT INTO vote_tokens (student_id, election_id, token) VALUES (?, ?, ?)",
+        [studentId, electionId, token],
+      );
+
+      return token;
     });
 
     revalidatePath(`/elections/${electionId}`);

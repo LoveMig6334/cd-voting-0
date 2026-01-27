@@ -236,30 +236,39 @@ CREATE TABLE position_display_configs (
 -- );
 
 -- v2.3: Add Public Display Settings Tables (for Post-Election Results Display)
--- CREATE TABLE public_display_settings (
+-- CREATE TABLE public_display_settings (...);
+-- CREATE TABLE position_display_configs (...);
+
+-- 13. ตารางเก็บ Token ยืนยันการโหวต (Vote Tokens)
+-- Token ใช้ยืนยันว่านักเรียนโหวตเรียบร้อย และใช้ดูผลการเลือกตั้ง
+CREATE TABLE vote_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id VARCHAR(10) NOT NULL,
+    election_id INT NOT NULL,
+    token VARCHAR(20) UNIQUE NOT NULL,           -- Format: VOTE-XXXX-XXXX
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (election_id) REFERENCES elections(id) ON DELETE CASCADE,
+    
+    -- นักเรียน 1 คน มี Token ได้ 1 อันต่อ 1 การเลือกตั้ง
+    UNIQUE KEY unique_student_election (student_id, election_id),
+    INDEX idx_token (token)
+);
+
+-- =====================================================
+-- Migration Scripts
+-- =====================================================
+
+-- v2.4: Add Vote Tokens Table (for Vote Verification)
+-- CREATE TABLE vote_tokens (
 --     id INT AUTO_INCREMENT PRIMARY KEY,
+--     student_id VARCHAR(10) NOT NULL,
 --     election_id INT NOT NULL,
---     is_published BOOLEAN DEFAULT FALSE,
---     published_at DATETIME,
---     global_show_raw_score BOOLEAN DEFAULT TRUE,
---     global_show_winner_only BOOLEAN DEFAULT FALSE,
+--     token VARCHAR(20) UNIQUE NOT NULL,
 --     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+--     FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
 --     FOREIGN KEY (election_id) REFERENCES elections(id) ON DELETE CASCADE,
---     UNIQUE KEY unique_election (election_id)
--- );
---
--- CREATE TABLE position_display_configs (
---     id INT AUTO_INCREMENT PRIMARY KEY,
---     election_id INT NOT NULL,
---     position_id VARCHAR(50) NOT NULL,
---     show_raw_score BOOLEAN DEFAULT TRUE,
---     show_winner_only BOOLEAN DEFAULT FALSE,
---     skip BOOLEAN DEFAULT FALSE,
---     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
---     FOREIGN KEY (election_id) REFERENCES elections(id) ON DELETE CASCADE,
---     FOREIGN KEY (position_id) REFERENCES positions(id) ON DELETE CASCADE,
---     UNIQUE KEY unique_election_position (election_id, position_id),
---     INDEX idx_election_id (election_id)
+--     UNIQUE KEY unique_student_election (student_id, election_id),
+--     INDEX idx_token (token)
 -- );
