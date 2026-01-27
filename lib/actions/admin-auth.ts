@@ -14,6 +14,7 @@ import {
   canDeleteAdmin,
   canEditAdmin,
 } from "@/lib/permissions";
+import { sanitizeInput } from "@/lib/validation";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
@@ -50,19 +51,22 @@ export interface AdminSessionData {
 export async function adminLoginAction(
   formData: FormData,
 ): Promise<AdminLoginResult> {
-  const username = formData.get("username") as string;
+  const rawUsername = formData.get("username") as string;
   const password = formData.get("password") as string;
 
   // 1. Basic validation
-  if (!username || !password) {
+  if (!rawUsername || !password) {
     return { success: false, message: "กรุณากรอกข้อมูลให้ครบถ้วน" };
   }
 
+  // 2. Sanitize username (password is not sanitized to preserve all characters)
+  const username = sanitizeInput(rawUsername);
+
   try {
-    // 2. Query database for admin
+    // 3. Query database for admin
     const admins = await query<AdminRow>(
       "SELECT * FROM admins WHERE username = ?",
-      [username.trim()],
+      [username],
     );
 
     if (admins.length === 0) {
@@ -202,10 +206,14 @@ export async function createAdmin(
       };
     }
 
+    // Sanitize username and display name
+    const cleanUsername = sanitizeInput(username);
+    const cleanDisplayName = displayName ? sanitizeInput(displayName) : null;
+
     // Check if username exists
     const existing = await query<AdminRow>(
       "SELECT id FROM admins WHERE username = ?",
-      [username],
+      [cleanUsername],
     );
 
     if (existing.length > 0) {
@@ -223,14 +231,14 @@ export async function createAdmin(
     // Insert admin
     const result = await execute(
       "INSERT INTO admins (username, password_hash, display_name, access_level) VALUES (?, ?, ?, ?)",
-      [username, passwordHash, displayName || null, accessLevel],
+      [cleanUsername, passwordHash, cleanDisplayName, accessLevel],
     );
 
     revalidatePath("/admin/admins");
 
     // Log activity
     await logSystemCheck(
-      `สร้างผู้ดูแลระบบ "${username}" (ระดับ: ${getAccessLevelLabel(accessLevel)})`,
+      `สร้างผู้ดูแลระบบ "${cleanUsername}" (ระดับ: ${getAccessLevelLabel(accessLevel)})`,
     );
 
     return { success: true, adminId: result.insertId };
