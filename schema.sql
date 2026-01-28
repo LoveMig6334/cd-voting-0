@@ -156,33 +156,6 @@ CREATE TABLE activities (
     INDEX idx_created_at (created_at)
 );
 
--- =====================================================
--- Sample Data (Optional - for testing)
--- =====================================================
-
--- ตัวอย่างคำนำหน้าที่ใช้:
--- 'นาย', 'นางสาว', 'เด็กชาย', 'เด็กหญิง', 'นาง'
-
--- Default Admin (password: admin123, access_level: 0=Root)
--- INSERT INTO admins (username, password_hash, display_name, access_level) VALUES
--- ('admin', '$2a$10$rqKvPYZvTZx8t8YGqPvnHOqVPZQ5mGWkDVLFM8KMQvRJrXbZ.lR6W', 'Administrator', 0);
-
--- =====================================================
--- Useful Queries
--- =====================================================
-
--- นับคะแนนแต่ละผู้สมัครตามตำแหน่ง:
--- SELECT c.name, c.rank, p.title as position, COUNT(v.id) as vote_count
--- FROM candidates c
--- JOIN positions p ON c.position_id = p.id
--- LEFT JOIN votes v ON v.candidate_id = c.id
--- WHERE c.election_id = ?
--- GROUP BY c.id, p.id
--- ORDER BY p.sort_order, vote_count DESC;
-
--- ตรวจสอบว่านักเรียนโหวตแล้วหรือยัง:
--- SELECT * FROM vote_history WHERE student_id = ? AND election_id = ?;
-
 -- 11. ตารางการตั้งค่าแสดงผลสาธารณะ (Public Display Settings)
 CREATE TABLE public_display_settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -215,6 +188,51 @@ CREATE TABLE position_display_configs (
     INDEX idx_election_id (election_id)
 );
 
+-- 13. ตารางเก็บ Token ยืนยันการโหวต (Vote Tokens)
+-- Token ใช้ยืนยันว่านักเรียนโหวตเรียบร้อย และใช้ดูผลการเลือกตั้ง
+CREATE TABLE vote_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id VARCHAR(10) NOT NULL,
+    election_id INT NOT NULL,
+    token VARCHAR(20) UNIQUE NOT NULL,           -- Format: VOTE-XXXX-XXXX
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (election_id) REFERENCES elections(id) ON DELETE CASCADE,
+    
+    -- นักเรียน 1 คน มี Token ได้ 1 อันต่อ 1 การเลือกตั้ง
+    UNIQUE KEY unique_student_election (student_id, election_id),
+    INDEX idx_token (token)
+);
+
+
+-- =====================================================
+-- Sample Data (Optional - for testing)
+-- =====================================================
+
+-- ตัวอย่างคำนำหน้าที่ใช้:
+-- 'นาย', 'นางสาว', 'เด็กชาย', 'เด็กหญิง', 'นาง'
+
+-- Default Admin (password: admin123, access_level: 0=Root)
+-- INSERT INTO admins (username, password_hash, display_name, access_level) VALUES
+-- ('admin', '$2a$10$rqKvPYZvTZx8t8YGqPvnHOqVPZQ5mGWkDVLFM8KMQvRJrXbZ.lR6W', 'Administrator', 0);
+
+-- =====================================================
+-- Useful Queries
+-- =====================================================
+
+-- นับคะแนนแต่ละผู้สมัครตามตำแหน่ง:
+-- SELECT c.name, c.rank, p.title as position, COUNT(v.id) as vote_count
+-- FROM candidates c
+-- JOIN positions p ON c.position_id = p.id
+-- LEFT JOIN votes v ON v.candidate_id = c.id
+-- WHERE c.election_id = ?
+-- GROUP BY c.id, p.id
+-- ORDER BY p.sort_order, vote_count DESC;
+
+-- ตรวจสอบว่านักเรียนโหวตแล้วหรือยัง:
+-- SELECT * FROM vote_history WHERE student_id = ? AND election_id = ?;
+
 -- =====================================================
 -- Migration Scripts
 -- =====================================================
@@ -238,23 +256,6 @@ CREATE TABLE position_display_configs (
 -- v2.3: Add Public Display Settings Tables (for Post-Election Results Display)
 -- CREATE TABLE public_display_settings (...);
 -- CREATE TABLE position_display_configs (...);
-
--- 13. ตารางเก็บ Token ยืนยันการโหวต (Vote Tokens)
--- Token ใช้ยืนยันว่านักเรียนโหวตเรียบร้อย และใช้ดูผลการเลือกตั้ง
-CREATE TABLE vote_tokens (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id VARCHAR(10) NOT NULL,
-    election_id INT NOT NULL,
-    token VARCHAR(20) UNIQUE NOT NULL,           -- Format: VOTE-XXXX-XXXX
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
-    FOREIGN KEY (election_id) REFERENCES elections(id) ON DELETE CASCADE,
-    
-    -- นักเรียน 1 คน มี Token ได้ 1 อันต่อ 1 การเลือกตั้ง
-    UNIQUE KEY unique_student_election (student_id, election_id),
-    INDEX idx_token (token)
-);
 
 -- =====================================================
 -- Migration Scripts

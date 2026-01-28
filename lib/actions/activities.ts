@@ -22,16 +22,6 @@ interface CreateActivityData {
   metadata?: Record<string, unknown>;
 }
 
-/**
- * Input data for creating a new activity log
- */
-interface CreateActivityData {
-  type: ActivityType;
-  title: string;
-  description: string;
-  metadata?: Record<string, unknown>;
-}
-
 // ==========================================
 // Activity Type Configuration
 // ==========================================

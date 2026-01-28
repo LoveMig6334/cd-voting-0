@@ -3,12 +3,9 @@
 import {
   ACCESS_LEVELS,
   AccessLevel,
-  AdminRow,
-  AdminSessionRow,
-  execute,
   getAccessLevelLabel,
-  query,
-} from "@/lib/db";
+} from "@/lib/admin-types";
+import { AdminRow, AdminSessionRow, execute, query } from "@/lib/db";
 import {
   canCreateAdmin,
   canDeleteAdmin,

@@ -305,33 +305,6 @@
   color: var(--color-royal-blue);
 }
 
-/* === TIMELINE STYLING === */
-.timeline-line {
-  position: absolute;
-  left: 15px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: linear-gradient(
-    180deg,
-    rgba(26, 86, 219, 0.2) 0%,
-    rgba(226, 232, 240, 0.5) 100%
-  );
-}
-
-.timeline-badge {
-  position: relative;
-  z-index: 1;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.9);
-}
-
 /* Custom Utilities */
 .material-symbols-outlined {
   font-variation-settings:
