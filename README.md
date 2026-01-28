@@ -40,8 +40,7 @@
 - หน้าแสดงผลการเลือกตั้งแบบเรียลไทม์
 - ระบบอนุมัติสิทธิ์โหวตโดยครูประจำชั้น
 
-🚧 **กำลังพัฒนา**:
-- การ Migrate จาก localStorage ไปใช้ MySQL Database
+🚧 **กำลังเตรียม Deploy**:
 - ระบบ OCR อ่านบัตรนักเรียนอัตโนมัติ (อยู่ในขั้น Prototype)
 - การ Deploy ไปยังเว็บเซิร์ฟเวอร์โรงเรียน
 
@@ -722,7 +721,7 @@ WHERE vh.election_id = ?;
 
 ## ไฟล์ Database Schema
 
-📄 **Schema เต็มรูปแบบ:** [`app/poc/schema.sql`](app/poc/schema.sql)
+📄 **Schema เต็มรูปแบบ:** [`schema.sql`](schema.sql)
 
 ---
 
@@ -732,7 +731,7 @@ WHERE vh.election_id = ?;
 
 ## 7.1 Authentication API
 
-### Server Actions (`app/poc/actions.ts`)
+### Server Actions (`lib/actions/auth.ts`)
 
 | Function              | Description                              | Parameters                                   | Returns                                |
 | --------------------- | ---------------------------------------- | -------------------------------------------- | -------------------------------------- |
@@ -744,7 +743,7 @@ WHERE vh.election_id = ?;
 **ตัวอย่าง Usage:**
 
 ```typescript
-import { loginAction, getCurrentSession } from "@/app/poc/actions";
+import { loginAction, getCurrentSession } from "@/lib/actions/auth";
 
 // Login
 const result = await loginAction("6312", "1234567890123");
@@ -968,10 +967,10 @@ export const config = {
 
 ## 7.7 Database Connection Layer
 
-### Connection Pool (`app/poc/lib/db.ts`)
+### Connection Pool (`lib/db.ts`)
 
 ```typescript
-import { query, execute, transaction } from "@/app/poc/lib/db";
+import { query, execute, transaction } from "@/lib/db";
 
 // SELECT Queries
 const students = await query<StudentRow>(
@@ -997,8 +996,8 @@ await transaction(async (conn) => {
 
 ## 📋 Reference Files
 
-- **Server Actions:** [`app/poc/actions.ts`](app/poc/actions.ts)
-- **Database Layer:** [`app/poc/lib/db.ts`](app/poc/lib/db.ts)
+- **Server Actions:** [`lib/actions/`](lib/actions/) (auth, admin-auth, elections, students, votes, activities, public-display)
+- **Database Layer:** [`lib/db.ts`](lib/db.ts)
 - **Types:** [`types.ts`](types.ts)
 
 ---
@@ -2481,16 +2480,16 @@ cd-voting-0/
 - [x] **CLAUDE.md** - Instructions for Claude Code
 - [x] **OCR System Architecture** - docs/architech/OCR_System_Flow.md
 - [x] **Animation Best Practices** - docs/practices/ANIMATION_AND_MODAL_BEST_PRACTICES.md
-- [x] **MySQL Migration Guide** - app/poc/README.md
+- [x] **MySQL Migration Guide** - (completed, app/poc/ removed)
 
 ---
 
-## 🚧 กำลังพัฒนา (In Progress)
+## 🚧 เตรียม Deploy (Pending Deployment)
 
-### Database Migration
+### Database Migration (Completed)
 
 - [x] **Migrate from localStorage to MySQL** - All localStorage stores removed, fully using Server Actions
-  - [x] POC implementation (app/poc/)
+  - [x] POC implementation (completed, app/poc/ removed)
   - [x] Server Actions tested
   - [x] Replace useAuth hook with session-based auth
   - [x] Migrate all pages to use Server Actions
@@ -2499,7 +2498,7 @@ cd-voting-0/
 ### Deployment Preparation
 
 - [~] **Environment Configuration**
-  - [x] .env.example created
+  - [x] .env.local created
   - [ ] Production environment variables setup
   - [ ] Database credentials configuration
 
@@ -2713,12 +2712,12 @@ cd-voting-0/
 
 ### Pre-deployment Checklist
 
-- [ ] All localStorage code replaced with MySQL
+- [x] All localStorage code replaced with MySQL
 - [ ] Real student data imported
 - [ ] Admin account created
 - [ ] Environment variables configured
 - [ ] Security measures implemented
-- [ ] Production build tested
+- [x] Production build tested
 - [ ] Database backups configured
 - [ ] Apache reverse proxy configured
 - [ ] SSL certificate installed (if applicable)
