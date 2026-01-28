@@ -15,6 +15,7 @@
     "maxval",
     "nidx",
     "Noto",
+    "opsz",
     "picsum",
     "readback",
     "readbacks",
@@ -35,6 +36,7 @@
     "Unvote",
     "VARCHAR",
     "vercel",
+    "wght",
     "XAMPP"
   ]
 }
