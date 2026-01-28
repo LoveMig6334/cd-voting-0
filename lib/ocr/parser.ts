@@ -1,4 +1,4 @@
-import { StudentData } from "../student-data";
+import { StudentData } from "./types";
 
 export interface ParseResult extends Partial<StudentData> {
   nationalId?: string;

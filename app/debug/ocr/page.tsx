@@ -16,7 +16,7 @@ import {
   parseOCRText,
   validateParsedData,
 } from "@/lib/ocr/parser";
-import { StudentData } from "@/lib/student-data";
+import { StudentData } from "@/lib/ocr/types";
 import Image from "next/image";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Tesseract from "tesseract.js";
