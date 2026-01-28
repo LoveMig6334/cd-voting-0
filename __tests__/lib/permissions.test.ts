@@ -1,15 +1,15 @@
+import { ACCESS_LEVELS, AccessLevel } from "@/lib/admin-types";
 import {
   PAGE_PERMISSIONS,
   canAccessPage,
-  getDefaultPage,
   canCreateAdmin,
-  getCreatableAccessLevels,
   canDeleteAdmin,
   canEditAdmin,
-  canViewAdminManagement,
   canManageStudents,
+  canViewAdminManagement,
+  getCreatableAccessLevels,
+  getDefaultPage,
 } from "@/lib/permissions";
-import { ACCESS_LEVELS, AccessLevel } from "@/lib/admin-types";
 
 const { ROOT, SYSTEM_ADMIN, TEACHER, OBSERVER } = ACCESS_LEVELS;
 const ALL_LEVELS: AccessLevel[] = [ROOT, SYSTEM_ADMIN, TEACHER, OBSERVER];
@@ -104,9 +104,7 @@ describe("PAGE_PERMISSIONS", () => {
       "adminManagement",
       "activity",
     ];
-    expect(Object.keys(PAGE_PERMISSIONS).sort()).toEqual(
-      expectedPages.sort(),
-    );
+    expect(Object.keys(PAGE_PERMISSIONS).sort()).toEqual(expectedPages.sort());
   });
 
   it("every page lists at least one allowed access level", () => {
@@ -230,11 +228,36 @@ describe("canDeleteAdmin", () => {
 // canEditAdmin
 // -------------------------------------------------
 describe("canEditAdmin", () => {
-  it("only ROOT can edit admins", () => {
+  it("ROOT can edit any admin", () => {
     expect(canEditAdmin(ROOT)).toBe(true);
-    expect(canEditAdmin(SYSTEM_ADMIN)).toBe(false);
+    expect(canEditAdmin(ROOT, ROOT)).toBe(true);
+    expect(canEditAdmin(ROOT, SYSTEM_ADMIN)).toBe(true);
+    expect(canEditAdmin(ROOT, TEACHER)).toBe(true);
+    expect(canEditAdmin(ROOT, OBSERVER)).toBe(true);
+  });
+
+  it("SYSTEM_ADMIN can edit TEACHER and OBSERVER only", () => {
+    // Without targetLevel, SYSTEM_ADMIN can access edit UI
+    expect(canEditAdmin(SYSTEM_ADMIN)).toBe(true);
+    // With targetLevel, check specific permissions
+    expect(canEditAdmin(SYSTEM_ADMIN, ROOT)).toBe(false);
+    expect(canEditAdmin(SYSTEM_ADMIN, SYSTEM_ADMIN)).toBe(false);
+    expect(canEditAdmin(SYSTEM_ADMIN, TEACHER)).toBe(true);
+    expect(canEditAdmin(SYSTEM_ADMIN, OBSERVER)).toBe(true);
+  });
+
+  it("TEACHER cannot edit any admin", () => {
     expect(canEditAdmin(TEACHER)).toBe(false);
+    for (const target of ALL_LEVELS) {
+      expect(canEditAdmin(TEACHER, target)).toBe(false);
+    }
+  });
+
+  it("OBSERVER cannot edit any admin", () => {
     expect(canEditAdmin(OBSERVER)).toBe(false);
+    for (const target of ALL_LEVELS) {
+      expect(canEditAdmin(OBSERVER, target)).toBe(false);
+    }
   });
 });
 

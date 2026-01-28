@@ -123,10 +123,25 @@ export function canDeleteAdmin(
 /**
  * Check if an editor can edit admin details
  * - ROOT (0): Can edit any admin
+ * - SYSTEM_ADMIN (1): Can edit level 2-3 admins only
  * - Others: Cannot edit admins
  */
-export function canEditAdmin(editorLevel: AccessLevel): boolean {
-  return editorLevel === ACCESS_LEVELS.ROOT;
+export function canEditAdmin(
+  editorLevel: AccessLevel,
+  targetLevel?: AccessLevel,
+): boolean {
+  if (editorLevel === ACCESS_LEVELS.ROOT) {
+    return true;
+  }
+  if (editorLevel === ACCESS_LEVELS.SYSTEM_ADMIN) {
+    // If targetLevel is provided, check if it's level 2-3
+    if (targetLevel !== undefined) {
+      return targetLevel >= ACCESS_LEVELS.TEACHER; // Level 2-3 only
+    }
+    // If targetLevel is not provided, SYSTEM_ADMIN can still access edit UI
+    return true;
+  }
+  return false;
 }
 
 /**

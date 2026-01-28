@@ -333,9 +333,27 @@ export async function updateAdmin(
   editorLevel: AccessLevel,
 ): Promise<{ success: boolean; message?: string }> {
   try {
-    // Permission check
-    if (!canEditAdmin(editorLevel)) {
-      return { success: false, message: "คุณไม่มีสิทธิ์แก้ไข Admin" };
+    // Get target admin to check their level
+    const targetAdmin = await getAdminById(adminId);
+    if (!targetAdmin) {
+      return { success: false, message: "ไม่พบ Admin ที่ต้องการแก้ไข" };
+    }
+
+    // Permission check with target level
+    if (!canEditAdmin(editorLevel, targetAdmin.access_level)) {
+      return { success: false, message: "คุณไม่มีสิทธิ์แก้ไข Admin ระดับนี้" };
+    }
+
+    // SYSTEM_ADMIN can only set access levels they can create (level 2-3)
+    if (
+      editorLevel === ACCESS_LEVELS.SYSTEM_ADMIN &&
+      data.accessLevel !== undefined &&
+      data.accessLevel < ACCESS_LEVELS.TEACHER
+    ) {
+      return {
+        success: false,
+        message: "คุณไม่มีสิทธิ์ตั้งค่าระดับสิทธิ์นี้",
+      };
     }
 
     // Build update query
@@ -366,10 +384,7 @@ export async function updateAdmin(
     revalidatePath("/admin/admins");
 
     // Log activity
-    const admin = await getAdminById(adminId);
-    await logSystemCheck(
-      `แก้ไขข้อมูลผู้ดูแลระบบ "${admin?.username || "(ไม่ทราบชื่อ)"}"`,
-    );
+    await logSystemCheck(`แก้ไขข้อมูลผู้ดูแลระบบ "${targetAdmin.username}"`);
 
     return { success: true };
   } catch (error) {
@@ -430,7 +445,9 @@ export async function deleteAdmin(
 }
 
 /**
- * Reset admin password (by ROOT only)
+ * Reset admin password
+ * - ROOT (0): Can reset any admin's password
+ * - SYSTEM_ADMIN (1): Can reset level 2-3 admin's password
  */
 export async function resetAdminPassword(
   adminId: number,
@@ -438,9 +455,21 @@ export async function resetAdminPassword(
   editorLevel: AccessLevel,
 ): Promise<{ success: boolean; message?: string }> {
   try {
-    // Permission check - only ROOT can reset passwords
-    if (editorLevel !== ACCESS_LEVELS.ROOT) {
-      return { success: false, message: "คุณไม่มีสิทธิ์รีเซ็ตรหัสผ่าน" };
+    // Get target admin to check their level
+    const targetAdmin = await getAdminById(adminId);
+    if (!targetAdmin) {
+      return {
+        success: false,
+        message: "ไม่พบ Admin ที่ต้องการรีเซ็ตรหัสผ่าน",
+      };
+    }
+
+    // Permission check with target level
+    if (!canEditAdmin(editorLevel, targetAdmin.access_level)) {
+      return {
+        success: false,
+        message: "คุณไม่มีสิทธิ์รีเซ็ตรหัสผ่าน Admin ระดับนี้",
+      };
     }
 
     if (newPassword.length < 6) {
@@ -455,10 +484,7 @@ export async function resetAdminPassword(
     ]);
 
     // Log activity
-    const admin = await getAdminById(adminId);
-    await logSystemCheck(
-      `รีเซ็ตรหัสผ่าน Admin "${admin?.username || "(ไม่ทราบชื่อ)"}"`,
-    );
+    await logSystemCheck(`รีเซ็ตรหัสผ่าน Admin "${targetAdmin.username}"`);
 
     return { success: true };
   } catch (error) {

@@ -266,7 +266,10 @@ export function AdminManagementClient({
                 const canDelete =
                   !isSelf &&
                   canDeleteAdmin(currentAccessLevel, admin.access_level);
-                const canEdit = canEditAdmin(currentAccessLevel);
+                const canEdit = canEditAdmin(
+                  currentAccessLevel,
+                  admin.access_level,
+                );
 
                 return (
                   <tr
@@ -581,31 +584,39 @@ export function AdminManagementClient({
                     })
                   }
                   disabled={
-                    selectedAdmin.id === currentAdminId &&
-                    currentAccessLevel === ACCESS_LEVELS.ROOT
+                    selectedAdmin.id === currentAdminId ||
+                    (currentAccessLevel === ACCESS_LEVELS.SYSTEM_ADMIN &&
+                      selectedAdmin.access_level < ACCESS_LEVELS.TEACHER)
                   }
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:bg-slate-100"
                 >
-                  {[
-                    ACCESS_LEVELS.ROOT,
-                    ACCESS_LEVELS.SYSTEM_ADMIN,
-                    ACCESS_LEVELS.TEACHER,
-                    ACCESS_LEVELS.OBSERVER,
-                  ].map((level) => (
-                    <option key={level} value={level}>
-                      {level} - {ACCESS_LEVEL_LABELS[level]}
-                    </option>
-                  ))}
+                  {currentAccessLevel === ACCESS_LEVELS.ROOT
+                    ? [
+                        ACCESS_LEVELS.ROOT,
+                        ACCESS_LEVELS.SYSTEM_ADMIN,
+                        ACCESS_LEVELS.TEACHER,
+                        ACCESS_LEVELS.OBSERVER,
+                      ].map((level) => (
+                        <option key={level} value={level}>
+                          {level} - {ACCESS_LEVEL_LABELS[level]}
+                        </option>
+                      ))
+                    : [ACCESS_LEVELS.TEACHER, ACCESS_LEVELS.OBSERVER].map(
+                        (level) => (
+                          <option key={level} value={level}>
+                            {level} - {ACCESS_LEVEL_LABELS[level]}
+                          </option>
+                        ),
+                      )}
                 </select>
-                {selectedAdmin.id === currentAdminId &&
-                  currentAccessLevel === ACCESS_LEVELS.ROOT && (
-                    <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">
-                        lock
-                      </span>
-                      ไม่สามารถลดระดับสิทธิ์ตัวเองได้
-                    </p>
-                  )}
+                {selectedAdmin.id === currentAdminId && (
+                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">
+                      lock
+                    </span>
+                    ไม่สามารถเปลี่ยนระดับสิทธิ์ตัวเองได้
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex gap-3 mt-6">
