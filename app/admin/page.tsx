@@ -1,3 +1,4 @@
+import { CloseElectionButton } from "@/components/CloseElectionButton";
 import { ElectionControlButtons } from "@/components/ElectionControlButtons";
 import { getRecentActivitiesForDisplay } from "@/lib/actions/activities";
 import { getCurrentAdmin } from "@/lib/actions/admin-auth";
@@ -310,6 +311,7 @@ export default async function AdminDashboard() {
                     </span>
                     ผลลัพธ์สด
                   </Link>
+                  <CloseElectionButton electionId={primaryActiveElection.id} />
                 </div>
               </div>
 
