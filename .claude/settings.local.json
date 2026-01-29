@@ -8,7 +8,8 @@
       "mcp__ide__getDiagnostics",
       "Bash(npx next build)",
       "Bash(del \"C:\\\\Users\\\\thatt\\\\Documents\\\\Coding Project\\\\Web Projects\\\\cd-voting-0\\\\lib\\\\student-data.ts\")",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(npm test:*)"
     ]
   }
 }

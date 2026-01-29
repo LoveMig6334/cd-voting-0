@@ -12,7 +12,9 @@ import { ActivityDisplayItem } from "@/lib/db";
 import { canAccessPage, PageName } from "@/lib/permissions";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useClickOutside } from "@/lib/hooks/useClickOutside";
+import { NotificationItem } from "./NotificationItem";
 
 interface NavItem {
   name: string;
@@ -59,6 +61,17 @@ export const AdminNavbar: React.FC = () => {
   const [activities, setActivities] = useState<ActivityDisplayItem[]>([]);
   const [hasUnread, setHasUnread] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  // Ref for click-outside detection
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  // Memoized close handler for click-outside
+  const closeNotifications = useCallback(() => {
+    setNotificationsOpen(false);
+  }, []);
+
+  // Click-outside hook for notification dropdown
+  useClickOutside(notificationRef, closeNotifications, notificationsOpen);
 
   // Load activities and check for unread
   useEffect(() => {
@@ -182,7 +195,7 @@ export const AdminNavbar: React.FC = () => {
             <div className="hidden md:flex items-center gap-3">
               {/* Notification Badge - Only for Root/System Admin */}
               {admin && admin.accessLevel <= ACCESS_LEVELS.SYSTEM_ADMIN && (
-                <div className="relative">
+                <div className="relative" ref={notificationRef}>
                   <button
                     onClick={toggleNotifications}
                     className={`relative p-2 rounded-xl transition-all duration-200 ${
@@ -227,34 +240,13 @@ export const AdminNavbar: React.FC = () => {
                             </p>
                           </div>
                         ) : (
-                          <div className="space-y-1">
+                          <div className="space-y-0.5">
                             {activities.map((activity) => (
-                              <div
+                              <NotificationItem
                                 key={activity.id}
-                                className="flex items-start gap-3 p-3 hover:bg-slate-50 rounded-xl transition-colors group cursor-default"
-                              >
-                                <div className="shrink-0 mt-1">
-                                  <div
-                                    className={`w-2 h-2 rounded-full ${activity.iconBg} shadow-[0_0_8px]`}
-                                    style={{
-                                      boxShadow: `0 0 8px ${activity.iconBg.replace("bg-", "rgba(").replace("-500", ", 0.5)")}`,
-                                    }}
-                                  ></div>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[13px] font-medium text-dark-slate leading-tight mb-1">
-                                    {activity.title}
-                                  </p>
-                                  <div className="flex items-center justify-between gap-2">
-                                    <p className="text-[11px] text-cool-gray truncate">
-                                      {activity.description}
-                                    </p>
-                                    <span className="text-[10px] font-medium text-cool-gray/50 whitespace-nowrap">
-                                      {activity.time}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
+                                activity={activity}
+                                onNavigate={closeNotifications}
+                              />
                             ))}
                           </div>
                         )}
@@ -262,7 +254,7 @@ export const AdminNavbar: React.FC = () => {
 
                       <Link
                         href="/admin/activity"
-                        onClick={() => setNotificationsOpen(false)}
+                        onClick={closeNotifications}
                         className="p-3 text-center border-t border-slate-100 text-xs font-bold text-royal-blue hover:text-cyan-600 transition-colors bg-slate-50/30"
                       >
                         ดูกิจกรรมทั้งหมด
