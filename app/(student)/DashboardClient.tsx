@@ -117,7 +117,7 @@ export function DashboardClient({ elections }: DashboardClientProps) {
                 <Image
                   alt="Profile"
                   className="w-full h-full object-cover"
-                  src="https://picsum.photos/seed/alex/200/200"
+                  src="/default-avatar.svg"
                   width={40}
                   height={40}
                   priority

@@ -1,9 +1,9 @@
 "use client";
 
-import { useStudentUser } from "../StudentLayoutClient";
 import { logoutAction } from "@/lib/actions/auth";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
+import { useStudentUser } from "../StudentLayoutClient";
 
 export default function Profile() {
   const router = useRouter();
@@ -39,8 +39,7 @@ export default function Profile() {
                 <div
                   className="bg-center bg-no-repeat bg-cover rounded-full h-28 w-28 border-4 border-white shadow-lg"
                   style={{
-                    backgroundImage:
-                      'url("https://picsum.photos/seed/alex/200/200")',
+                    backgroundImage: 'url("/default-avatar.svg")',
                   }}
                 ></div>
               </div>
