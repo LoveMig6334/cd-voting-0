@@ -1,12 +1,14 @@
 "use client";
 
-import { ElectionRow, PositionRow, CandidateRow } from "@/lib/db";
 import {
-  VoterTurnout,
-  PositionResult,
   CandidateVoteCount,
+  LevelParticipation,
+  PositionResult,
+  VoterTurnout,
 } from "@/lib/actions/votes";
+import { CandidateRow, ElectionRow, PositionRow } from "@/lib/db";
 import Link from "next/link";
+import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -33,13 +35,17 @@ interface ResultsClientProps {
   turnout: VoterTurnout;
   positionResults: PositionResult[];
   totalStudents: number;
+  levelStats: LevelParticipation[];
 }
 
 // ============================================
 // Helper Functions
 // ============================================
 
-function calculateStatus(startDate: Date, endDate: Date): "draft" | "open" | "closed" {
+function calculateStatus(
+  startDate: Date,
+  endDate: Date,
+): "draft" | "open" | "closed" {
   const now = new Date();
   if (now < startDate) return "draft";
   if (now >= startDate && now <= endDate) return "open";
@@ -71,22 +77,77 @@ function CustomTooltip({
 // Main Component
 // ============================================
 
+// Dynamic color scale based on percentage
+function getParticipationColor(percentage: number) {
+  if (percentage >= 80) {
+    return {
+      bg: "bg-blue-700",
+      text: "text-white",
+      subtext: "text-blue-100",
+      fill: "bg-white",
+      track: "bg-blue-800",
+    };
+  }
+  if (percentage >= 60) {
+    return {
+      bg: "bg-blue-500",
+      text: "text-white",
+      subtext: "text-blue-50",
+      fill: "bg-white",
+      track: "bg-blue-600",
+    };
+  }
+  if (percentage >= 40) {
+    return {
+      bg: "bg-blue-200",
+      text: "text-blue-900",
+      subtext: "text-blue-700",
+      fill: "bg-blue-600",
+      track: "bg-blue-300",
+    };
+  }
+  if (percentage >= 20) {
+    return {
+      bg: "bg-blue-100",
+      text: "text-blue-800",
+      subtext: "text-blue-600",
+      fill: "bg-blue-500",
+      track: "bg-blue-200",
+    };
+  }
+  return {
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    subtext: "text-blue-500",
+    fill: "bg-blue-400",
+    track: "bg-blue-100",
+  };
+}
+
 export default function ResultsClient({
   election,
   turnout,
   positionResults,
   totalStudents,
+  levelStats,
 }: ResultsClientProps) {
-  const status = calculateStatus(new Date(election.start_date), new Date(election.end_date));
+  const [showLevelStats, setShowLevelStats] = useState(false);
+
+  const status = calculateStatus(
+    new Date(election.start_date),
+    new Date(election.end_date),
+  );
   const isLive = status === "open";
 
   // Calculate percentages
-  const participationRate = totalStudents > 0
-    ? Math.round((turnout.totalVoted / totalStudents) * 100)
-    : 0;
-  const turnoutRate = turnout.totalEligible > 0
-    ? Math.round((turnout.totalVoted / turnout.totalEligible) * 100)
-    : 0;
+  const participationRate =
+    totalStudents > 0
+      ? Math.round((turnout.totalVoted / totalStudents) * 100)
+      : 0;
+  const turnoutRate =
+    turnout.totalEligible > 0
+      ? Math.round((turnout.totalVoted / turnout.totalEligible) * 100)
+      : 0;
 
   // Prepare pie chart data for voter turnout
   const voterTurnoutData = [
@@ -190,8 +251,12 @@ export default function ResultsClient({
           <div className="bg-linear-to-br from-violet-50 to-purple-50 rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500 mb-1">อัตราการมีส่วนร่วม</p>
-                <p className="text-xs text-slate-400">ลงคะแนน / นักเรียนทั้งหมด</p>
+                <p className="text-sm text-slate-500 mb-1">
+                  อัตราการมีส่วนร่วม
+                </p>
+                <p className="text-xs text-slate-400">
+                  ลงคะแนน / นักเรียนทั้งหมด
+                </p>
               </div>
               <div className="text-right">
                 <p className="text-3xl font-bold text-violet-600">
@@ -224,6 +289,64 @@ export default function ResultsClient({
                 style={{ width: `${turnoutRate}%` }}
               ></div>
             </div>
+          </div>
+        </div>
+
+        {/* Expandable: Level Stats */}
+        <div className="mt-4 border-t border-slate-100 pt-4">
+          <button
+            onClick={() => setShowLevelStats(!showLevelStats)}
+            aria-expanded={showLevelStats}
+            className="w-full flex items-center justify-between text-sm text-slate-600 hover:text-slate-900 transition-colors py-2"
+          >
+            <span className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-lg">school</span>
+              <span className="font-medium">
+                อัตราการมีส่วนร่วมแยกตามระดับชั้น
+              </span>
+            </span>
+            <span
+              className={`material-symbols-outlined text-lg transition-transform duration-200 ${
+                showLevelStats ? "rotate-180" : ""
+              }`}
+            >
+              expand_more
+            </span>
+          </button>
+
+          {/* Collapsible Content */}
+          <div
+            className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 overflow-hidden transition-all duration-300 ease-out p-2 ${
+              showLevelStats ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"
+            }`}
+          >
+            {levelStats.map((level) => {
+              const colors = getParticipationColor(level.percentage);
+              return (
+                <div
+                  key={level.level}
+                  className={`${colors.bg} rounded-xl p-4 text-center transition-all hover:scale-105`}
+                >
+                  <p className={`text-2xl font-bold ${colors.text}`}>
+                    {level.percentage}%
+                  </p>
+                  <p className={`text-xs font-medium mt-1 ${colors.subtext}`}>
+                    ม.{level.level}
+                  </p>
+                  <div
+                    className={`w-full ${colors.track} rounded-full h-2 mt-2 bg-opacity-30`}
+                  >
+                    <div
+                      className={`h-2 rounded-full ${colors.fill} transition-all duration-500`}
+                      style={{ width: `${level.percentage}%` }}
+                    ></div>
+                  </div>
+                  <p className={`text-[10px] mt-1 ${colors.subtext}`}>
+                    {level.voted}/{level.totalStudents}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -342,7 +465,7 @@ export default function ResultsClient({
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <span className="material-symbols-outlined text-primary">
                     {election.positions.find(
-                      (p) => p.id === position.positionId
+                      (p) => p.id === position.positionId,
                     )?.icon || "person"}
                   </span>
                 </div>

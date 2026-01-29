@@ -3,6 +3,7 @@ import { getElectionById } from "@/lib/actions/elections";
 import {
   getVoterTurnout,
   getPositionResults,
+  getParticipationByLevel,
   PositionResult,
 } from "@/lib/actions/votes";
 import { getStudentStats } from "@/lib/actions/students";
@@ -47,12 +48,16 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
     positionResults.push(result);
   }
 
+  // Get participation by class level (1-6)
+  const levelStats = await getParticipationByLevel(electionId);
+
   return (
     <ResultsClient
       election={election}
       turnout={turnout}
       positionResults={positionResults}
       totalStudents={studentStats.total}
+      levelStats={levelStats}
     />
   );
 }

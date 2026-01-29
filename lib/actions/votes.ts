@@ -54,6 +54,13 @@ export interface VoterTurnout {
   percentage: number;
 }
 
+export interface LevelParticipation {
+  level: number;
+  totalStudents: number;
+  voted: number;
+  percentage: number;
+}
+
 export type WinnerStatus =
   | "winner"
   | "abstain_wins"
@@ -450,4 +457,62 @@ export async function getTotalVotes(electionId: number): Promise<number> {
     [electionId],
   );
   return results[0]?.count || 0;
+}
+
+/**
+ * Get participation rate by class level (1-6)
+ */
+export async function getParticipationByLevel(
+  electionId: number,
+): Promise<LevelParticipation[]> {
+  interface LevelCount extends RowDataPacket {
+    level: number;
+    count: number;
+  }
+
+  // Get total students per level (extract first character from class_room, e.g., "3/1" -> 3)
+  const totalByLevel = await query<LevelCount>(
+    `SELECT
+       CAST(SUBSTRING(class_room, 1, 1) AS UNSIGNED) as level,
+       COUNT(*) as count
+     FROM students
+     WHERE class_room REGEXP '^[1-6]/'
+     GROUP BY level
+     ORDER BY level`,
+  );
+
+  // Get voted students per level
+  const votedByLevel = await query<LevelCount>(
+    `SELECT
+       CAST(SUBSTRING(s.class_room, 1, 1) AS UNSIGNED) as level,
+       COUNT(*) as count
+     FROM vote_history vh
+     JOIN students s ON vh.student_id = s.id
+     WHERE vh.election_id = ? AND s.class_room REGEXP '^[1-6]/'
+     GROUP BY level
+     ORDER BY level`,
+    [electionId],
+  );
+
+  // Build maps for quick lookup
+  const totalMap = new Map<number, number>();
+  for (const row of totalByLevel) {
+    totalMap.set(row.level, row.count);
+  }
+
+  const votedMap = new Map<number, number>();
+  for (const row of votedByLevel) {
+    votedMap.set(row.level, row.count);
+  }
+
+  // Build result for levels 1-6
+  const result: LevelParticipation[] = [];
+  for (let level = 1; level <= 6; level++) {
+    const totalStudents = totalMap.get(level) || 0;
+    const voted = votedMap.get(level) || 0;
+    const percentage = totalStudents > 0 ? Math.round((voted / totalStudents) * 100) : 0;
+    result.push({ level, totalStudents, voted, percentage });
+  }
+
+  return result;
 }
