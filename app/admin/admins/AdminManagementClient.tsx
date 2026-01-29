@@ -16,6 +16,7 @@ import {
   canEditAdmin,
   getCreatableAccessLevels,
 } from "@/lib/permissions";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { useState, useTransition } from "react";
 
 // Admin data passed from server (without password_hash)
@@ -137,18 +138,18 @@ export function AdminManagementClient({
   };
 
   const handleDelete = () => {
-    if (!selectedAdmin) return;
+    const adminToDelete = selectedAdmin;
+    if (!adminToDelete) return;
     setMessage(null);
     startTransition(async () => {
       const result = await deleteAdmin(
-        selectedAdmin.id,
+        adminToDelete.id,
         currentAdminId,
         currentAccessLevel,
       );
 
       if (result.success) {
         setMessage({ type: "success", text: "ลบ Admin สำเร็จ" });
-        setShowDeleteModal(false);
         resetForm();
       } else {
         setMessage({ type: "error", text: result.message || "เกิดข้อผิดพลาด" });
@@ -642,52 +643,23 @@ export function AdminManagementClient({
       )}
 
       {/* Delete Modal */}
-      {showDeleteModal && selectedAdmin && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 animate-fade-in">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                <span className="material-symbols-outlined text-red-600 text-2xl">
-                  warning
-                </span>
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-dark-slate">
-                  ยืนยันการลบ
-                </h2>
-                <p className="text-sm text-cool-gray">
-                  การดำเนินการนี้ไม่สามารถย้อนกลับได้
-                </p>
-              </div>
-            </div>
-            <p className="text-dark-slate mb-6">
-              คุณต้องการลบ Admin{" "}
-              <span className="font-semibold">
-                {selectedAdmin.display_name || selectedAdmin.username}
-              </span>{" "}
-              ใช่หรือไม่?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  resetForm();
-                }}
-                className="flex-1 px-4 py-2.5 border border-slate-200 text-dark-slate rounded-xl hover:bg-slate-50 transition-colors"
-              >
-                ยกเลิก
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={isPending}
-                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
-              >
-                {isPending ? "กำลังลบ..." : "ลบ"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={showDeleteModal && !!selectedAdmin}
+        onClose={() => {
+          setShowDeleteModal(false);
+          resetForm();
+        }}
+        onConfirm={handleDelete}
+        title="ยืนยันการลบ"
+        message={
+          selectedAdmin
+            ? `คุณต้องการลบ Admin "${selectedAdmin.display_name || selectedAdmin.username}" ใช่หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้`
+            : ""
+        }
+        confirmText="ลบ"
+        cancelText="ยกเลิก"
+        variant="danger"
+      />
 
       {/* Reset Password Modal */}
       {showResetPasswordModal && selectedAdmin && (
