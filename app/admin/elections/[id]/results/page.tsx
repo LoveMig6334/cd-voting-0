@@ -52,6 +52,7 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
       election={election}
       turnout={turnout}
       positionResults={positionResults}
+      totalStudents={studentStats.total}
     />
   );
 }

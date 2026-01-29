@@ -7,7 +7,6 @@ import {
   CandidateVoteCount,
 } from "@/lib/actions/votes";
 import Link from "next/link";
-import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -33,6 +32,7 @@ interface ResultsClientProps {
   election: ElectionWithDetails;
   turnout: VoterTurnout;
   positionResults: PositionResult[];
+  totalStudents: number;
 }
 
 // ============================================
@@ -75,11 +75,18 @@ export default function ResultsClient({
   election,
   turnout,
   positionResults,
+  totalStudents,
 }: ResultsClientProps) {
-  const [showVotingLog, setShowVotingLog] = useState(false);
-
   const status = calculateStatus(new Date(election.start_date), new Date(election.end_date));
   const isLive = status === "open";
+
+  // Calculate percentages
+  const participationRate = totalStudents > 0
+    ? Math.round((turnout.totalVoted / totalStudents) * 100)
+    : 0;
+  const turnoutRate = turnout.totalEligible > 0
+    ? Math.round((turnout.totalVoted / turnout.totalEligible) * 100)
+    : 0;
 
   // Prepare pie chart data for voter turnout
   const voterTurnoutData = [
@@ -130,6 +137,95 @@ export default function ResultsClient({
           <span className="material-symbols-outlined text-xl">download</span>
           Export CSV
         </button>
+      </div>
+
+      {/* Voting Stats Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="flex items-center gap-3 mb-5">
+          <span className="material-symbols-outlined text-primary">
+            analytics
+          </span>
+          <h3 className="text-lg font-bold text-slate-900">ข้อมูลการลงคะแนน</h3>
+        </div>
+
+        {/* Row 1: 3 Stats Boxes */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="bg-slate-50 rounded-xl p-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-slate-400 text-lg">
+                groups
+              </span>
+            </div>
+            <p className="text-3xl font-bold text-slate-900">
+              {totalStudents.toLocaleString()}
+            </p>
+            <p className="text-sm text-slate-500">นักเรียนทั้งหมด</p>
+          </div>
+          <div className="bg-blue-50 rounded-xl p-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-blue-500 text-lg">
+                how_to_reg
+              </span>
+            </div>
+            <p className="text-3xl font-bold text-blue-600">
+              {turnout.totalEligible.toLocaleString()}
+            </p>
+            <p className="text-sm text-slate-500">ผู้มีสิทธิ</p>
+          </div>
+          <div className="bg-emerald-50 rounded-xl p-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-emerald-500 text-lg">
+                task_alt
+              </span>
+            </div>
+            <p className="text-3xl font-bold text-emerald-600">
+              {turnout.totalVoted.toLocaleString()}
+            </p>
+            <p className="text-sm text-slate-500">ลงคะแนนแล้ว</p>
+          </div>
+        </div>
+
+        {/* Row 2: 2 Percentage Boxes */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-linear-to-br from-violet-50 to-purple-50 rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500 mb-1">อัตราการมีส่วนร่วม</p>
+                <p className="text-xs text-slate-400">ลงคะแนน / นักเรียนทั้งหมด</p>
+              </div>
+              <div className="text-right">
+                <p className="text-3xl font-bold text-violet-600">
+                  {participationRate}%
+                </p>
+              </div>
+            </div>
+            <div className="w-full bg-violet-100 rounded-full h-2 mt-3">
+              <div
+                className="h-2 rounded-full bg-violet-500 transition-all"
+                style={{ width: `${participationRate}%` }}
+              ></div>
+            </div>
+          </div>
+          <div className="bg-linear-to-br from-cyan-50 to-blue-50 rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500 mb-1">อัตราการใช้สิทธิ</p>
+                <p className="text-xs text-slate-400">ลงคะแนน / ผู้มีสิทธิ</p>
+              </div>
+              <div className="text-right">
+                <p className="text-3xl font-bold text-cyan-600">
+                  {turnoutRate}%
+                </p>
+              </div>
+            </div>
+            <div className="w-full bg-cyan-100 rounded-full h-2 mt-3">
+              <div
+                className="h-2 rounded-full bg-cyan-500 transition-all"
+                style={{ width: `${turnoutRate}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Charts Section */}
@@ -349,58 +445,6 @@ export default function ResultsClient({
             </div>
           )}
         </div>
-      </div>
-
-      {/* Voting Log (Simplified - just show total votes) */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <button
-          onClick={() => setShowVotingLog(!showVotingLog)}
-          className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-slate-400">
-              security
-            </span>
-            <h3 className="text-lg font-bold text-slate-900">
-              ข้อมูลการลงคะแนน
-            </h3>
-          </div>
-          <span
-            className={`material-symbols-outlined text-slate-400 transition-transform ${
-              showVotingLog ? "rotate-180" : ""
-            }`}
-          >
-            expand_more
-          </span>
-        </button>
-
-        {showVotingLog && (
-          <div className="border-t border-slate-200 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-slate-50 rounded-lg p-4 text-center">
-                <p className="text-3xl font-bold text-slate-900">
-                  {turnout.totalVoted}
-                </p>
-                <p className="text-sm text-slate-500">ลงคะแนนแล้ว</p>
-              </div>
-              <div className="bg-slate-50 rounded-lg p-4 text-center">
-                <p className="text-3xl font-bold text-slate-900">
-                  {turnout.totalEligible}
-                </p>
-                <p className="text-sm text-slate-500">ผู้มีสิทธิ์ทั้งหมด</p>
-              </div>
-              <div className="bg-slate-50 rounded-lg p-4 text-center">
-                <p className="text-3xl font-bold text-slate-900">
-                  {turnout.percentage}%
-                </p>
-                <p className="text-sm text-slate-500">อัตราการมีส่วนร่วม</p>
-              </div>
-            </div>
-            <p className="text-sm text-slate-500 mt-4 text-center">
-              การโหวตเป็นแบบไม่ระบุตัวตน - ไม่สามารถติดตามว่าใครโหวตให้ใครได้
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
