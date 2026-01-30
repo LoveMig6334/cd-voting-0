@@ -10,13 +10,13 @@ This file provides context and instructions for AI agents (Gemini) working on th
 
 ### Technology Stack
 
-- **Framework:** Next.js 16 (App Router)
+- **Framework:** Next.js 16.1 (App Router)
 - **Language:** TypeScript
 - **UI:** Tailwind CSS 4, Glassmorphism design system
 - **State Management:** Server Actions (MySQL), React Server Components
 - **OCR:** `@techstark/opencv-js` (Image Processing) + `tesseract.js` (Text Recognition)
 - **Icons:** Material Symbols Outlined (Google Fonts)
-- **Visualization:** Recharts, TanStack Table
+- **Visualization:** Recharts, TanStack Table v8
 
 ## 2. Architecture & Key Concepts
 
@@ -67,6 +67,7 @@ This file provides context and instructions for AI agents (Gemini) working on th
 - **Build:** `npm run build`
 - **Start:** `npm start`
 - **Lint:** `npm run lint`
+- **Test:** `npm run test`
 
 ### Coding Conventions
 
@@ -84,10 +85,12 @@ This file provides context and instructions for AI agents (Gemini) working on th
 ## 4. Current Status
 
 The project has been **fully migrated** from client-side mock to MySQL:
+
 - Session-based auth with MySQL (Student + Admin)
 - Server Actions for all data operations (auth, elections, votes, students, activities, public-display)
 - Role-based access control (4 levels)
 - All localStorage stores removed
 
 Remaining work:
+
 - Production deployment configuration

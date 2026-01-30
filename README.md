@@ -24,7 +24,7 @@
 
 ## จุดเด่นของระบบ
 
-- **Next.js 16 + React 19** - ใช้ App Router และ Server Components เพื่อประสิทธิภาพสูงสุด
+- **Next.js 16.1 + React 19.2** - ใช้ App Router และ Server Components เพื่อประสิทธิภาพสูงสุด
 - **Multi-Position Elections** - รองรับการเลือกตั้งหลายตำแหน่งในครั้งเดียว (ประธาน, เลขา, เหรัญญิก ฯลฯ)
 - **Anonymous Voting** - ระบบแยกการบันทึกสิทธิ์และคะแนนโหวต เพื่อรักษาความลับของผู้ลงคะแนน
 - **Real-time Results** - แสดงผลคะแนนแบบเรียลไทม์พร้อมกราฟและตาราง
@@ -34,6 +34,7 @@
 ## สถานะปัจจุบัน (Current Status)
 
 ✅ **พร้อมใช้งาน**:
+
 - ระบบ Authentication แบบ Manual (Student ID + National ID)
 - Admin Dashboard สำหรับจัดการการเลือกตั้งและผู้สมัคร
 - ระบบโหวตแบบ Multi-Position พร้อมป้องกันการโหวตซ้ำ
@@ -41,6 +42,7 @@
 - ระบบอนุมัติสิทธิ์โหวตโดยครูประจำชั้น
 
 🚧 **กำลังเตรียม Deploy**:
+
 - ระบบ OCR อ่านบัตรนักเรียนอัตโนมัติ (อยู่ในขั้น Prototype)
 - การ Deploy ไปยังเว็บเซิร์ฟเวอร์โรงเรียน
 
@@ -50,8 +52,8 @@
 
 ## Frontend
 
-- **Framework:** Next.js 16 with App Router
-- **UI Library:** React 19
+- **Framework:** Next.js 16.1 with App Router
+- **UI Library:** React 19.2
 - **Styling:** Tailwind CSS 4 (Custom animations, glassmorphism design)
 - **State Management:** React Hooks + Context API
 - **UI Components:**
@@ -75,7 +77,7 @@
 
 ## Development Tools
 
-- **Package Manager:** pnpm
+- **Package Manager:** npm
 - **Linting:** ESLint + TypeScript ESLint
 - **Development Server:** XAMPP (Apache + MySQL)
 - **Version Control:** Git
@@ -437,22 +439,22 @@ COMMIT;
 
 ### 1. `students` - ข้อมูลนักเรียน
 
-| Column               | Type                       | Description                          |
-| -------------------- | -------------------------- | ------------------------------------ |
-| `id`                 | VARCHAR(10) PRIMARY KEY    | รหัสนักเรียน (e.g., "6312")          |
-| `national_id`        | VARCHAR(13) NOT NULL       | เลขบัตรประจำตัวประชาชน              |
-| `prefix`             | VARCHAR(20)                | คำนำหน้าชื่อ (นาย, นางสาว, เด็กชาย) |
-| `name`               | VARCHAR(100) NOT NULL      | ชื่อ                                 |
-| `surname`            | VARCHAR(100) NOT NULL      | นามสกุล                              |
-| `student_no`         | INT                        | เลขที่ในห้อง                         |
-| `class_room`         | VARCHAR(20) NOT NULL       | ห้องเรียน (e.g., "3/1")             |
-| `role`               | ENUM('STUDENT', 'ADMIN')   | บทบาท                                |
-| `voting_approved`    | BOOLEAN DEFAULT FALSE      | ได้รับอนุมัติสิทธิ์โหวตหรือไม่       |
-| `voting_approved_at` | DATETIME                   | วันที่อนุมัติ                        |
-| `voting_approved_by` | VARCHAR(100)               | ผู้อนุมัติ                           |
-| `last_active`        | DATETIME                   | ใช้งานล่าสุด                         |
-| `created_at`         | TIMESTAMP DEFAULT CURRENT  | วันที่สร้างบัญชี                     |
-| `updated_at`         | TIMESTAMP ON UPDATE        | วันที่แก้ไขล่าสุด                    |
+| Column               | Type                      | Description                         |
+| -------------------- | ------------------------- | ----------------------------------- |
+| `id`                 | VARCHAR(10) PRIMARY KEY   | รหัสนักเรียน (e.g., "6312")         |
+| `national_id`        | VARCHAR(13) NOT NULL      | เลขบัตรประจำตัวประชาชน              |
+| `prefix`             | VARCHAR(20)               | คำนำหน้าชื่อ (นาย, นางสาว, เด็กชาย) |
+| `name`               | VARCHAR(100) NOT NULL     | ชื่อ                                |
+| `surname`            | VARCHAR(100) NOT NULL     | นามสกุล                             |
+| `student_no`         | INT                       | เลขที่ในห้อง                        |
+| `class_room`         | VARCHAR(20) NOT NULL      | ห้องเรียน (e.g., "3/1")             |
+| `role`               | ENUM('STUDENT', 'ADMIN')  | บทบาท                               |
+| `voting_approved`    | BOOLEAN DEFAULT FALSE     | ได้รับอนุมัติสิทธิ์โหวตหรือไม่      |
+| `voting_approved_at` | DATETIME                  | วันที่อนุมัติ                       |
+| `voting_approved_by` | VARCHAR(100)              | ผู้อนุมัติ                          |
+| `last_active`        | DATETIME                  | ใช้งานล่าสุด                        |
+| `created_at`         | TIMESTAMP DEFAULT CURRENT | วันที่สร้างบัญชี                    |
+| `updated_at`         | TIMESTAMP ON UPDATE       | วันที่แก้ไขล่าสุด                   |
 
 **Indexes:**
 
@@ -463,33 +465,33 @@ COMMIT;
 
 ### 2. `elections` - การเลือกตั้ง
 
-| Column        | Type                                 | Description                  |
-| ------------- | ------------------------------------ | ---------------------------- |
-| `id`          | INT AUTO_INCREMENT PRIMARY KEY       | รหัสการเลือกตั้ง             |
-| `title`       | VARCHAR(255) NOT NULL                | หัวข้อการเลือกตั้ง           |
-| `description` | TEXT                                 | รายละเอียด                   |
-| `type`        | VARCHAR(50)                          | ประเภท (e.g., council, club) |
-| `start_date`  | DATETIME NOT NULL                    | วันเริ่มต้น                  |
-| `end_date`    | DATETIME NOT NULL                    | วันสิ้นสุด                   |
-| `status`      | ENUM('PENDING', 'OPEN', 'CLOSED')    | สถานะ                        |
-| `is_active`   | BOOLEAN DEFAULT TRUE                 | เปิดใช้งานหรือไม่            |
-| `total_votes` | INT DEFAULT 0                        | จำนวนผู้มาใช้สิทธิ์ทั้งหมด |
-| `created_at`  | TIMESTAMP DEFAULT CURRENT_TIMESTAMP  | วันที่สร้าง                  |
+| Column        | Type                                  | Description                  |
+| ------------- | ------------------------------------- | ---------------------------- |
+| `id`          | INT AUTO_INCREMENT PRIMARY KEY        | รหัสการเลือกตั้ง             |
+| `title`       | VARCHAR(255) NOT NULL                 | หัวข้อการเลือกตั้ง           |
+| `description` | TEXT                                  | รายละเอียด                   |
+| `type`        | VARCHAR(50)                           | ประเภท (e.g., council, club) |
+| `start_date`  | DATETIME NOT NULL                     | วันเริ่มต้น                  |
+| `end_date`    | DATETIME NOT NULL                     | วันสิ้นสุด                   |
+| `status`      | ENUM('PENDING', 'OPEN', 'CLOSED')     | สถานะ                        |
+| `is_active`   | BOOLEAN DEFAULT TRUE                  | เปิดใช้งานหรือไม่            |
+| `total_votes` | INT DEFAULT 0                         | จำนวนผู้มาใช้สิทธิ์ทั้งหมด   |
+| `created_at`  | TIMESTAMP DEFAULT CURRENT_TIMESTAMP   | วันที่สร้าง                  |
 | `updated_at`  | TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | วันที่แก้ไข                  |
 
 ---
 
 ### 3. `positions` - ตำแหน่งที่เปิดให้เลือกตั้ง
 
-| Column        | Type                       | Description                       |
-| ------------- | -------------------------- | --------------------------------- |
-| `id`          | VARCHAR(50) PRIMARY KEY    | รหัสตำแหน่ง (e.g., "president")  |
-| `election_id` | INT NOT NULL (FK)          | สังกัดการเลือกตั้งไหน             |
-| `title`       | VARCHAR(100) NOT NULL      | ชื่อตำแหน่ง (e.g., "ประธาน")     |
-| `icon`        | VARCHAR(50)                | ไอคอน (Material Symbol)           |
-| `enabled`     | BOOLEAN DEFAULT TRUE       | เปิดใช้งานหรือไม่                |
-| `is_custom`   | BOOLEAN DEFAULT FALSE      | เป็นตำแหน่งที่สร้างเองหรือไม่    |
-| `sort_order`  | INT DEFAULT 0              | ลำดับการแสดงผล                    |
+| Column        | Type                    | Description                     |
+| ------------- | ----------------------- | ------------------------------- |
+| `id`          | VARCHAR(50) PRIMARY KEY | รหัสตำแหน่ง (e.g., "president") |
+| `election_id` | INT NOT NULL (FK)       | สังกัดการเลือกตั้งไหน           |
+| `title`       | VARCHAR(100) NOT NULL   | ชื่อตำแหน่ง (e.g., "ประธาน")    |
+| `icon`        | VARCHAR(50)             | ไอคอน (Material Symbol)         |
+| `enabled`     | BOOLEAN DEFAULT TRUE    | เปิดใช้งานหรือไม่               |
+| `is_custom`   | BOOLEAN DEFAULT FALSE   | เป็นตำแหน่งที่สร้างเองหรือไม่   |
+| `sort_order`  | INT DEFAULT 0           | ลำดับการแสดงผล                  |
 
 **Foreign Keys:**
 
@@ -499,16 +501,16 @@ COMMIT;
 
 ### 4. `candidates` - ผู้สมัคร
 
-| Column        | Type                                | Description                    |
-| ------------- | ----------------------------------- | ------------------------------ |
-| `id`          | INT AUTO_INCREMENT PRIMARY KEY      | รหัสผู้สมัคร                   |
-| `election_id` | INT NOT NULL (FK)                   | สังกัดการเลือกตั้งไหน          |
-| `position_id` | VARCHAR(50) NOT NULL (FK)           | ลงสมัครตำแหน่งไหน              |
-| `rank`        | INT NOT NULL                        | หมายเลขผู้สมัคร (เบอร์)        |
-| `name`        | VARCHAR(255) NOT NULL               | ชื่อผู้สมัคร                   |
-| `slogan`      | VARCHAR(255)                        | คำขวัญ                         |
-| `image_url`   | VARCHAR(500)                        | URL รูปภาพ                     |
-| `created_at`  | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | วันที่เพิ่มผู้สมัคร            |
+| Column        | Type                                | Description             |
+| ------------- | ----------------------------------- | ----------------------- |
+| `id`          | INT AUTO_INCREMENT PRIMARY KEY      | รหัสผู้สมัคร            |
+| `election_id` | INT NOT NULL (FK)                   | สังกัดการเลือกตั้งไหน   |
+| `position_id` | VARCHAR(50) NOT NULL (FK)           | ลงสมัครตำแหน่งไหน       |
+| `rank`        | INT NOT NULL                        | หมายเลขผู้สมัคร (เบอร์) |
+| `name`        | VARCHAR(255) NOT NULL               | ชื่อผู้สมัคร            |
+| `slogan`      | VARCHAR(255)                        | คำขวัญ                  |
+| `image_url`   | VARCHAR(500)                        | URL รูปภาพ              |
+| `created_at`  | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | วันที่เพิ่มผู้สมัคร     |
 
 **Foreign Keys:**
 
@@ -525,14 +527,14 @@ COMMIT;
 
 > ⚠️ **ตารางนี้บันทึกว่า "ใครมาโหวตแล้ว" แต่ไม่รู้ว่า "เลือกใคร"**
 
-| Column        | Type                                | Description                   |
-| ------------- | ----------------------------------- | ----------------------------- |
-| `id`          | INT AUTO_INCREMENT PRIMARY KEY      | รหัสบันทึก                    |
-| `student_id`  | VARCHAR(10) NOT NULL (FK)           | นักเรียนคนไหนมาใช้สิทธิ์     |
-| `election_id` | INT NOT NULL (FK)                   | การเลือกตั้งไหน               |
-| `voted_at`    | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | เวลาที่โหวต                   |
-| `ip_address`  | VARCHAR(45)                         | IP Address (Optional)         |
-| `user_agent`  | TEXT                                | Browser Info (Optional)       |
+| Column        | Type                                | Description              |
+| ------------- | ----------------------------------- | ------------------------ |
+| `id`          | INT AUTO_INCREMENT PRIMARY KEY      | รหัสบันทึก               |
+| `student_id`  | VARCHAR(10) NOT NULL (FK)           | นักเรียนคนไหนมาใช้สิทธิ์ |
+| `election_id` | INT NOT NULL (FK)                   | การเลือกตั้งไหน          |
+| `voted_at`    | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | เวลาที่โหวต              |
+| `ip_address`  | VARCHAR(45)                         | IP Address (Optional)    |
+| `user_agent`  | TEXT                                | Browser Info (Optional)  |
 
 **Foreign Keys:**
 
@@ -549,14 +551,14 @@ COMMIT;
 
 > ⚠️ **ตารางนี้บันทึกเฉพาะ "คะแนน" ไม่มี student_id เพื่อรักษาความลับ**
 
-| Column         | Type                                | Description                  |
-| -------------- | ----------------------------------- | ---------------------------- |
-| `id`           | BIGINT AUTO_INCREMENT PRIMARY KEY   | รหัสคะแนน                    |
-| `election_id`  | INT NOT NULL (FK)                   | การเลือกตั้งไหน              |
-| `position_id`  | VARCHAR(50) NOT NULL (FK)           | ตำแหน่งไหน                   |
+| Column         | Type                                | Description                             |
+| -------------- | ----------------------------------- | --------------------------------------- |
+| `id`           | BIGINT AUTO_INCREMENT PRIMARY KEY   | รหัสคะแนน                               |
+| `election_id`  | INT NOT NULL (FK)                   | การเลือกตั้งไหน                         |
+| `position_id`  | VARCHAR(50) NOT NULL (FK)           | ตำแหน่งไหน                              |
 | `candidate_id` | INT (FK)                            | เลือกผู้สมัครคนไหน (NULL ถ้างดออกเสียง) |
-| `is_no_vote`   | BOOLEAN DEFAULT FALSE               | งดออกเสียงหรือไม่            |
-| `created_at`   | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | เวลาที่บันทึกคะแนน           |
+| `is_no_vote`   | BOOLEAN DEFAULT FALSE               | งดออกเสียงหรือไม่                       |
+| `created_at`   | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | เวลาที่บันทึกคะแนน                      |
 
 **Foreign Keys:**
 
@@ -572,12 +574,12 @@ COMMIT;
 
 ### 7. `sessions` - Server-side Authentication
 
-| Column       | Type                                | Description           |
-| ------------ | ----------------------------------- | --------------------- |
-| `id`         | VARCHAR(255) PRIMARY KEY            | Session Token (UUID)  |
-| `student_id` | VARCHAR(10) NOT NULL (FK)           | นักเรียนคนไหน         |
-| `expires_at` | DATETIME NOT NULL                   | วันหมดอายุ            |
-| `created_at` | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | วันที่สร้าง Session   |
+| Column       | Type                                | Description          |
+| ------------ | ----------------------------------- | -------------------- |
+| `id`         | VARCHAR(255) PRIMARY KEY            | Session Token (UUID) |
+| `student_id` | VARCHAR(10) NOT NULL (FK)           | นักเรียนคนไหน        |
+| `expires_at` | DATETIME NOT NULL                   | วันหมดอายุ           |
+| `created_at` | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | วันที่สร้าง Session  |
 
 **Foreign Keys:**
 
@@ -591,14 +593,14 @@ COMMIT;
 
 ### 8. `admins` - ผู้ดูแลระบบ
 
-| Column          | Type                                | Description                      |
-| --------------- | ----------------------------------- | -------------------------------- |
-| `id`            | INT AUTO_INCREMENT PRIMARY KEY      | รหัส Admin                       |
-| `username`      | VARCHAR(50) UNIQUE NOT NULL         | Username                         |
-| `password_hash` | VARCHAR(255) NOT NULL               | bcrypt hash                      |
-| `display_name`  | VARCHAR(100)                        | ชื่อที่แสดง                      |
+| Column          | Type                                | Description                             |
+| --------------- | ----------------------------------- | --------------------------------------- |
+| `id`            | INT AUTO_INCREMENT PRIMARY KEY      | รหัส Admin                              |
+| `username`      | VARCHAR(50) UNIQUE NOT NULL         | Username                                |
+| `password_hash` | VARCHAR(255) NOT NULL               | bcrypt hash                             |
+| `display_name`  | VARCHAR(100)                        | ชื่อที่แสดง                             |
 | `access_level`  | TINYINT DEFAULT 1                   | 0=Root, 1=System, 2=Teacher, 3=Observer |
-| `created_at`    | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | วันที่สร้างบัญชี                |
+| `created_at`    | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | วันที่สร้างบัญชี                        |
 
 ---
 
@@ -619,14 +621,14 @@ COMMIT;
 
 ### 10. `activities` - Activity Log
 
-| Column        | Type                                                                     | Description          |
-| ------------- | ------------------------------------------------------------------------ | -------------------- |
-| `id`          | INT AUTO_INCREMENT PRIMARY KEY                                           | รหัสกิจกรรม          |
-| `type`        | ENUM('vote_cast', 'system_check', 'admin_action', 'election_change')    | ประเภทกิจกรรม        |
-| `title`       | VARCHAR(255) NOT NULL                                                    | หัวข้อกิจกรรม        |
-| `description` | TEXT NOT NULL                                                            | รายละเอียด           |
-| `metadata`    | JSON                                                                     | ข้อมูลเพิ่มเติม (Optional) |
-| `created_at`  | TIMESTAMP DEFAULT CURRENT_TIMESTAMP                                      | เวลาที่เกิดกิจกรรม   |
+| Column        | Type                                                                 | Description                |
+| ------------- | -------------------------------------------------------------------- | -------------------------- |
+| `id`          | INT AUTO_INCREMENT PRIMARY KEY                                       | รหัสกิจกรรม                |
+| `type`        | ENUM('vote_cast', 'system_check', 'admin_action', 'election_change') | ประเภทกิจกรรม              |
+| `title`       | VARCHAR(255) NOT NULL                                                | หัวข้อกิจกรรม              |
+| `description` | TEXT NOT NULL                                                        | รายละเอียด                 |
+| `metadata`    | JSON                                                                 | ข้อมูลเพิ่มเติม (Optional) |
+| `created_at`  | TIMESTAMP DEFAULT CURRENT_TIMESTAMP                                  | เวลาที่เกิดกิจกรรม         |
 
 **Indexes:**
 
@@ -637,16 +639,16 @@ COMMIT;
 
 ### 11. `public_display_settings` - การตั้งค่าการแสดงผลสาธารณะ
 
-| Column                      | Type                                  | Description                            |
-| --------------------------- | ------------------------------------- | -------------------------------------- |
-| `id`                        | INT AUTO_INCREMENT PRIMARY KEY        | รหัสการตั้งค่า                         |
-| `election_id`               | INT NOT NULL (FK)                     | การเลือกตั้งไหน                        |
-| `is_published`              | BOOLEAN DEFAULT FALSE                 | เผยแพร่ผลหรือยัง                       |
-| `published_at`              | DATETIME                              | วันเวลาที่เผยแพร่                      |
-| `global_show_raw_score`     | BOOLEAN DEFAULT TRUE                  | แสดงคะแนนดิบทุกตำแหน่ง                |
-| `global_show_winner_only`   | BOOLEAN DEFAULT FALSE                 | แสดงเฉพาะผู้ชนะทุกตำแหน่ง             |
-| `created_at`                | TIMESTAMP DEFAULT CURRENT_TIMESTAMP   | วันที่สร้าง                            |
-| `updated_at`                | TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | วันที่แก้ไข                            |
+| Column                    | Type                                  | Description               |
+| ------------------------- | ------------------------------------- | ------------------------- |
+| `id`                      | INT AUTO_INCREMENT PRIMARY KEY        | รหัสการตั้งค่า            |
+| `election_id`             | INT NOT NULL (FK)                     | การเลือกตั้งไหน           |
+| `is_published`            | BOOLEAN DEFAULT FALSE                 | เผยแพร่ผลหรือยัง          |
+| `published_at`            | DATETIME                              | วันเวลาที่เผยแพร่         |
+| `global_show_raw_score`   | BOOLEAN DEFAULT TRUE                  | แสดงคะแนนดิบทุกตำแหน่ง    |
+| `global_show_winner_only` | BOOLEAN DEFAULT FALSE                 | แสดงเฉพาะผู้ชนะทุกตำแหน่ง |
+| `created_at`              | TIMESTAMP DEFAULT CURRENT_TIMESTAMP   | วันที่สร้าง               |
+| `updated_at`              | TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | วันที่แก้ไข               |
 
 **Foreign Keys:**
 
@@ -660,16 +662,16 @@ COMMIT;
 
 ### 12. `position_display_configs` - การตั้งค่าแสดงผลแต่ละตำแหน่ง
 
-| Column               | Type                                  | Description                     |
-| -------------------- | ------------------------------------- | ------------------------------- |
-| `id`                 | INT AUTO_INCREMENT PRIMARY KEY        | รหัสการตั้งค่า                  |
-| `election_id`        | INT NOT NULL (FK)                     | การเลือกตั้งไหน                 |
-| `position_id`        | VARCHAR(50) NOT NULL (FK)             | ตำแหน่งไหน                      |
-| `show_raw_score`     | BOOLEAN DEFAULT TRUE                  | แสดงคะแนนดิบ                    |
-| `show_winner_only`   | BOOLEAN DEFAULT FALSE                 | แสดงเฉพาะผู้ชนะ                 |
-| `skip`               | BOOLEAN DEFAULT FALSE                 | ข้ามการแสดงผล                   |
-| `created_at`         | TIMESTAMP DEFAULT CURRENT_TIMESTAMP   | วันที่สร้าง                     |
-| `updated_at`         | TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | วันที่แก้ไข                     |
+| Column             | Type                                  | Description     |
+| ------------------ | ------------------------------------- | --------------- |
+| `id`               | INT AUTO_INCREMENT PRIMARY KEY        | รหัสการตั้งค่า  |
+| `election_id`      | INT NOT NULL (FK)                     | การเลือกตั้งไหน |
+| `position_id`      | VARCHAR(50) NOT NULL (FK)             | ตำแหน่งไหน      |
+| `show_raw_score`   | BOOLEAN DEFAULT TRUE                  | แสดงคะแนนดิบ    |
+| `show_winner_only` | BOOLEAN DEFAULT FALSE                 | แสดงเฉพาะผู้ชนะ |
+| `skip`             | BOOLEAN DEFAULT FALSE                 | ข้ามการแสดงผล   |
+| `created_at`       | TIMESTAMP DEFAULT CURRENT_TIMESTAMP   | วันที่สร้าง     |
+| `updated_at`       | TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | วันที่แก้ไข     |
 
 **Foreign Keys:**
 
@@ -733,12 +735,12 @@ WHERE vh.election_id = ?;
 
 ### Server Actions (`lib/actions/auth.ts`)
 
-| Function              | Description                              | Parameters                                   | Returns                                |
-| --------------------- | ---------------------------------------- | -------------------------------------------- | -------------------------------------- |
-| `loginAction`         | Login นักเรียนด้วย Student ID + National ID | `studentId: string, nationalId: string`     | `{ success: boolean, student?, error? }` |
-| `logoutAction`        | Logout และลบ Session                     | -                                            | `{ success: boolean }`                 |
-| `getCurrentSession`   | ดึงข้อมูล Session ปัจจุบัน               | -                                            | `Student \| null`                      |
-| `lookupStudent`       | ค้นหานักเรียนจากฐานข้อมูล (สำหรับลงทะเบียน) | `studentId: string, nationalId: string`     | `{ success: boolean, student?, error? }` |
+| Function            | Description                                 | Parameters                              | Returns                                  |
+| ------------------- | ------------------------------------------- | --------------------------------------- | ---------------------------------------- |
+| `loginAction`       | Login นักเรียนด้วย Student ID + National ID | `studentId: string, nationalId: string` | `{ success: boolean, student?, error? }` |
+| `logoutAction`      | Logout และลบ Session                        | -                                       | `{ success: boolean }`                   |
+| `getCurrentSession` | ดึงข้อมูล Session ปัจจุบัน                  | -                                       | `Student \| null`                        |
+| `lookupStudent`     | ค้นหานักเรียนจากฐานข้อมูล (สำหรับลงทะเบียน) | `studentId: string, nationalId: string` | `{ success: boolean, student?, error? }` |
 
 **ตัวอย่าง Usage:**
 
@@ -764,25 +766,25 @@ if (!session) {
 
 ### Elections
 
-| Endpoint/Function        | Method | Description                 | Auth Required |
-| ------------------------ | ------ | --------------------------- | ------------- |
-| `getActiveElections`     | Server Action | ดึงการเลือกตั้งที่เปิดอยู่ | ✅ Session    |
-| `getElectionDetails`     | Server Action | ดึงรายละเอียดการเลือกตั้ง  | ✅ Session    |
-| `getCandidates`          | Server Action | ดึงรายชื่อผู้สมัคร          | ✅ Session    |
+| Endpoint/Function    | Method        | Description                | Auth Required |
+| -------------------- | ------------- | -------------------------- | ------------- |
+| `getActiveElections` | Server Action | ดึงการเลือกตั้งที่เปิดอยู่ | ✅ Session    |
+| `getElectionDetails` | Server Action | ดึงรายละเอียดการเลือกตั้ง  | ✅ Session    |
+| `getCandidates`      | Server Action | ดึงรายชื่อผู้สมัคร         | ✅ Session    |
 
 ### Voting
 
-| Function         | Description              | Parameters                                        | Returns                           |
-| ---------------- | ------------------------ | ------------------------------------------------- | --------------------------------- |
-| `castVoteAction` | ลงคะแนนโหวต              | `electionId: number, votes: VotePayload[]`        | `{ success: boolean, error? }`    |
-| `checkVoteStatus` | ตรวจสอบว่าโหวตแล้วหรือยัง | `studentId: string, electionId: number`           | `{ hasVoted: boolean }`           |
-| `getVoteHistory` | ดูประวัติการโหวตของตัวเอง | `studentId: string`                               | `VoteHistory[]`                   |
+| Function          | Description               | Parameters                                 | Returns                        |
+| ----------------- | ------------------------- | ------------------------------------------ | ------------------------------ |
+| `castVoteAction`  | ลงคะแนนโหวต               | `electionId: number, votes: VotePayload[]` | `{ success: boolean, error? }` |
+| `checkVoteStatus` | ตรวจสอบว่าโหวตแล้วหรือยัง | `studentId: string, electionId: number`    | `{ hasVoted: boolean }`        |
+| `getVoteHistory`  | ดูประวัติการโหวตของตัวเอง | `studentId: string`                        | `VoteHistory[]`                |
 
 **VotePayload Interface:**
 
 ```typescript
 interface VotePayload {
-  positionId: string;      // e.g., "president"
+  positionId: string; // e.g., "president"
   candidateId: number | null; // null = No Vote (งดออกเสียง)
   isNoVote: boolean;
 }
@@ -810,36 +812,36 @@ await castVoteAction(1, [
 
 ### Elections Management
 
-| Function                | Description                  | Parameters                            | Returns                        |
-| ----------------------- | ---------------------------- | ------------------------------------- | ------------------------------ |
-| `createElection`        | สร้างการเลือกตั้งใหม่        | `ElectionInput`                       | `{ success: boolean, id? }`    |
-| `updateElection`        | แก้ไขการเลือกตั้ง            | `electionId: number, data: Partial<Election>` | `{ success: boolean }`         |
-| `deleteElection`        | ลบการเลือกตั้ง               | `electionId: number`                  | `{ success: boolean }`         |
-| `changeElectionStatus`  | เปลี่ยนสถานะ (OPEN/CLOSED)   | `electionId: number, status: string`  | `{ success: boolean }`         |
+| Function               | Description                | Parameters                                    | Returns                     |
+| ---------------------- | -------------------------- | --------------------------------------------- | --------------------------- |
+| `createElection`       | สร้างการเลือกตั้งใหม่      | `ElectionInput`                               | `{ success: boolean, id? }` |
+| `updateElection`       | แก้ไขการเลือกตั้ง          | `electionId: number, data: Partial<Election>` | `{ success: boolean }`      |
+| `deleteElection`       | ลบการเลือกตั้ง             | `electionId: number`                          | `{ success: boolean }`      |
+| `changeElectionStatus` | เปลี่ยนสถานะ (OPEN/CLOSED) | `electionId: number, status: string`          | `{ success: boolean }`      |
 
 ### Candidates Management
 
-| Function          | Description           | Parameters                                  | Returns                     |
-| ----------------- | --------------------- | ------------------------------------------- | --------------------------- |
-| `addCandidate`    | เพิ่มผู้สมัคร         | `CandidateInput`                            | `{ success: boolean, id? }` |
-| `updateCandidate` | แก้ไขข้อมูลผู้สมัคร   | `candidateId: number, data: Partial<Candidate>` | `{ success: boolean }`      |
-| `deleteCandidate` | ลบผู้สมัคร            | `candidateId: number`                       | `{ success: boolean }`      |
+| Function          | Description         | Parameters                                      | Returns                     |
+| ----------------- | ------------------- | ----------------------------------------------- | --------------------------- |
+| `addCandidate`    | เพิ่มผู้สมัคร       | `CandidateInput`                                | `{ success: boolean, id? }` |
+| `updateCandidate` | แก้ไขข้อมูลผู้สมัคร | `candidateId: number, data: Partial<Candidate>` | `{ success: boolean }`      |
+| `deleteCandidate` | ลบผู้สมัคร          | `candidateId: number`                           | `{ success: boolean }`      |
 
 ### Students Management
 
-| Function              | Description                  | Parameters                            | Returns                     |
-| --------------------- | ---------------------------- | ------------------------------------- | --------------------------- |
-| `getAllStudents`      | ดึงรายชื่อนักเรียนทั้งหมด    | `filters?: StudentFilters`            | `Student[]`                 |
-| `approveVotingRights` | อนุมัติสิทธิ์โหวต            | `studentId: string, approvedBy: string` | `{ success: boolean }`      |
-| `revokeVotingRights`  | เพิกถอนสิทธิ์โหวต            | `studentId: string`                   | `{ success: boolean }`      |
+| Function              | Description               | Parameters                              | Returns                |
+| --------------------- | ------------------------- | --------------------------------------- | ---------------------- |
+| `getAllStudents`      | ดึงรายชื่อนักเรียนทั้งหมด | `filters?: StudentFilters`              | `Student[]`            |
+| `approveVotingRights` | อนุมัติสิทธิ์โหวต         | `studentId: string, approvedBy: string` | `{ success: boolean }` |
+| `revokeVotingRights`  | เพิกถอนสิทธิ์โหวต         | `studentId: string`                     | `{ success: boolean }` |
 
 ### Results & Analytics
 
-| Function             | Description                      | Parameters              | Returns                         |
-| -------------------- | -------------------------------- | ----------------------- | ------------------------------- |
-| `getElectionResults` | ดึงผลคะแนนแบบเรียลไทม์            | `electionId: number`    | `ElectionResults`               |
-| `getVoterTurnout`    | ดูจำนวนผู้มาใช้สิทธิ์            | `electionId: number`    | `{ voted: number, total: number }` |
-| `getActivityLog`     | ดึงประวัติกิจกรรม                | `filters?: ActivityFilters` | `Activity[]`                    |
+| Function             | Description            | Parameters                  | Returns                            |
+| -------------------- | ---------------------- | --------------------------- | ---------------------------------- |
+| `getElectionResults` | ดึงผลคะแนนแบบเรียลไทม์ | `electionId: number`        | `ElectionResults`                  |
+| `getVoterTurnout`    | ดูจำนวนผู้มาใช้สิทธิ์  | `electionId: number`        | `{ voted: number, total: number }` |
+| `getActivityLog`     | ดึงประวัติกิจกรรม      | `filters?: ActivityFilters` | `Activity[]`                       |
 
 **ElectionResults Interface:**
 
@@ -916,17 +918,17 @@ interface APIError {
 
 ### Common Error Codes
 
-| Code                     | HTTP Status | Description                         |
-| ------------------------ | ----------- | ----------------------------------- |
-| `UNAUTHORIZED`           | 401         | ไม่มี Session หรือ Session หมดอายุ |
-| `FORBIDDEN`              | 403         | ไม่มีสิทธิ์เข้าถึง                  |
-| `NOT_FOUND`              | 404         | ไม่พบข้อมูล                         |
-| `ALREADY_VOTED`          | 409         | โหวตไปแล้ว (ป้องกันโหวตซ้ำ)        |
-| `VOTING_NOT_APPROVED`    | 403         | ยังไม่ได้รับอนุมัติสิทธิ์โหวต      |
-| `ELECTION_CLOSED`        | 400         | การเลือกตั้งปิดแล้ว                 |
-| `DUPLICATE_ENTRY`        | 409         | ข้อมูลซ้ำ                            |
-| `VALIDATION_ERROR`       | 400         | ข้อมูลไม่ถูกต้อง                    |
-| `DATABASE_ERROR`         | 500         | เกิดข้อผิดพลาดในฐานข้อมูล          |
+| Code                  | HTTP Status | Description                        |
+| --------------------- | ----------- | ---------------------------------- |
+| `UNAUTHORIZED`        | 401         | ไม่มี Session หรือ Session หมดอายุ |
+| `FORBIDDEN`           | 403         | ไม่มีสิทธิ์เข้าถึง                 |
+| `NOT_FOUND`           | 404         | ไม่พบข้อมูล                        |
+| `ALREADY_VOTED`       | 409         | โหวตไปแล้ว (ป้องกันโหวตซ้ำ)        |
+| `VOTING_NOT_APPROVED` | 403         | ยังไม่ได้รับอนุมัติสิทธิ์โหวต      |
+| `ELECTION_CLOSED`     | 400         | การเลือกตั้งปิดแล้ว                |
+| `DUPLICATE_ENTRY`     | 409         | ข้อมูลซ้ำ                          |
+| `VALIDATION_ERROR`    | 400         | ข้อมูลไม่ถูกต้อง                   |
+| `DATABASE_ERROR`      | 500         | เกิดข้อผิดพลาดในฐานข้อมูล          |
 
 ---
 
@@ -1150,19 +1152,19 @@ const rawText = result.data.text;
 
 **Extraction Functions:**
 
-| Function                | Pattern Matching                                     | Confidence |
-| ----------------------- | ---------------------------------------------------- | ---------- |
-| `extractStudentId`      | `เลขประจำตัว[นักเรียน]: XXXX`                       | 100%       |
-|                         | `Student ID: XXXX`                                   | 95%        |
-|                         | 4-digit starting with 6/7                            | 70%        |
-| `extractClassroom`      | `ห้องเรียน: X/Y`                                     | 100%       |
-|                         | `X/Y` format (e.g., "3/1")                           | 80%        |
-| `extractName`           | `ชื่อ-สกุล: [คำนำหน้า] [ชื่อ] [นามสกุล]`            | 100%       |
-|                         | Title + 2 Thai words                                 | 85%        |
-| `extractStudentNo`      | `เลขที่: XX`                                         | 100%       |
-|                         | Number 1-50 near other info                          | 70%        |
-| `extractNationalId`     | `เลขบัตรประชาชน: X XXXX XXXXX XX X`                 | 100%       |
-|                         | 13-digit number                                      | 90%        |
+| Function            | Pattern Matching                         | Confidence |
+| ------------------- | ---------------------------------------- | ---------- |
+| `extractStudentId`  | `เลขประจำตัว[นักเรียน]: XXXX`            | 100%       |
+|                     | `Student ID: XXXX`                       | 95%        |
+|                     | 4-digit starting with 6/7                | 70%        |
+| `extractClassroom`  | `ห้องเรียน: X/Y`                         | 100%       |
+|                     | `X/Y` format (e.g., "3/1")               | 80%        |
+| `extractName`       | `ชื่อ-สกุล: [คำนำหน้า] [ชื่อ] [นามสกุล]` | 100%       |
+|                     | Title + 2 Thai words                     | 85%        |
+| `extractStudentNo`  | `เลขที่: XX`                             | 100%       |
+|                     | Number 1-50 near other info              | 70%        |
+| `extractNationalId` | `เลขบัตรประชาชน: X XXXX XXXXX XX X`      | 100%       |
+|                     | 13-digit number                          | 90%        |
 
 **Output:**
 
@@ -1195,7 +1197,7 @@ interface ParseResult {
 // ตรวจสอบกับ data.json หรือ MySQL
 const student = await query<StudentRow>(
   "SELECT * FROM students WHERE id = ? AND national_id = ?",
-  [parsedData.id, parsedData.nationalId]
+  [parsedData.id, parsedData.nationalId],
 );
 
 if (student) {
@@ -1209,16 +1211,16 @@ if (student) {
 
 ## 8.4 ไฟล์ที่เกี่ยวข้อง
 
-| File                              | Purpose                                 |
-| --------------------------------- | --------------------------------------- |
-| [`lib/ocr/index.ts`](lib/ocr/index.ts)            | Entry Point - Re-exports all functions  |
-| [`lib/ocr/types.ts`](lib/ocr/types.ts)            | TypeScript Interfaces                   |
-| [`lib/ocr/constants.ts`](lib/ocr/constants.ts)    | Configuration Values                    |
-| [`lib/ocr/opencv-loader.ts`](lib/ocr/opencv-loader.ts) | OpenCV.js Dynamic Loading               |
-| [`lib/ocr/detector.ts`](lib/ocr/detector.ts)      | Card Detection Algorithm                |
-| [`lib/ocr/pipeline.ts`](lib/ocr/pipeline.ts)      | Image Processing Pipeline               |
-| [`lib/ocr/parser.ts`](lib/ocr/parser.ts)          | OCR Text Parsing                        |
-| [`lib/ocr/debug-visualizer.ts`](lib/ocr/debug-visualizer.ts) | Debug Visualization Tools               |
+| File                                                         | Purpose                                |
+| ------------------------------------------------------------ | -------------------------------------- |
+| [`lib/ocr/index.ts`](lib/ocr/index.ts)                       | Entry Point - Re-exports all functions |
+| [`lib/ocr/types.ts`](lib/ocr/types.ts)                       | TypeScript Interfaces                  |
+| [`lib/ocr/constants.ts`](lib/ocr/constants.ts)               | Configuration Values                   |
+| [`lib/ocr/opencv-loader.ts`](lib/ocr/opencv-loader.ts)       | OpenCV.js Dynamic Loading              |
+| [`lib/ocr/detector.ts`](lib/ocr/detector.ts)                 | Card Detection Algorithm               |
+| [`lib/ocr/pipeline.ts`](lib/ocr/pipeline.ts)                 | Image Processing Pipeline              |
+| [`lib/ocr/parser.ts`](lib/ocr/parser.ts)                     | OCR Text Parsing                       |
+| [`lib/ocr/debug-visualizer.ts`](lib/ocr/debug-visualizer.ts) | Debug Visualization Tools              |
 
 ---
 
@@ -1348,10 +1350,9 @@ WHERE id = '6312';
 
 ```typescript
 // ตรวจสอบก่อนให้โหวต
-const student = await query<StudentRow>(
-  "SELECT * FROM students WHERE id = ?",
-  [studentId]
-);
+const student = await query<StudentRow>("SELECT * FROM students WHERE id = ?", [
+  studentId,
+]);
 
 if (!student.voting_approved) {
   return {
@@ -1413,7 +1414,11 @@ sequenceDiagram
 
 export async function castVoteAction(
   electionId: number,
-  votes: { positionId: string; candidateId: number | null; isNoVote: boolean }[]
+  votes: {
+    positionId: string;
+    candidateId: number | null;
+    isNoVote: boolean;
+  }[],
 ) {
   const session = await getCurrentSession();
   if (!session) {
@@ -1424,7 +1429,7 @@ export async function castVoteAction(
     // 1. ตรวจสอบสิทธิ์
     const [student] = await conn.query<StudentRow[]>(
       "SELECT * FROM students WHERE id = ?",
-      [session.id]
+      [session.id],
     );
 
     if (!student.voting_approved) {
@@ -1434,7 +1439,7 @@ export async function castVoteAction(
     // 2. ตรวจสอบว่าโหวตแล้วหรือยัง
     const [existingVote] = await conn.query(
       "SELECT * FROM vote_history WHERE student_id = ? AND election_id = ?",
-      [session.id, electionId]
+      [session.id, electionId],
     );
 
     if (existingVote.length > 0) {
@@ -1444,21 +1449,21 @@ export async function castVoteAction(
     // 3. บันทึกการมาใช้สิทธิ์
     await conn.execute(
       "INSERT INTO vote_history (student_id, election_id) VALUES (?, ?)",
-      [session.id, electionId]
+      [session.id, electionId],
     );
 
     // 4. บันทึกคะแนนโหวต (ไม่มี student_id)
     for (const vote of votes) {
       await conn.execute(
         "INSERT INTO votes (election_id, position_id, candidate_id, is_no_vote) VALUES (?, ?, ?, ?)",
-        [electionId, vote.positionId, vote.candidateId, vote.isNoVote]
+        [electionId, vote.positionId, vote.candidateId, vote.isNoVote],
       );
     }
 
     // 5. อัพเดท total_votes
     await conn.execute(
       "UPDATE elections SET total_votes = total_votes + 1 WHERE id = ?",
-      [electionId]
+      [electionId],
     );
 
     return { success: true };
@@ -1484,7 +1489,7 @@ ADD CONSTRAINT unique_voter UNIQUE (student_id, election_id);
 // ตรวจสอบก่อนแสดงหน้าโหวต
 const hasVoted = await query(
   "SELECT * FROM vote_history WHERE student_id = ? AND election_id = ?",
-  [studentId, electionId]
+  [studentId, electionId],
 );
 
 if (hasVoted.length > 0) {
@@ -1515,7 +1520,7 @@ export async function getVoteHistory(studentId: string) {
     JOIN elections e ON vh.election_id = e.id
     WHERE vh.student_id = ?
     ORDER BY vh.voted_at DESC`,
-    [studentId]
+    [studentId],
   );
 }
 ```
@@ -1565,7 +1570,7 @@ const token = `VOTE-${generateRandomCode(8)}`; // e.g., "VOTE-9SG2-XQ11"
 // บันทึกลง Database
 await execute(
   "INSERT INTO vote_tokens (student_id, election_id, token) VALUES (?, ?, ?)",
-  [studentId, electionId, token]
+  [studentId, electionId, token],
 );
 
 // ส่งอีเมล
@@ -1576,7 +1581,7 @@ await sendEmail({
     คุณได้ลงคะแนนเลือกตั้ง "${election.title}" เรียบร้อยแล้ว
 
     Token ยืนยัน: ${token}
-    เวลา: ${new Date().toLocaleString('th-TH')}
+    เวลา: ${new Date().toLocaleString("th-TH")}
 
     ขอบคุณที่ใช้สิทธิ์ของคุณ
   `,
@@ -1620,7 +1625,7 @@ ADD CONSTRAINT unique_voter UNIQUE (student_id, election_id);
 // ตรวจสอบก่อนให้โหวต
 const existingVote = await query(
   "SELECT * FROM vote_history WHERE student_id = ? AND election_id = ?",
-  [studentId, electionId]
+  [studentId, electionId],
 );
 
 if (existingVote.length > 0) {
@@ -1696,7 +1701,7 @@ export async function getCurrentSession() {
   // ตรวจสอบว่า Session ยังไม่หมดอายุ
   const [session] = await query<SessionRow[]>(
     "SELECT * FROM sessions WHERE id = ? AND expires_at > NOW()",
-    [sessionId]
+    [sessionId],
   );
 
   if (!session) return null;
@@ -1704,7 +1709,7 @@ export async function getCurrentSession() {
   // ดึงข้อมูล Student
   const [student] = await query<StudentRow[]>(
     "SELECT * FROM students WHERE id = ?",
-    [session.student_id]
+    [session.student_id],
   );
 
   return student || null;
@@ -1770,7 +1775,7 @@ await query("SELECT * FROM students WHERE id = ? AND national_id = ?", [
 
 // ❌ อันตราย: String Concatenation
 await query(
-  `SELECT * FROM students WHERE id = '${studentId}' AND national_id = '${nationalId}'`
+  `SELECT * FROM students WHERE id = '${studentId}' AND national_id = '${nationalId}'`,
 );
 ```
 
@@ -1933,14 +1938,14 @@ SMTP_PASSWORD=app-password-here
 
 ### Color Palette
 
-| Color          | Hex Code  | Usage                                    |
-| -------------- | --------- | ---------------------------------------- |
-| Primary Blue   | `#137fec` | ปุ่มหลัก, Links                          |
-| Royal Blue     | `#1a56db` | Admin Navbar, Hover States               |
-| Vivid Yellow   | `#fbbf24` | Highlights, Warnings                     |
-| Success Green  | `#22c55e` | ผลสำเร็จ, Checkmarks                     |
-| Error Red      | `#ef4444` | ข้อผิดพลาด, Danger Actions               |
-| Neutral Gray   | `#6b7280` | ข้อความรอง, Disabled States              |
+| Color         | Hex Code  | Usage                       |
+| ------------- | --------- | --------------------------- |
+| Primary Blue  | `#137fec` | ปุ่มหลัก, Links             |
+| Royal Blue    | `#1a56db` | Admin Navbar, Hover States  |
+| Vivid Yellow  | `#fbbf24` | Highlights, Warnings        |
+| Success Green | `#22c55e` | ผลสำเร็จ, Checkmarks        |
+| Error Red     | `#ef4444` | ข้อผิดพลาด, Danger Actions  |
+| Neutral Gray  | `#6b7280` | ข้อความรอง, Disabled States |
 
 ### Typography
 
@@ -1982,15 +1987,15 @@ SMTP_PASSWORD=app-password-here
 
 ### Custom Animations (globals.css)
 
-| Animation           | Duration | Easing      | Usage                          |
-| ------------------- | -------- | ----------- | ------------------------------ |
-| `fadeIn`            | 0.3s     | ease-out    | Page load, Modal open          |
-| `slideUp`           | 0.4s     | ease-out    | Cards, List items              |
-| `float`             | 3s       | ease-in-out | Hero elements (infinite)       |
-| `pulse-glow`        | 2s       | ease-in-out | Active indicators (infinite)   |
-| `neon-pulse`        | 1.5s     | ease-in-out | Button hover effects (infinite)|
-| `modalBackdrop`     | 0.3s     | ease-out    | Modal backdrop fade-in         |
-| `modalContent`      | 0.3s     | ease-out    | Modal content scale-in         |
+| Animation       | Duration | Easing      | Usage                           |
+| --------------- | -------- | ----------- | ------------------------------- |
+| `fadeIn`        | 0.3s     | ease-out    | Page load, Modal open           |
+| `slideUp`       | 0.4s     | ease-out    | Cards, List items               |
+| `float`         | 3s       | ease-in-out | Hero elements (infinite)        |
+| `pulse-glow`    | 2s       | ease-in-out | Active indicators (infinite)    |
+| `neon-pulse`    | 1.5s     | ease-in-out | Button hover effects (infinite) |
+| `modalBackdrop` | 0.3s     | ease-out    | Modal backdrop fade-in          |
+| `modalContent`  | 0.3s     | ease-out    | Modal content scale-in          |
 
 ### Best Practices
 
@@ -2377,36 +2382,36 @@ cd-voting-0/
 
 ### Database & Backend
 
-| File                      | Description                                      |
-| ------------------------- | ------------------------------------------------ |
-| `app/poc/schema.sql`      | MySQL Database Schema (12 tables)                |
-| `app/poc/lib/db.ts`       | MySQL Connection Pool & Query Helpers            |
-| `app/poc/actions.ts`      | Server Actions (Login, Vote, Election Management)|
+| File                 | Description                                       |
+| -------------------- | ------------------------------------------------- |
+| `app/poc/schema.sql` | MySQL Database Schema (12 tables)                 |
+| `app/poc/lib/db.ts`  | MySQL Connection Pool & Query Helpers             |
+| `app/poc/actions.ts` | Server Actions (Login, Vote, Election Management) |
 
 ### Frontend
 
-| File                      | Description                                      |
-| ------------------------- | ------------------------------------------------ |
-| `components/admin/AdminNavbar.tsx` | Admin Navigation with Menu & Profile      |
-| `components/student/BottomNav.tsx` | Student Bottom Navigation                  |
-| `components/shared/ConfirmModal.tsx` | Reusable Confirmation Modal              |
+| File                                 | Description                          |
+| ------------------------------------ | ------------------------------------ |
+| `components/admin/AdminNavbar.tsx`   | Admin Navigation with Menu & Profile |
+| `components/student/BottomNav.tsx`   | Student Bottom Navigation            |
+| `components/shared/ConfirmModal.tsx` | Reusable Confirmation Modal          |
 
 ### Utilities
 
-| File                      | Description                                      |
-| ------------------------- | ------------------------------------------------ |
-| `lib/ocr/pipeline.ts`     | OCR Image Processing Pipeline (Prototype)        |
-| `lib/actions/*.ts`        | Server Actions for all data operations (MySQL)   |
-| `lib/db.ts`               | MySQL connection pool with query/execute/transaction |
-| `types.ts`                | Global TypeScript Interfaces                     |
+| File                  | Description                                          |
+| --------------------- | ---------------------------------------------------- |
+| `lib/ocr/pipeline.ts` | OCR Image Processing Pipeline (Prototype)            |
+| `lib/actions/*.ts`    | Server Actions for all data operations (MySQL)       |
+| `lib/db.ts`           | MySQL connection pool with query/execute/transaction |
+| `types.ts`            | Global TypeScript Interfaces                         |
 
 ### Configuration
 
-| File                      | Description                                      |
-| ------------------------- | ------------------------------------------------ |
-| `globals.css`             | Custom animations, glassmorphism utilities       |
-| `tailwind.config.ts`      | Tailwind CSS 4 configuration                     |
-| `CLAUDE.md`               | Project instructions for Claude Code             |
+| File                 | Description                                |
+| -------------------- | ------------------------------------------ |
+| `globals.css`        | Custom animations, glassmorphism utilities |
+| `tailwind.config.ts` | Tailwind CSS 4 configuration               |
+| `CLAUDE.md`          | Project instructions for Claude Code       |
 
 ---
 

@@ -13,13 +13,14 @@ npm run dev      # Start development server
 npm run build    # Build for production
 npm start        # Run production build
 npm run lint     # Run ESLint
+npm run test     # Run Jest tests
 ```
 
 ## Tech Stack
 
-- **Framework:** Next.js 16 with App Router, React 19, TypeScript (strict mode)
+- **Framework:** Next.js 16.1 with App Router, React 19.2, TypeScript (strict mode)
 - **Styling:** Tailwind CSS 4, glassmorphism design patterns
-- **UI Libraries:** TanStack React Table, Recharts, Material Symbols Outlined icons
+- **UI Libraries:** TanStack React Table v8, Recharts, Material Symbols Outlined icons
 - **OCR (Legacy/Debug):** Tesseract.js and OpenCV.js available for student card scanning (currently in debug pages)
 
 ## Architecture
