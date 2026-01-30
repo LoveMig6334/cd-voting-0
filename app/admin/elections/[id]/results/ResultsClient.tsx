@@ -194,10 +194,15 @@ export default function ResultsClient({
             </span>
           )}
         </div>
-        <button className="bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2 self-start sm:self-auto">
+        <a
+          href={`/api/export/election-results/${election.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2 self-start sm:self-auto"
+        >
           <span className="material-symbols-outlined text-xl">download</span>
           Export CSV
-        </button>
+        </a>
       </div>
 
       {/* Voting Stats Section */}
