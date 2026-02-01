@@ -1,12 +1,11 @@
-import { notFound } from "next/navigation";
 import { getElectionById } from "@/lib/actions/elections";
-import {
-  getVoterTurnout,
-  getPositionResults,
-  getParticipationByLevel,
-  PositionResult,
-} from "@/lib/actions/votes";
 import { getStudentStats } from "@/lib/actions/students";
+import {
+  getParticipationByLevel,
+  getPositionResults,
+  getVoterTurnout,
+} from "@/lib/actions/votes";
+import { notFound } from "next/navigation";
 import ResultsClient from "./ResultsClient";
 
 interface ResultsPageProps {
@@ -35,18 +34,13 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
   // Get voter turnout
   const turnout = await getVoterTurnout(electionId, totalEligible);
 
-  // Get results for each enabled position
+  // Get results for each enabled position (parallel fetch)
   const enabledPositions = election.positions.filter((p) => p.enabled);
-  const positionResults: PositionResult[] = [];
-
-  for (const position of enabledPositions) {
-    const result = await getPositionResults(
-      electionId,
-      position.id,
-      position.title
-    );
-    positionResults.push(result);
-  }
+  const positionResults = await Promise.all(
+    enabledPositions.map((position) =>
+      getPositionResults(electionId, position.id, position.title),
+    ),
+  );
 
   // Get participation by class level (1-6)
   const levelStats = await getParticipationByLevel(electionId);
