@@ -3,6 +3,7 @@
 import { ElectionWithDetails } from "@/lib/actions/elections";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { memo, useMemo } from "react";
 import { useStudentUser } from "./StudentLayoutClient";
 
 // Format date for display
@@ -16,11 +17,20 @@ function formatDate(date: Date | string): string {
   });
 }
 
-// Election Card Component
-function ElectionCard({ election }: { election: ElectionWithDetails }) {
+// Election Card Component - Memoized to prevent unnecessary re-renders (rerender-memo)
+const ElectionCard = memo(function ElectionCard({
+  election,
+}: {
+  election: ElectionWithDetails;
+}) {
   const router = useRouter();
 
-  const enabledPositions = election.positions.filter((p) => p.enabled);
+  // useMemo to cache filter result when positions don't change
+  const enabledPositions = useMemo(
+    () => election.positions.filter((p) => p.enabled),
+    [election.positions]
+  );
+  // Primitive value - no useMemo needed
   const hasCandidates = election.candidates.length > 0;
 
   return (
@@ -93,7 +103,7 @@ function ElectionCard({ election }: { election: ElectionWithDetails }) {
       </div>
     </article>
   );
-}
+});
 
 interface DashboardClientProps {
   elections: ElectionWithDetails[];
