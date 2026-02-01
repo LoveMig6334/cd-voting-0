@@ -161,3 +161,18 @@ export function canViewAdminManagement(level: AccessLevel): boolean {
 export function canManageStudents(level: AccessLevel): boolean {
   return level === ACCESS_LEVELS.ROOT || level === ACCESS_LEVELS.SYSTEM_ADMIN;
 }
+
+/**
+ * Check if user can approve/revoke student voting rights
+ * - ROOT (0): Yes
+ * - SYSTEM_ADMIN (1): Yes
+ * - TEACHER (2): Yes (this is their primary function)
+ * - OBSERVER (3): No
+ */
+export function canApproveVotingRights(level: AccessLevel): boolean {
+  return (
+    level === ACCESS_LEVELS.ROOT ||
+    level === ACCESS_LEVELS.SYSTEM_ADMIN ||
+    level === ACCESS_LEVELS.TEACHER
+  );
+}

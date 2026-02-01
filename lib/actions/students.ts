@@ -1,7 +1,7 @@
 "use server";
 
 import { execute, query, StudentRow } from "@/lib/db";
-import { canManageStudents } from "@/lib/permissions";
+import { canApproveVotingRights, canManageStudents } from "@/lib/permissions";
 import {
   isValidStudentId,
   isValidNationalId,
@@ -295,6 +295,14 @@ export async function approveVotingRight(
   approvedBy: string = "Admin",
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const adminSession = await getCurrentAdmin();
+    if (
+      !adminSession ||
+      !canApproveVotingRights(adminSession.admin.access_level)
+    ) {
+      return { success: false, error: "ไม่มีสิทธิ์ดำเนินการนี้" };
+    }
+
     await execute(
       `UPDATE students
        SET voting_approved = TRUE, voting_approved_at = NOW(), voting_approved_by = ?
@@ -321,6 +329,14 @@ export async function revokeVotingRight(
   studentId: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const adminSession = await getCurrentAdmin();
+    if (
+      !adminSession ||
+      !canApproveVotingRights(adminSession.admin.access_level)
+    ) {
+      return { success: false, error: "ไม่มีสิทธิ์ดำเนินการนี้" };
+    }
+
     await execute(
       `UPDATE students
        SET voting_approved = FALSE, voting_approved_at = NULL, voting_approved_by = NULL
@@ -348,6 +364,14 @@ export async function bulkApproveVotingRights(
   approvedBy: string = "Admin",
 ): Promise<{ success: boolean; count: number; error?: string }> {
   try {
+    const adminSession = await getCurrentAdmin();
+    if (
+      !adminSession ||
+      !canApproveVotingRights(adminSession.admin.access_level)
+    ) {
+      return { success: false, count: 0, error: "ไม่มีสิทธิ์ดำเนินการนี้" };
+    }
+
     const result = await execute(
       `UPDATE students
        SET voting_approved = TRUE, voting_approved_at = NOW(), voting_approved_by = ?
@@ -379,6 +403,14 @@ export async function bulkRevokeVotingRights(
   classroom: string,
 ): Promise<{ success: boolean; count: number; error?: string }> {
   try {
+    const adminSession = await getCurrentAdmin();
+    if (
+      !adminSession ||
+      !canApproveVotingRights(adminSession.admin.access_level)
+    ) {
+      return { success: false, count: 0, error: "ไม่มีสิทธิ์ดำเนินการนี้" };
+    }
+
     const result = await execute(
       `UPDATE students
        SET voting_approved = FALSE, voting_approved_at = NULL, voting_approved_by = NULL

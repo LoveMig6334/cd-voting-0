@@ -12,7 +12,7 @@ import {
   StudentStats,
 } from "@/lib/actions/students";
 import { StudentRow } from "@/lib/db";
-import { canManageStudents } from "@/lib/permissions";
+import { canApproveVotingRights, canManageStudents } from "@/lib/permissions";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { useRequireAdmin } from "../AdminLayoutClient";
@@ -863,6 +863,8 @@ export default function StudentsClient({
 
   // Check if current admin can manage students (only levels 0 and 1)
   const userCanManageStudents = canManageStudents(admin.accessLevel);
+  // Check if current admin can approve/revoke voting rights (levels 0, 1, and 2)
+  const userCanApproveVotingRights = canApproveVotingRights(admin.accessLevel);
 
   return (
     <div className="space-y-6">
@@ -965,7 +967,7 @@ export default function StudentsClient({
       </div>
 
       {/* Bulk Actions */}
-      {filterClassroom && (
+      {filterClassroom && userCanApproveVotingRights && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-wrap items-center gap-4">
           <span className="text-sm text-slate-600">
             ดำเนินการกับห้อง <strong>ม.{filterClassroom}</strong> ทั้งหมด:
@@ -1087,7 +1089,7 @@ export default function StudentsClient({
                     <VotingStatusBadge
                       approved={student.voting_approved}
                       onClick={() => handleStatusClick(student)}
-                      canManage={userCanManageStudents}
+                      canManage={userCanApproveVotingRights}
                     />
                   </td>
                   <td className="px-6 py-4">
