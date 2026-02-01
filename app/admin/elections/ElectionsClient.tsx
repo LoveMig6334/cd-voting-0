@@ -40,24 +40,25 @@ function calculateStatus(startDate: Date, endDate: Date): ElectionStatus {
 // Status Badge Component
 // ============================================
 
+// Hoisted constants to avoid re-creation on every render (rendering-hoist-jsx)
+const STATUS_STYLES = {
+  OPEN: "bg-green-100 text-green-700",
+  PENDING: "bg-slate-100 text-slate-600",
+  CLOSED: "bg-red-100 text-red-700",
+} as const;
+
+const STATUS_LABELS: Record<ElectionStatus, string> = {
+  OPEN: "เปิด",
+  PENDING: "ร่าง",
+  CLOSED: "ปิด",
+} as const;
+
 function StatusBadge({ status }: { status: ElectionStatus }) {
-  const styles = {
-    OPEN: "bg-green-100 text-green-700",
-    PENDING: "bg-slate-100 text-slate-600",
-    CLOSED: "bg-red-100 text-red-700",
-  };
-
-  const statusLabels: Record<ElectionStatus, string> = {
-    OPEN: "เปิด",
-    PENDING: "ร่าง",
-    CLOSED: "ปิด",
-  };
-
   return (
     <span
-      className={`${styles[status]} px-2.5 py-1 rounded-full text-xs font-semibold uppercase`}
+      className={`${STATUS_STYLES[status]} px-2.5 py-1 rounded-full text-xs font-semibold uppercase`}
     >
-      {statusLabels[status]}
+      {STATUS_LABELS[status]}
     </span>
   );
 }
