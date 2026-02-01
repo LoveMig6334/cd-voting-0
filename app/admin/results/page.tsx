@@ -19,42 +19,46 @@ export default async function AdminResultsPage() {
   const totalEligible =
     studentStats.approved > 0 ? studentStats.approved : studentStats.total;
 
-  // Build summaries for each election
-  const summaries: ElectionResultSummary[] = [];
+  // Step 1: Fetch all election details in parallel (async-parallel)
+  const electionsWithDetails = await Promise.all(
+    elections.map((row) => getElectionById(row.id))
+  );
 
-  for (const electionRow of elections) {
-    // Get full election details
-    const election = await getElectionById(electionRow.id);
-    if (!election) continue;
+  // Filter out null elections
+  const validElections = electionsWithDetails.filter(
+    (e): e is NonNullable<typeof e> => e !== null
+  );
 
-    // Calculate status
-    const status = calculateStatus(
-      new Date(election.start_date),
-      new Date(election.end_date)
-    );
-
-    // Get voter turnout
-    const turnout = await getVoterTurnout(election.id, totalEligible);
-
-    // Get primary winner (first enabled position)
-    const enabledPositions = election.positions.filter((p) => p.enabled);
-    let primaryWinner = null;
-
-    if (enabledPositions.length > 0) {
-      primaryWinner = await getPositionWinner(
-        election.id,
-        enabledPositions[0].id,
-        enabledPositions[0].title
+  // Step 2: Build summaries in parallel - fetch turnout and winner concurrently
+  const summaries = await Promise.all(
+    validElections.map(async (election) => {
+      const status = calculateStatus(
+        new Date(election.start_date),
+        new Date(election.end_date)
       );
-    }
 
-    summaries.push({
-      election,
-      turnout,
-      primaryWinner,
-      status,
-    });
-  }
+      const enabledPositions = election.positions.filter((p) => p.enabled);
+
+      // Parallel fetch: turnout and primary winner at the same time
+      const [turnout, primaryWinner] = await Promise.all([
+        getVoterTurnout(election.id, totalEligible),
+        enabledPositions.length > 0
+          ? getPositionWinner(
+              election.id,
+              enabledPositions[0].id,
+              enabledPositions[0].title
+            )
+          : Promise.resolve(null),
+      ]);
+
+      return {
+        election,
+        turnout,
+        primaryWinner,
+        status,
+      } satisfies ElectionResultSummary;
+    })
+  );
 
   return <AdminResultsClient summaries={summaries} />;
 }
