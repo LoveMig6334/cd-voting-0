@@ -7,19 +7,24 @@ import {
   VoterTurnout,
 } from "@/lib/actions/votes";
 import { CandidateRow, ElectionRow, PositionRow } from "@/lib/db";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState } from "react";
-import {
-  Bar,
-  BarChart,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+
+// Dynamic import chart components to reduce initial bundle size (~500KB)
+const VoterTurnoutChart = dynamic(() => import("./VoterTurnoutChart"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center">
+      <div className="animate-pulse h-64 w-64 bg-slate-200 rounded-full" />
+    </div>
+  ),
+});
+
+const CandidateBarChart = dynamic(() => import("./CandidateBarChart"), {
+  ssr: false,
+  loading: () => <div className="animate-pulse h-72 bg-slate-200 rounded-lg" />,
+});
 
 // ============================================
 // Types
@@ -50,27 +55,6 @@ function calculateStatus(
   if (now < startDate) return "draft";
   if (now >= startDate && now <= endDate) return "open";
   return "closed";
-}
-
-// Custom tooltip for bar chart
-function CustomTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: Array<{ value: number; payload: { name: string } }>;
-}) {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white shadow-lg rounded-lg p-3 border border-slate-200">
-        <p className="font-medium text-slate-900">{payload[0].payload.name}</p>
-        <p className="text-sm text-slate-600">
-          {payload[0].value.toLocaleString()} คะแนน
-        </p>
-      </div>
-    );
-  }
-  return null;
 }
 
 // ============================================
@@ -363,34 +347,10 @@ export default function ResultsClient({
           <h3 className="text-lg font-bold text-slate-900 mb-4">
             อัตราการลงคะแนน
           </h3>
-          <div className="flex items-center justify-center">
-            <div className="relative">
-              <ResponsiveContainer width={250} height={250}>
-                <PieChart>
-                  <Pie
-                    data={voterTurnoutData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={100}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {voterTurnoutData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-bold text-slate-900">
-                  {turnout.percentage}%
-                </span>
-                <span className="text-sm text-slate-500">Turnout</span>
-              </div>
-            </div>
-          </div>
+          <VoterTurnoutChart
+            data={voterTurnoutData}
+            percentage={turnout.percentage}
+          />
           <div className="flex justify-center gap-6 mt-4">
             {voterTurnoutData.map((entry) => (
               <div key={entry.name} className="flex items-center gap-2">
@@ -412,38 +372,12 @@ export default function ResultsClient({
             คะแนนต่อผู้สมัคร
           </h3>
           {candidateVotes.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart
-                data={candidateVotes.map((c) => ({
-                  name: c.candidateName,
-                  votes: c.votes,
-                }))}
-                layout="vertical"
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <XAxis type="number" hide />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  width={100}
-                  tick={{ fontSize: 12 }}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar
-                  dataKey="votes"
-                  radius={[0, 4, 4, 0]}
-                  fill="#137fec"
-                  barSize={24}
-                >
-                  {candidateVotes.map((_, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={index === 0 ? "#ffb800" : "#137fec"}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <CandidateBarChart
+              data={candidateVotes.map((c) => ({
+                name: c.candidateName,
+                votes: c.votes,
+              }))}
+            />
           ) : (
             <div className="flex flex-col items-center justify-center h-64 text-slate-400">
               <span className="material-symbols-outlined text-5xl mb-2">
