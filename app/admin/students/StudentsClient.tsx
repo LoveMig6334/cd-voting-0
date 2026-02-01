@@ -35,17 +35,36 @@ interface StudentsClientProps {
 // Status Badge Component
 // ============================================
 
-function VotingStatusBadge({ approved }: { approved: boolean }) {
+interface VotingStatusBadgeProps {
+  approved: boolean;
+  onClick?: () => void;
+  canManage: boolean;
+}
+
+function VotingStatusBadge({
+  approved,
+  onClick,
+  canManage,
+}: VotingStatusBadgeProps) {
+  const commonClasses =
+    "px-2.5 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1 transition-transform active:scale-95 select-none";
+
   if (approved) {
     return (
-      <span className="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1">
+      <span
+        onClick={canManage ? onClick : undefined}
+        className={`${commonClasses} bg-green-100 text-green-700 ${canManage ? "cursor-pointer hover:bg-green-200" : "cursor-default"}`}
+      >
         <span className="material-symbols-outlined text-sm">verified</span>
         อนุมัติสิทธิ์แล้ว
       </span>
     );
   }
   return (
-    <span className="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1">
+    <span
+      onClick={canManage ? onClick : undefined}
+      className={`${commonClasses} bg-amber-100 text-amber-700 ${canManage ? "cursor-pointer hover:bg-amber-200" : "cursor-default"}`}
+    >
       <span className="material-symbols-outlined text-sm">pending</span>
       รอการอนุมัติ
     </span>
@@ -619,7 +638,10 @@ function StudentDetailModal({ student, onClose }: StudentDetailModalProps) {
               <p className="text-xs text-slate-500 uppercase font-semibold mb-1">
                 สิทธิ์การโหวต
               </p>
-              <VotingStatusBadge approved={student.voting_approved} />
+              <VotingStatusBadge
+                approved={student.voting_approved}
+                canManage={false}
+              />
             </div>
             <div className="bg-slate-50 rounded-lg p-4">
               <p className="text-xs text-slate-500 uppercase font-semibold mb-1">
@@ -738,6 +760,10 @@ export default function StudentsClient({
     isOpen: boolean;
     student: StudentWithHistory | null;
   }>({ isOpen: false, student: null });
+  const [statusConfirmModal, setStatusConfirmModal] = useState<{
+    isOpen: boolean;
+    student: StudentWithHistory | null;
+  }>({ isOpen: false, student: null });
 
   // Filtered students
   const filteredStudents = useMemo(() => {
@@ -814,6 +840,25 @@ export default function StudentsClient({
       setDeleteConfirmModal({ isOpen: false, student: null });
       router.refresh();
     });
+  };
+
+  const handleStatusClick = (student: StudentWithHistory) => {
+    setStatusConfirmModal({
+      isOpen: true,
+      student,
+    });
+  };
+
+  const handleConfirmStatusChange = () => {
+    const student = statusConfirmModal.student;
+    if (!student) return;
+
+    if (student.voting_approved) {
+      handleRevoke(student.id);
+    } else {
+      handleApprove(student.id);
+    }
+    setStatusConfirmModal({ isOpen: false, student: null });
   };
 
   // Check if current admin can manage students (only levels 0 and 1)
@@ -1039,33 +1084,14 @@ export default function StudentsClient({
                     ม.{student.class_room}
                   </td>
                   <td className="px-6 py-4">
-                    <VotingStatusBadge approved={student.voting_approved} />
+                    <VotingStatusBadge
+                      approved={student.voting_approved}
+                      onClick={() => handleStatusClick(student)}
+                      canManage={userCanManageStudents}
+                    />
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      {student.voting_approved ? (
-                        <button
-                          onClick={() => handleRevoke(student.id)}
-                          disabled={isPending}
-                          className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                          title="เพิกถอนสิทธิ์"
-                        >
-                          <span className="material-symbols-outlined text-lg">
-                            block
-                          </span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleApprove(student.id)}
-                          disabled={isPending}
-                          className="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
-                          title="อนุมัติสิทธิ์"
-                        >
-                          <span className="material-symbols-outlined text-lg">
-                            verified
-                          </span>
-                        </button>
-                      )}
                       <button
                         onClick={() => setSelectedStudent(student)}
                         className="px-3 py-1.5 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors font-medium"
@@ -1133,6 +1159,33 @@ export default function StudentsClient({
         confirmText="ลบนักเรียน"
         cancelText="ยกเลิก"
         variant="danger"
+      />
+
+      <ConfirmModal
+        isOpen={statusConfirmModal.isOpen}
+        onClose={() => setStatusConfirmModal({ isOpen: false, student: null })}
+        onConfirm={handleConfirmStatusChange}
+        title={
+          statusConfirmModal.student?.voting_approved
+            ? "ยืนยันการเพิกถอนสิทธิ์"
+            : "ยืนยันการอนุมัติสิทธิ์"
+        }
+        message={
+          statusConfirmModal.student
+            ? statusConfirmModal.student.voting_approved
+              ? `คุณต้องการเพิกถอนสิทธิ์การลงคะแนนของ ${statusConfirmModal.student.name} ${statusConfirmModal.student.surname} หรือไม่?`
+              : `คุณต้องการอนุมัติสิทธิ์การลงคะแนนให้ ${statusConfirmModal.student.name} ${statusConfirmModal.student.surname} หรือไม่?`
+            : ""
+        }
+        confirmText={
+          statusConfirmModal.student?.voting_approved
+            ? "เพิกถอนสิทธิ์"
+            : "อนุมัติสิทธิ์"
+        }
+        cancelText="ยกเลิก"
+        variant={
+          statusConfirmModal.student?.voting_approved ? "danger" : "success"
+        }
       />
     </div>
   );
