@@ -12,7 +12,8 @@
       "Bash(npm test:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: add participation breakdown by class level to election results\n\nDisplay voting participation rates \\(ม.1 through ม.6\\) in an expandable\nsection with dynamic color-coded cards based on percentage thresholds.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(npm run test:*)"
     ]
   }
 }

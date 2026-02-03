@@ -7,6 +7,7 @@ import {
 } from "@/lib/actions/votes";
 import { CandidateRow, ElectionRow, PositionRow } from "@/lib/db";
 import PublicDisplayModal from "@/components/PublicDisplayModal";
+import { SlidePreviewModal } from "@/components/SlidePreview";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -154,6 +155,10 @@ export default function AdminResultsClient({
   const [selectedElection, setSelectedElection] =
     useState<ElectionResultSummary | null>(null);
 
+  // State for Slide Preview Modal
+  const [slidePreviewElection, setSlidePreviewElection] =
+    useState<ElectionResultSummary | null>(null);
+
   // Handler to open Public Display Modal
   const handleOpenDisplaySettings = (summary: ElectionResultSummary) => {
     setSelectedElection(summary);
@@ -162,6 +167,16 @@ export default function AdminResultsClient({
   // Handler to close Public Display Modal
   const handleCloseDisplaySettings = () => {
     setSelectedElection(null);
+  };
+
+  // Handler to open Slide Preview Modal
+  const handleOpenSlidePreview = (summary: ElectionResultSummary) => {
+    setSlidePreviewElection(summary);
+  };
+
+  // Handler to close Slide Preview Modal
+  const handleCloseSlidePreview = () => {
+    setSlidePreviewElection(null);
   };
 
   // Transform candidates data for modal props
@@ -291,6 +306,26 @@ export default function AdminResultsClient({
               {/* Footer with Actions */}
               <div className="border-t border-slate-200 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
+                  {/* Show slide preview button for closed elections only */}
+                  {status === "closed" && (
+                    <button
+                      onClick={() =>
+                        handleOpenSlidePreview({
+                          election,
+                          turnout,
+                          primaryWinner,
+                          status,
+                        })
+                      }
+                      className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors group"
+                      title="ดูตัวอย่าง Slide"
+                    >
+                      <span className="material-symbols-outlined">
+                        slideshow
+                      </span>
+                    </button>
+                  )}
+
                   {/* Show public display button for open/closed elections */}
                   {status !== "draft" && (
                     <button
@@ -343,6 +378,22 @@ export default function AdminResultsClient({
           candidates={transformCandidatesForModal(
             selectedElection.election.candidates,
           )}
+        />
+      )}
+
+      {/* Slide Preview Modal */}
+      {slidePreviewElection && (
+        <SlidePreviewModal
+          isOpen={true}
+          onClose={handleCloseSlidePreview}
+          electionId={slidePreviewElection.election.id.toString()}
+          electionTitle={slidePreviewElection.election.title}
+          positions={slidePreviewElection.election.positions.map((p) => ({
+            id: p.id,
+            title: p.title,
+            enabled: p.enabled,
+            icon: p.icon || "person",
+          }))}
         />
       )}
     </div>
