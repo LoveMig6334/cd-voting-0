@@ -337,24 +337,6 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      <Link
-                        href={`/admin/elections/${election.id}/candidates`}
-                        className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                        title="จัดการผู้สมัคร"
-                      >
-                        <span className="material-symbols-outlined text-xl">
-                          group
-                        </span>
-                      </Link>
-                      <Link
-                        href={`/admin/elections/${election.id}/results`}
-                        className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                        title="ดูผลลัพธ์"
-                      >
-                        <span className="material-symbols-outlined text-xl">
-                          bar_chart
-                        </span>
-                      </Link>
                       <button
                         onClick={() => handleToggleStatus(election)}
                         disabled={isPending}
@@ -375,6 +357,25 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
                             : "play_circle"}
                         </span>
                       </button>
+                      <Link
+                        href={`/admin/elections/${election.id}/candidates`}
+                        className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                        title="จัดการผู้สมัคร"
+                      >
+                        <span className="material-symbols-outlined text-xl">
+                          group
+                        </span>
+                      </Link>
+                      <Link
+                        href={`/admin/elections/${election.id}/results`}
+                        className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                        title="ดูผลลัพธ์"
+                      >
+                        <span className="material-symbols-outlined text-xl">
+                          bar_chart
+                        </span>
+                      </Link>
+
                       <button
                         onClick={() =>
                           handleDeleteElection(election.id, election.title)
