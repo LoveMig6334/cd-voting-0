@@ -51,6 +51,13 @@ export interface CreateCandidateData {
 // Default positions for student committee
 const DEFAULT_POSITIONS: Omit<CreatePositionData, "sortOrder">[] = [
   // ประธาน/รองประธาน ชาย-หญิง
+  { id: "president", title: "ประธาน", icon: "person", enabled: true },
+  {
+    id: "vice-president",
+    title: "รองประธาน",
+    icon: "supervisor_account",
+    enabled: true,
+  },
   { id: "male-president", title: "ประธานชาย", icon: "man", enabled: true },
   {
     id: "male-vice-president",
