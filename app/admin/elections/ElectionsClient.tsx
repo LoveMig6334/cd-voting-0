@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmModal } from "@/components/ConfirmModal";
 import {
   createElection,
   deleteElection,
@@ -9,7 +10,6 @@ import { ElectionRow } from "@/lib/db";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { ConfirmModal } from "@/components/ConfirmModal";
 
 // ============================================
 // Types
@@ -376,7 +376,9 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
                         </span>
                       </button>
                       <button
-                        onClick={() => handleDeleteElection(election.id, election.title)}
+                        onClick={() =>
+                          handleDeleteElection(election.id, election.title)
+                        }
                         disabled={isPending}
                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                         title="ลบ"
