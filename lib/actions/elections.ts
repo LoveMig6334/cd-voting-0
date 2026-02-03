@@ -146,6 +146,18 @@ const DEFAULT_POSITIONS: Omit<CreatePositionData, "sortOrder">[] = [
     icon: "verified_user",
     enabled: true,
   },
+  {
+    id: "male-discipline-president",
+    title: "ประธานระเบียบชาย",
+    icon: "security",
+    enabled: true,
+  },
+  {
+    id: "female-discipline-president",
+    title: "ประธานระเบียบหญิง",
+    icon: "shield_person",
+    enabled: true,
+  },
 ];
 
 // ==========================================
