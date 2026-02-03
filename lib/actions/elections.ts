@@ -1,7 +1,7 @@
 "use server";
 
-import { getCurrentAdmin } from "@/lib/actions/admin-auth";
 import { logAdminAction, logElectionChange } from "@/lib/actions/activities";
+import { getCurrentAdmin } from "@/lib/actions/admin-auth";
 import { ACCESS_LEVELS } from "@/lib/admin-types";
 import {
   CandidateRow,
