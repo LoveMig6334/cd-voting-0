@@ -1,6 +1,8 @@
 "use server";
 
+import { getCurrentAdmin } from "@/lib/actions/admin-auth";
 import { logAdminAction, logElectionChange } from "@/lib/actions/activities";
+import { ACCESS_LEVELS } from "@/lib/admin-types";
 import {
   CandidateRow,
   ElectionRow,
@@ -115,21 +117,21 @@ function calculateStatus(
 // ==========================================
 
 /**
- * Get all elections
+ * Get all elections (excludes archived)
  */
 export async function getAllElections(): Promise<ElectionRow[]> {
   return query<ElectionRow>(
-    "SELECT * FROM elections WHERE is_active = TRUE ORDER BY start_date DESC",
+    "SELECT * FROM elections WHERE is_active = TRUE AND is_archived = FALSE ORDER BY start_date DESC",
   );
 }
 
 /**
- * Get active/open elections
+ * Get active/open elections (excludes archived)
  */
 export async function getActiveElections(): Promise<ElectionRow[]> {
   // Update status based on current time
   const elections = await query<ElectionRow>(
-    "SELECT * FROM elections WHERE is_active = TRUE ORDER BY start_date ASC",
+    "SELECT * FROM elections WHERE is_active = TRUE AND is_archived = FALSE ORDER BY start_date ASC",
   );
 
   // Filter by calculated status
@@ -346,6 +348,141 @@ export async function deleteElection(
   } catch (error) {
     console.error("Delete election error:", error);
     return { success: false, error: "เกิดข้อผิดพลาดในการลบ" };
+  }
+}
+
+// ==========================================
+// Archive Operations
+// ==========================================
+
+/**
+ * Check if current admin can archive/unarchive elections
+ * Only ROOT (0) and SYSTEM_ADMIN (1) can archive
+ */
+async function canManageArchive(): Promise<boolean> {
+  const session = await getCurrentAdmin();
+  if (!session) return false;
+
+  return (
+    session.admin.access_level === ACCESS_LEVELS.ROOT ||
+    session.admin.access_level === ACCESS_LEVELS.SYSTEM_ADMIN
+  );
+}
+
+/**
+ * Get all archived elections
+ */
+export async function getArchivedElections(): Promise<ElectionRow[]> {
+  return query<ElectionRow>(
+    "SELECT * FROM elections WHERE is_active = TRUE AND is_archived = TRUE ORDER BY updated_at DESC",
+  );
+}
+
+/**
+ * Get election by ID including archived ones (for admin restore)
+ */
+export async function getElectionByIdIncludeArchived(
+  id: number,
+): Promise<ElectionWithDetails | null> {
+  const elections = await query<ElectionRow>(
+    "SELECT * FROM elections WHERE id = ? AND is_active = TRUE",
+    [id],
+  );
+
+  if (elections.length === 0) return null;
+
+  const positions = await query<PositionRow>(
+    "SELECT * FROM positions WHERE election_id = ? ORDER BY sort_order ASC",
+    [id],
+  );
+
+  const candidates = await query<CandidateRow>(
+    "SELECT * FROM candidates WHERE election_id = ? ORDER BY position_id, rank ASC",
+    [id],
+  );
+
+  return {
+    ...elections[0],
+    positions,
+    candidates,
+  };
+}
+
+/**
+ * Archive an election
+ * Only ROOT (0) and SYSTEM_ADMIN (1) can archive
+ */
+export async function archiveElection(
+  id: number,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Permission check
+    if (!(await canManageArchive())) {
+      return { success: false, error: "คุณไม่มีสิทธิ์เก็บถาวรการเลือกตั้ง" };
+    }
+
+    // Get election before archive
+    const election = await getElectionById(id);
+    if (!election) {
+      return { success: false, error: "ไม่พบการเลือกตั้ง" };
+    }
+
+    // Check if election is already archived
+    if (election.is_archived) {
+      return { success: false, error: "การเลือกตั้งนี้ถูกเก็บถาวรแล้ว" };
+    }
+
+    await execute("UPDATE elections SET is_archived = TRUE WHERE id = ?", [id]);
+
+    revalidatePath("/admin/elections");
+
+    // Log activity
+    await logElectionChange("เก็บถาวรการเลือกตั้ง", election.title);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Archive election error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาดในการเก็บถาวร" };
+  }
+}
+
+/**
+ * Unarchive/restore an election
+ * Only ROOT (0) and SYSTEM_ADMIN (1) can unarchive
+ */
+export async function unarchiveElection(
+  id: number,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Permission check
+    if (!(await canManageArchive())) {
+      return { success: false, error: "คุณไม่มีสิทธิ์กู้คืนการเลือกตั้ง" };
+    }
+
+    // Get election before unarchive (must use include archived version)
+    const election = await getElectionByIdIncludeArchived(id);
+    if (!election) {
+      return { success: false, error: "ไม่พบการเลือกตั้ง" };
+    }
+
+    // Check if election is not archived
+    if (!election.is_archived) {
+      return { success: false, error: "การเลือกตั้งนี้ไม่ได้ถูกเก็บถาวร" };
+    }
+
+    await execute("UPDATE elections SET is_archived = FALSE WHERE id = ?", [
+      id,
+    ]);
+
+    revalidatePath("/admin/elections");
+
+    // Log activity
+    await logElectionChange("กู้คืนการเลือกตั้งจากถาวร", election.title);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Unarchive election error:", error);
+    return { success: false, error: "เกิดข้อผิดพลาดในการกู้คืน" };
   }
 }
 

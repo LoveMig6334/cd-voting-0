@@ -1,10 +1,16 @@
-import { getAllElections } from "@/lib/actions/elections";
+import {
+  getAllElections,
+  getArchivedElections,
+} from "@/lib/actions/elections";
 import { query, CandidateRow } from "@/lib/db";
 import ElectionsClient, { ElectionWithCandidates } from "./ElectionsClient";
 
 export default async function ElectionManagementPage() {
-  // Get all elections
-  const elections = await getAllElections();
+  // Get all elections and archived elections in parallel
+  const [elections, archivedElectionsRaw] = await Promise.all([
+    getAllElections(),
+    getArchivedElections(),
+  ]);
 
   // Get candidate counts for each election
   const candidateCounts = await query<
@@ -27,5 +33,18 @@ export default async function ElectionManagementPage() {
     })
   );
 
-  return <ElectionsClient elections={electionsWithCandidates} />;
+  // Combine archived elections with candidate counts
+  const archivedElections: ElectionWithCandidates[] = archivedElectionsRaw.map(
+    (e) => ({
+      ...e,
+      candidateCount: countMap.get(e.id) || 0,
+    })
+  );
+
+  return (
+    <ElectionsClient
+      elections={electionsWithCandidates}
+      archivedElections={archivedElections}
+    />
+  );
 }

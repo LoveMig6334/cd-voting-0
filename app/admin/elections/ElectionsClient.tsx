@@ -2,8 +2,10 @@
 
 import { ConfirmModal } from "@/components/ConfirmModal";
 import {
+  archiveElection,
   createElection,
   deleteElection,
+  unarchiveElection,
   updateElection,
 } from "@/lib/actions/elections";
 import { ElectionRow } from "@/lib/db";
@@ -16,6 +18,8 @@ import { useState, useTransition } from "react";
 // ============================================
 
 type ElectionStatus = "PENDING" | "OPEN" | "CLOSED";
+type StatusFilterType = "all" | "PENDING" | "OPEN" | "CLOSED";
+type ViewMode = "active" | "archived";
 
 export interface ElectionWithCandidates extends ElectionRow {
   candidateCount: number;
@@ -23,6 +27,7 @@ export interface ElectionWithCandidates extends ElectionRow {
 
 interface ElectionsClientProps {
   elections: ElectionWithCandidates[];
+  archivedElections: ElectionWithCandidates[];
 }
 
 // ============================================
@@ -45,15 +50,17 @@ const STATUS_STYLES = {
   OPEN: "bg-green-100 text-green-700",
   PENDING: "bg-slate-100 text-slate-600",
   CLOSED: "bg-red-100 text-red-700",
+  ARCHIVED: "bg-amber-100 text-amber-700",
 } as const;
 
-const STATUS_LABELS: Record<ElectionStatus, string> = {
+const STATUS_LABELS: Record<ElectionStatus | "ARCHIVED", string> = {
   OPEN: "เปิด",
   PENDING: "ร่าง",
   CLOSED: "ปิด",
+  ARCHIVED: "ถาวร",
 } as const;
 
-function StatusBadge({ status }: { status: ElectionStatus }) {
+function StatusBadge({ status }: { status: ElectionStatus | "ARCHIVED" }) {
   return (
     <span
       className={`${STATUS_STYLES[status]} px-2.5 py-1 rounded-full text-xs font-semibold uppercase`}
@@ -81,14 +88,16 @@ function formatDate(date: Date): string {
 // Main Component
 // ============================================
 
-export default function ElectionsClient({ elections }: ElectionsClientProps) {
+export default function ElectionsClient({
+  elections,
+  archivedElections,
+}: ElectionsClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "PENDING" | "OPEN" | "CLOSED"
-  >("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilterType>("all");
+  const [viewMode, setViewMode] = useState<ViewMode>("active");
   const [showModal, setShowModal] = useState(false);
 
   // Confirm modals state
@@ -99,6 +108,11 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<{
     id: number;
     title: string;
+  } | null>(null);
+  const [archiveConfirm, setArchiveConfirm] = useState<{
+    id: number;
+    title: string;
+    isArchived: boolean;
   } | null>(null);
 
   // Form state
@@ -111,18 +125,33 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
   });
   const [formError, setFormError] = useState("");
 
-  // Calculate status for each election
+  // Calculate status for each election (non-archived)
   const electionsWithStatus = elections.map((e) => ({
     ...e,
-    status: calculateStatus(new Date(e.start_date), new Date(e.end_date)),
+    displayStatus: calculateStatus(
+      new Date(e.start_date),
+      new Date(e.end_date),
+    ) as ElectionStatus | "ARCHIVED",
   }));
 
-  const filteredElections = electionsWithStatus.filter((election) => {
+  // Add archived elections with ARCHIVED status
+  const archivedElectionsWithStatus = archivedElections.map((e) => ({
+    ...e,
+    displayStatus: "ARCHIVED" as const,
+  }));
+
+  // Combine and filter based on current view mode and status filter
+  const allElections =
+    viewMode === "archived" ? archivedElectionsWithStatus : electionsWithStatus;
+
+  const filteredElections = allElections.filter((election) => {
     const matchesSearch = election.title
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesStatus =
-      statusFilter === "all" || election.status === statusFilter;
+      viewMode === "archived" ||
+      statusFilter === "all" ||
+      election.displayStatus === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -171,10 +200,15 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
   };
 
   const handleToggleStatus = (
-    election: ElectionWithCandidates & { status: ElectionStatus },
+    election: ElectionWithCandidates & {
+      displayStatus: ElectionStatus | "ARCHIVED";
+    },
   ) => {
-    const isOpening = election.status !== "OPEN";
-    setToggleConfirm({ election, isOpening });
+    const isOpening = election.displayStatus !== "OPEN";
+    setToggleConfirm({
+      election: election as ElectionWithCandidates & { status: ElectionStatus },
+      isOpening,
+    });
   };
 
   const confirmToggleStatus = () => {
@@ -220,25 +254,81 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
     });
   };
 
+  const handleArchiveElection = (
+    id: number,
+    title: string,
+    isArchived: boolean,
+  ) => {
+    setArchiveConfirm({ id, title, isArchived });
+  };
+
+  const confirmArchiveElection = () => {
+    if (!archiveConfirm) return;
+    startTransition(async () => {
+      if (archiveConfirm.isArchived) {
+        await unarchiveElection(archiveConfirm.id);
+      } else {
+        await archiveElection(archiveConfirm.id);
+      }
+      setArchiveConfirm(null);
+      router.refresh();
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">
-            จัดการการเลือกตั้ง
+            {viewMode === "archived"
+              ? "การเลือกตั้งที่เก็บถาวร"
+              : "จัดการการเลือกตั้ง"}
           </h2>
           <p className="text-slate-500 text-sm mt-1">
-            สร้าง, แก้ไข และจัดการการเลือกตั้งทั้งหมดของโรงเรียน
+            {viewMode === "archived"
+              ? "รายการการเลือกตั้งที่ถูกเก็บถาวร สามารถกู้คืนได้"
+              : "สร้าง, แก้ไข และจัดการการเลือกตั้งทั้งหมดของโรงเรียน"}
           </p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2 self-start sm:self-auto"
-        >
-          <span className="material-symbols-outlined text-xl">add</span>
-          สร้างการเลือกตั้งใหม่
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {/* Archive Toggle Button */}
+          <button
+            onClick={() =>
+              setViewMode(viewMode === "archived" ? "active" : "archived")
+            }
+            className={`p-2.5 rounded-lg transition-colors relative ${
+              viewMode === "archived"
+                ? "bg-amber-500 text-white"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+            title={
+              viewMode === "archived"
+                ? "กลับไปรายการปกติ"
+                : "ดูการเลือกตั้งที่เก็บถาวร"
+            }
+          >
+            <span className="material-symbols-outlined text-xl">
+              {viewMode === "archived" ? "inventory_2" : "archive"}
+            </span>
+            {viewMode === "active" && archivedElections.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
+                {archivedElections.length}
+              </span>
+            )}
+          </button>
+
+          {/* Create Button - only show in active view */}
+          {viewMode === "active" && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-xl">add</span>
+              สร้างการเลือกตั้งใหม่
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filter Bar */}
@@ -258,30 +348,32 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
             />
           </div>
 
-          {/* Status Filter */}
-          <div className="flex gap-2">
-            {(["all", "PENDING", "OPEN", "CLOSED"] as const).map((status) => {
-              const labels = {
-                all: "ทั้งหมด",
-                PENDING: "ร่าง",
-                OPEN: "เปิด",
-                CLOSED: "ปิด",
-              };
-              return (
-                <button
-                  key={status}
-                  onClick={() => setStatusFilter(status)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    statusFilter === status
-                      ? "bg-primary text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  {labels[status]}
-                </button>
-              );
-            })}
-          </div>
+          {/* Status Filter - only show in active view */}
+          {viewMode === "active" && (
+            <div className="flex gap-2 flex-wrap">
+              {(["all", "PENDING", "OPEN", "CLOSED"] as const).map((status) => {
+                const labels: Record<StatusFilterType, string> = {
+                  all: "ทั้งหมด",
+                  PENDING: "ร่าง",
+                  OPEN: "เปิด",
+                  CLOSED: "ปิด",
+                };
+                return (
+                  <button
+                    key={status}
+                    onClick={() => setStatusFilter(status)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      statusFilter === status
+                        ? "bg-primary text-white"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {labels[status]}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -312,86 +404,121 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredElections.map((election) => (
-                <tr
-                  key={election.id}
-                  className="hover:bg-slate-50 transition-colors"
-                >
-                  <td className="px-6 py-4">
-                    <span className="font-medium text-slate-900">
-                      {election.title}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <StatusBadge status={election.status} />
-                  </td>
-                  <td className="px-6 py-4 text-slate-600">
-                    {election.candidateCount} ผู้สมัคร
-                  </td>
-                  <td className="px-6 py-4 text-slate-600 text-sm">
-                    {formatDate(new Date(election.start_date))} -{" "}
-                    {formatDate(new Date(election.end_date))}
-                  </td>
-                  <td className="px-6 py-4 text-slate-600">
-                    {election.total_votes.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleToggleStatus(election)}
-                        disabled={isPending}
-                        className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
-                          election.status === "OPEN"
-                            ? "text-orange-500 hover:text-orange-600 hover:bg-orange-50"
-                            : "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
-                        }`}
-                        title={
-                          election.status === "OPEN"
-                            ? "ปิดการเลือกตั้ง"
-                            : "เปิดการเลือกตั้ง"
-                        }
-                      >
-                        <span className="material-symbols-outlined text-xl">
-                          {election.status === "OPEN"
-                            ? "stop_circle"
-                            : "play_circle"}
-                        </span>
-                      </button>
-                      <Link
-                        href={`/admin/elections/${election.id}/candidates`}
-                        className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                        title="จัดการผู้สมัคร"
-                      >
-                        <span className="material-symbols-outlined text-xl">
-                          group
-                        </span>
-                      </Link>
-                      <Link
-                        href={`/admin/elections/${election.id}/results`}
-                        className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                        title="ดูผลลัพธ์"
-                      >
-                        <span className="material-symbols-outlined text-xl">
-                          bar_chart
-                        </span>
-                      </Link>
+              {filteredElections.map((election) => {
+                const isArchived = election.displayStatus === "ARCHIVED";
+                return (
+                  <tr
+                    key={election.id}
+                    className={`hover:bg-slate-50 transition-colors ${isArchived ? "opacity-75" : ""}`}
+                  >
+                    <td className="px-6 py-4">
+                      <span className="font-medium text-slate-900">
+                        {election.title}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <StatusBadge status={election.displayStatus} />
+                    </td>
+                    <td className="px-6 py-4 text-slate-600">
+                      {election.candidateCount} ผู้สมัคร
+                    </td>
+                    <td className="px-6 py-4 text-slate-600 text-sm">
+                      {formatDate(new Date(election.start_date))} -{" "}
+                      {formatDate(new Date(election.end_date))}
+                    </td>
+                    <td className="px-6 py-4 text-slate-600">
+                      {election.total_votes.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        {/* Toggle Status - only for non-archived */}
+                        {!isArchived && (
+                          <button
+                            onClick={() => handleToggleStatus(election)}
+                            disabled={isPending}
+                            className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
+                              election.displayStatus === "OPEN"
+                                ? "text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                                : "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                            }`}
+                            title={
+                              election.displayStatus === "OPEN"
+                                ? "ปิดการเลือกตั้ง"
+                                : "เปิดการเลือกตั้ง"
+                            }
+                          >
+                            <span className="material-symbols-outlined text-xl">
+                              {election.displayStatus === "OPEN"
+                                ? "stop_circle"
+                                : "play_circle"}
+                            </span>
+                          </button>
+                        )}
 
-                      <button
-                        onClick={() =>
-                          handleDeleteElection(election.id, election.title)
-                        }
-                        disabled={isPending}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                        title="ลบ"
-                      >
-                        <span className="material-symbols-outlined text-xl">
-                          delete
-                        </span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {/* Archive / Unarchive */}
+                        <button
+                          onClick={() =>
+                            handleArchiveElection(
+                              election.id,
+                              election.title,
+                              isArchived,
+                            )
+                          }
+                          disabled={isPending}
+                          className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
+                            isArchived
+                              ? "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                              : "text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+                          }`}
+                          title={isArchived ? "กู้คืน" : "เก็บถาวร"}
+                        >
+                          <span className="material-symbols-outlined text-xl">
+                            {isArchived ? "unarchive" : "archive"}
+                          </span>
+                        </button>
+
+                        {/* View Candidates */}
+                        <Link
+                          href={`/admin/elections/${election.id}/candidates`}
+                          className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                          title="จัดการผู้สมัคร"
+                        >
+                          <span className="material-symbols-outlined text-xl">
+                            group
+                          </span>
+                        </Link>
+
+                        {/* View Results */}
+                        <Link
+                          href={`/admin/elections/${election.id}/results`}
+                          className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="ดูผลลัพธ์"
+                        >
+                          <span className="material-symbols-outlined text-xl">
+                            bar_chart
+                          </span>
+                        </Link>
+
+                        {/* Delete - only for non-archived */}
+                        {!isArchived && (
+                          <button
+                            onClick={() =>
+                              handleDeleteElection(election.id, election.title)
+                            }
+                            disabled={isPending}
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="ลบ"
+                          >
+                            <span className="material-symbols-outlined text-xl">
+                              delete
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -399,11 +526,17 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
         {filteredElections.length === 0 && (
           <div className="text-center py-12">
             <span className="material-symbols-outlined text-5xl text-slate-300 mb-4 block">
-              inbox
+              {viewMode === "archived" ? "inventory_2" : "inbox"}
             </span>
-            <p className="text-slate-500">ไม่พบการเลือกตั้ง</p>
+            <p className="text-slate-500">
+              {viewMode === "archived"
+                ? "ไม่มีการเลือกตั้งที่ถูกเก็บถาวร"
+                : "ไม่พบการเลือกตั้ง"}
+            </p>
             <p className="text-slate-400 text-sm mt-1">
-              คลิก &quot;สร้างการเลือกตั้งใหม่&quot; เพื่อเริ่มต้น
+              {viewMode === "archived"
+                ? "การเลือกตั้งที่ถูกเก็บถาวรจะแสดงที่นี่"
+                : 'คลิก "สร้างการเลือกตั้งใหม่" เพื่อเริ่มต้น'}
             </p>
           </div>
         )}
@@ -571,6 +704,22 @@ export default function ElectionsClient({ elections }: ElectionsClientProps) {
         confirmText="ลบ"
         cancelText="ยกเลิก"
         variant="danger"
+      />
+
+      {/* Archive/Unarchive Election Confirmation */}
+      <ConfirmModal
+        isOpen={!!archiveConfirm}
+        onClose={() => setArchiveConfirm(null)}
+        onConfirm={confirmArchiveElection}
+        title={`ยืนยันการ${archiveConfirm?.isArchived ? "กู้คืน" : "เก็บถาวร"}การเลือกตั้ง`}
+        message={
+          archiveConfirm?.isArchived
+            ? `คุณแน่ใจหรือไม่ที่จะกู้คืนการเลือกตั้ง "${archiveConfirm?.title}" กลับมาแสดงในรายการ?`
+            : `คุณแน่ใจหรือไม่ที่จะเก็บถาวรการเลือกตั้ง "${archiveConfirm?.title}"?\n\nการเลือกตั้งที่ถูกเก็บถาวรจะไม่แสดงในหน้า Dashboard ของนักเรียน แต่ยังสามารถกู้คืนได้`
+        }
+        confirmText={archiveConfirm?.isArchived ? "กู้คืน" : "เก็บถาวร"}
+        cancelText="ยกเลิก"
+        variant={archiveConfirm?.isArchived ? "success" : "default"}
       />
     </div>
   );

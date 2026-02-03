@@ -38,11 +38,14 @@ CREATE TABLE elections (
     end_date DATETIME NOT NULL,              -- วันสิ้นสุด
     status ENUM('PENDING', 'OPEN', 'CLOSED') DEFAULT 'PENDING',
     is_active BOOLEAN DEFAULT TRUE,
+    is_archived BOOLEAN DEFAULT FALSE,       -- เก็บถาวรการเลือกตั้ง (ไม่แสดงใน dashboard)
     total_votes INT DEFAULT 0,               -- จำนวนผู้มาใช้สิทธิ์ทั้งหมด
-    
+
     -- Metadata
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX idx_is_archived (is_archived)
 );
 
 -- 3. ตารางตำแหน่ง (Positions for Multi-Position Elections)
@@ -273,3 +276,7 @@ CREATE TABLE vote_tokens (
 --     UNIQUE KEY unique_student_election (student_id, election_id),
 --     INDEX idx_token (token)
 -- );
+
+-- v2.5: Add is_archived column for Election Archiving
+-- ALTER TABLE elections ADD COLUMN is_archived BOOLEAN DEFAULT FALSE AFTER is_active;
+-- CREATE INDEX idx_is_archived ON elections(is_archived);

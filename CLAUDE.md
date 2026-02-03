@@ -172,3 +172,60 @@ mockedGetCurrentSession.mockResolvedValue({
 **Correct:** `bg-linear-to-br`
 
 Tailwind CSS v4 uses `bg-linear-*` instead of `bg-gradient-*`.
+
+### 5. Jest mockResolvedValue Type Casting
+
+When using `mockResolvedValue()`, cast to the **resolved value type**, NOT the promise type.
+
+**Wrong:**
+
+```ts
+// ❌ ReturnType includes Promise<...>, but mockResolvedValue expects the resolved value
+mockedGetCurrentAdmin.mockResolvedValue(
+  createMockAdminSession(0) as ReturnType<typeof getCurrentAdmin>,
+);
+// Error: Type 'AdminSessionData' cannot be converted to 'Promise<AdminSessionData | null>'
+```
+
+**Correct:**
+
+```ts
+// ✅ Cast to the resolved value type (without Promise wrapper)
+mockedGetCurrentAdmin.mockResolvedValue(
+  createMockAdminSession(0) as AdminSessionData,
+);
+
+// Or use Awaited<> to unwrap the Promise type
+mockedGetCurrentAdmin.mockResolvedValue(
+  createMockAdminSession(0) as Awaited<ReturnType<typeof getCurrentAdmin>>,
+);
+```
+
+**Key insight:** `mockResolvedValue(value)` internally wraps `value` in `Promise.resolve()`, so you should provide the unwrapped type.
+
+**Also ensure mock objects have all required fields:**
+
+```ts
+// ❌ Partial fields will cause type errors
+function createMockAdminSession(accessLevel: number): {
+  admin: Partial<AdminRow>;
+} {
+  return { admin: { id: 1, access_level: accessLevel } };
+}
+
+// ✅ Include all required fields from the interface
+function createMockAdminSession(accessLevel: number): AdminSessionData {
+  return {
+    adminId: 1,
+    admin: {
+      id: 1,
+      username: "testadmin",
+      display_name: "Test Admin",
+      access_level: accessLevel,
+      password_hash: "hashed",
+      created_at: new Date(),
+      updated_at: new Date(),
+    } as AdminRow,
+  };
+}
+```

@@ -170,6 +170,7 @@ export interface ElectionRow extends RowDataPacket {
   end_date: Date;
   status: "PENDING" | "OPEN" | "CLOSED";
   is_active: boolean;
+  is_archived: boolean;
   total_votes: number;
   created_at: Date;
   updated_at: Date;
