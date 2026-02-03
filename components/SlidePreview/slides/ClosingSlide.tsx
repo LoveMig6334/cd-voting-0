@@ -35,9 +35,7 @@ export default function ClosingSlide({ slide }: ClosingSlideProps) {
           <span className="material-symbols-outlined text-primary text-4xl mb-2">
             how_to_vote
           </span>
-          <p className="text-3xl font-bold text-slate-900">
-            {totalPositions}
-          </p>
+          <p className="text-3xl font-bold text-slate-900">{totalPositions}</p>
           <p className="text-slate-500">ตำแหน่ง</p>
         </div>
 
@@ -65,7 +63,7 @@ export default function ClosingSlide({ slide }: ClosingSlideProps) {
       {/* Footer */}
       <div className="mt-12 text-center">
         <p className="text-slate-400 text-sm">
-          ระบบเลือกตั้งออนไลน์ โรงเรียน
+          ระบบเลือกตั้งออนไลน์ โรงเรียนจิตรลดา
         </p>
       </div>
     </div>

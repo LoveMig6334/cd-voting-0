@@ -12,7 +12,7 @@ const spaceMono = Space_Mono({
 
 export const metadata: Metadata = {
   title: "CD Voting",
-  description: "ระบบเลือกตั้งโรงเรียน",
+  description: "ระบบเลือกตั้งโรงเรียนจิตรลดา",
 };
 
 export default function RootLayout({

@@ -9,11 +9,11 @@ import {
   AccessLevel,
 } from "@/lib/admin-types";
 import { ActivityDisplayItem } from "@/lib/db";
+import { useClickOutside } from "@/lib/hooks/useClickOutside";
 import { canAccessPage, PageName } from "@/lib/permissions";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { useClickOutside } from "@/lib/hooks/useClickOutside";
 import { NotificationItem } from "./NotificationItem";
 
 interface NavItem {
@@ -127,6 +127,7 @@ export const AdminNavbar: React.FC = () => {
     startTransition(async () => {
       await adminLogoutAction();
       router.push("/admin/login");
+      router.refresh();
     });
   };
 

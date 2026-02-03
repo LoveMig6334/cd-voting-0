@@ -65,8 +65,8 @@ function VotingStatusBadge({
       onClick={canManage ? onClick : undefined}
       className={`${commonClasses} bg-amber-100 text-amber-700 ${canManage ? "cursor-pointer hover:bg-amber-200" : "cursor-default"}`}
     >
-      <span className="material-symbols-outlined text-sm">pending</span>
-      รอการอนุมัติ
+      <span className="material-symbols-outlined text-sm">touch_app</span>
+      กดอนุมัติ
     </span>
   );
 }
