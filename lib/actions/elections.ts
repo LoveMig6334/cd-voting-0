@@ -50,15 +50,38 @@ export interface CreateCandidateData {
 
 // Default positions for student committee
 const DEFAULT_POSITIONS: Omit<CreatePositionData, "sortOrder">[] = [
-  { id: "president", title: "ประธาน", icon: "person", enabled: true },
+  // ประธาน/รองประธาน ชาย-หญิง
+  { id: "male-president", title: "ประธานชาย", icon: "man", enabled: true },
   {
-    id: "vice-president",
-    title: "รองประธาน",
-    icon: "supervisor_account",
+    id: "male-vice-president",
+    title: "รองประธานชาย",
+    icon: "man_2",
     enabled: true,
   },
+  { id: "female-president", title: "ประธานหญิง", icon: "woman", enabled: true },
+  {
+    id: "female-vice-president",
+    title: "รองประธานหญิง",
+    icon: "woman_2",
+    enabled: true,
+  },
+  // เลขานุการ
   { id: "secretary", title: "เลขานุการ", icon: "edit_note", enabled: true },
+  {
+    id: "vice-secretary",
+    title: "รองเลขานุการ",
+    icon: "edit_document",
+    enabled: true,
+  },
+  // เหรัญญิก
   { id: "treasurer", title: "เหรัญญิก", icon: "payments", enabled: true },
+  {
+    id: "vice-treasurer",
+    title: "รองเหรัญญิก",
+    icon: "account_balance_wallet",
+    enabled: true,
+  },
+  // ประชาสัมพันธ์
   {
     id: "public-relations",
     title: "ประชาสัมพันธ์",
@@ -66,17 +89,38 @@ const DEFAULT_POSITIONS: Omit<CreatePositionData, "sortOrder">[] = [
     enabled: true,
   },
   {
+    id: "vice-public-relations",
+    title: "รองประชาสัมพันธ์",
+    icon: "record_voice_over",
+    enabled: true,
+  },
+  // ชมรมดนตรี
+  {
     id: "music-president",
-    title: "ประธานชมรมดนตรี",
+    title: "ประธานดนตรี",
     icon: "music_note",
     enabled: true,
   },
   {
+    id: "vice-music-president",
+    title: "รองประธานดนตรี",
+    icon: "library_music",
+    enabled: true,
+  },
+  // ชมรมกีฬา
+  {
     id: "sports-president",
-    title: "ประธานชมรมกีฬา",
+    title: "ประธานกีฬา",
     icon: "sports_soccer",
     enabled: true,
   },
+  {
+    id: "vice-sports-president",
+    title: "รองประธานกีฬา",
+    icon: "sports",
+    enabled: true,
+  },
+  // เชียร์
   {
     id: "cheer-president",
     title: "ประธานเชียร์",
@@ -84,9 +128,22 @@ const DEFAULT_POSITIONS: Omit<CreatePositionData, "sortOrder">[] = [
     enabled: true,
   },
   {
+    id: "vice-cheer-president",
+    title: "รองประธานเชียร์",
+    icon: "sentiment_very_satisfied",
+    enabled: true,
+  },
+  // ระเบียบ
+  {
     id: "discipline-president",
     title: "ประธานระเบียบ",
     icon: "gavel",
+    enabled: true,
+  },
+  {
+    id: "vice-discipline-president",
+    title: "รองประธานระเบียบ",
+    icon: "verified_user",
     enabled: true,
   },
 ];
