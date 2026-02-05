@@ -29,23 +29,23 @@ export type {
   Point,
   ProcessedImage,
   ProcessingOptions,
-  Result,
+  Result
 } from "./types";
 
 export {
   CanvasContextError,
-  DetectionErrorCode,
-  ImageLoadError,
-  WarpFailedError,
   createBoundingRect,
   createDefaultProcessingOptions,
   createPoint,
+  DetectionErrorCode,
   err,
   errorToDiagnostic,
   getImageOrientation,
+  ImageLoadError,
   isErr,
   isOk,
   ok,
+  WarpFailedError
 } from "./types";
 
 // ============================================================================
@@ -56,7 +56,7 @@ export {
   CANNY_EDGE_DETECTION,
   CARD_DIMENSIONS,
   ENHANCEMENT,
-  OVERLAY,
+  OVERLAY
 } from "./constants";
 
 // ============================================================================
@@ -72,7 +72,6 @@ export { detectCard, getMethodDescription } from "./detector";
 export type { PipelineResult, PipelineStageResult } from "./pipeline";
 
 export {
-  PipelineManager,
   canvasToDataUrl,
   createCanvas,
   drawDetectionOverlay,
@@ -80,12 +79,13 @@ export {
   getImageData,
   isOpenCVReady,
   loadImage,
+  PipelineManager,
   processImage,
   processImageWithDiagnostics,
   scaleImage,
   sharpenImage,
   simpleCrop,
-  warpPerspective,
+  warpPerspective
 } from "./pipeline";
 
 // ============================================================================
@@ -100,3 +100,4 @@ export { isOpenCVLoaded, loadOpenCV } from "./opencv-loader";
 
 export { parseOCRText, validateParsedData } from "./parser";
 export type { ParseResult } from "./parser";
+

@@ -163,7 +163,7 @@ function extractName(lines: string[], result: ParseResult): void {
     // Pattern 1: "ชื่อ-สกุล" or "ชื่อ/สกุล" followed by title + name + surname
     // Note: Thai cards often use - or just space
     const fullNameMatch = line.match(
-      /(?:ชื่อ[-\s\/]*สกุล|Name)[:\s]*((?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)?\s*[\u0E00-\u0E7F]+)\s+([\u0E00-\u0E7F\s]+)/i
+      /(?:ชื่อ[-\s\/]*สกุล|Name)[:\s]*((?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)?\s*[\u0E00-\u0E7F]+)\s+([\u0E00-\u0E7F\s]+)/i,
     );
 
     if (fullNameMatch) {
@@ -188,7 +188,7 @@ function extractName(lines: string[], result: ParseResult): void {
     // Pattern 2: Title prefix followed by name and surname (e.g., "นาย ธรรศ บุนนาค")
     // Allow space after title
     const titleMatch = line.match(
-      /(นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)\s*([\u0E00-\u0E7F]+)\s+([\u0E00-\u0E7F]+)/
+      /(นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.)\s*([\u0E00-\u0E7F]+)\s+([\u0E00-\u0E7F]+)/,
     );
     if (titleMatch && !result.name) {
       result.name = titleMatch[2].trim();
@@ -200,7 +200,7 @@ function extractName(lines: string[], result: ParseResult): void {
 
     // Pattern 3: Just "ชื่อ" (name only)
     const nameOnlyMatch = line.match(
-      /ชื่อ[:\s]*((?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง)?\s*[\u0E00-\u0E7F]+)/
+      /ชื่อ[:\s]*((?:นาย|นางสาว|นาง|เด็กชาย|เด็กหญิง)?\s*[\u0E00-\u0E7F]+)/,
     );
     if (nameOnlyMatch && !result.name) {
       result.name = nameOnlyMatch[1].replace(titlePrefixes, "").trim();
@@ -294,7 +294,7 @@ function formatNationalId(id: string): string {
  * Validates parsed OCR data against the student database
  */
 export async function validateParsedData(
-  parsed: Partial<StudentData>
+  parsed: Partial<StudentData>,
 ): Promise<{
   isValid: boolean;
   matchedStudent: StudentData | null;

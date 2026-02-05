@@ -60,7 +60,7 @@ const ENHANCEMENT_LUT = (() => {
  * Load an image from a data URL
  */
 export function loadImage(
-  dataUrl: string
+  dataUrl: string,
 ): Promise<Result<HTMLImageElement, ImageLoadError>> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -76,7 +76,7 @@ export function loadImage(
  */
 export function createCanvas(
   width: number,
-  height: number
+  height: number,
 ): Result<
   { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D },
   CanvasContextError
@@ -95,7 +95,7 @@ export function createCanvas(
  * Get ImageData from an image
  */
 export function getImageData(
-  img: HTMLImageElement
+  img: HTMLImageElement,
 ): Result<ImageDataWithDimensions, CanvasContextError> {
   const result = createCanvas(img.width, img.height);
   if (!result.ok) return result;
@@ -114,7 +114,7 @@ export function getImageData(
 export function canvasToDataUrl(
   canvas: HTMLCanvasElement,
   format: "image/png" | "image/jpeg" = "image/png",
-  quality?: number
+  quality?: number,
 ): string {
   return canvas.toDataURL(format, quality);
 }
@@ -124,7 +124,7 @@ export function canvasToDataUrl(
  */
 export function drawDetectionOverlay(
   ctx: CanvasRenderingContext2D,
-  detection: DetectionResult
+  detection: DetectionResult,
 ): void {
   if (detection.success && detection.corners.length === 4) {
     ctx.fillStyle = OVERLAY.SUCCESS_FILL;
@@ -169,7 +169,7 @@ export function drawDetectionOverlay(
 export function enhanceImage(
   ctx: CanvasRenderingContext2D,
   width: number,
-  height: number
+  height: number,
 ): void {
   const imageData = ctx.getImageData(0, 0, width, height);
   enhanceImageData(imageData);
@@ -195,7 +195,7 @@ export function enhanceImageData(imageData: ImageData): void {
 export function grayscaleImage(
   ctx: CanvasRenderingContext2D,
   width: number,
-  height: number
+  height: number,
 ): void {
   const imageData = ctx.getImageData(0, 0, width, height);
   const src: CVMat = cv!.matFromImageData(imageData);
@@ -205,7 +205,7 @@ export function grayscaleImage(
   const grayImageData = new ImageData(
     new Uint8ClampedArray(dst.data),
     dst.cols,
-    dst.rows
+    dst.rows,
   );
 
   ctx.putImageData(grayImageData, 0, 0);
@@ -221,7 +221,7 @@ export function grayscaleImage(
 export function applyAdaptiveThreshold(
   ctx: CanvasRenderingContext2D,
   width: number,
-  height: number
+  height: number,
 ): void {
   const imageData = ctx.getImageData(0, 0, width, height);
   const thresholded = applyAdaptiveThresholdToData(imageData);
@@ -234,7 +234,7 @@ export function applyAdaptiveThreshold(
  * Apply adaptive thresholding to ImageData
  */
 export function applyAdaptiveThresholdToData(
-  imageData: ImageData
+  imageData: ImageData,
 ): ImageData | null {
   if (!isOpenCVReady() || typeof cv === "undefined") {
     return null;
@@ -267,7 +267,7 @@ export function applyAdaptiveThresholdToData(
       cv!.ADAPTIVE_THRESH_GAUSSIAN_C,
       cv!.THRESH_BINARY,
       OCR_PROCESSING.ADAPTIVE_THRESHOLD_BLOCK_SIZE,
-      OCR_PROCESSING.ADAPTIVE_THRESHOLD_C
+      OCR_PROCESSING.ADAPTIVE_THRESHOLD_C,
     );
 
     // 3. Global threshold pre-pass: Filter out anything not 'close to black'
@@ -277,7 +277,7 @@ export function applyAdaptiveThresholdToData(
       mask,
       OCR_PROCESSING.GLOBAL_THRESHOLD,
       255,
-      cv!.THRESH_BINARY
+      cv!.THRESH_BINARY,
     );
 
     // 4. Combine: Force globally 'light' pixels to white in the adaptive result
@@ -291,7 +291,7 @@ export function applyAdaptiveThresholdToData(
     return new ImageData(
       new Uint8ClampedArray(rgba.data),
       rgba.cols,
-      rgba.rows
+      rgba.rows,
     );
   } catch (error) {
     console.error("Adaptive threshold failed:", error);
@@ -313,7 +313,7 @@ export function applyAdaptiveThresholdToData(
 export function sharpenImage(
   ctx: CanvasRenderingContext2D,
   width: number,
-  height: number
+  height: number,
 ): void {
   const imageData = ctx.getImageData(0, 0, width, height);
   const sharpened = sharpenImageData(imageData);
@@ -358,7 +358,7 @@ export function sharpenImageData(imageData: ImageData): ImageData | null {
     return new ImageData(
       new Uint8ClampedArray(sharpenedMat.data),
       imageData.width,
-      imageData.height
+      imageData.height,
     );
   } catch (error) {
     console.warn("Sharpening failed:", error);
@@ -377,7 +377,7 @@ export function sharpenImageData(imageData: ImageData): ImageData | null {
 export function simpleCrop(
   img: HTMLImageElement,
   cropRect: { x: number; y: number; width: number; height: number },
-  outputDimensions: ImageDimensions
+  outputDimensions: ImageDimensions,
 ): Result<HTMLCanvasElement, CanvasContextError> {
   const result = createCanvas(outputDimensions.width, outputDimensions.height);
   if (!result.ok) return result;
@@ -391,7 +391,7 @@ export function simpleCrop(
     0,
     0,
     outputDimensions.width,
-    outputDimensions.height
+    outputDimensions.height,
   );
   return ok(canvas);
 }
@@ -401,7 +401,7 @@ export function simpleCrop(
  */
 export function scaleImage(
   img: HTMLImageElement,
-  outputWidth: number
+  outputWidth: number,
 ): Result<HTMLCanvasElement, CanvasContextError> {
   const aspectRatio = img.width / img.height;
   const outputHeight = Math.round(outputWidth / aspectRatio);
@@ -472,7 +472,7 @@ function getCardWarpDimensions(orderedCorners: readonly Point[]): {
   const widthTop = Math.hypot(tr.x - tl.x, tr.y - tl.y);
   const widthBottom = Math.hypot(
     orderedCorners[2].x - bl.x,
-    orderedCorners[2].y - bl.y
+    orderedCorners[2].y - bl.y,
   );
   const maxWidth = Math.max(widthTop, widthBottom);
   const targetWidth = Math.round(maxWidth);
@@ -482,7 +482,7 @@ function getCardWarpDimensions(orderedCorners: readonly Point[]): {
     width: Math.max(targetWidth, 400),
     height: Math.max(
       targetHeight,
-      Math.round(400 / CARD_DIMENSIONS.ASPECT_RATIO)
+      Math.round(400 / CARD_DIMENSIONS.ASPECT_RATIO),
     ),
   };
 }
@@ -495,7 +495,7 @@ export function warpPerspective(
   srcCorners: readonly Point[],
   _dstCorners: readonly Point[],
   _outputDimensions: ImageDimensions,
-  sourceImageData?: ImageData
+  sourceImageData?: ImageData,
 ): Result<HTMLCanvasElement, WarpFailedError | CanvasContextError> {
   const orderedCorners = robustSortCorners([...srcCorners]);
   const dimensions = getCardWarpDimensions(orderedCorners);
@@ -508,7 +508,7 @@ export function warpPerspective(
         orderedCorners,
         width,
         height,
-        sourceImageData
+        sourceImageData,
       );
     } catch {
       console.warn("OpenCV warp failed, using canvas fallback");
@@ -523,7 +523,7 @@ function warpWithOpenCV(
   orderedCorners: readonly Point[],
   width: number,
   height: number,
-  sourceImageData?: ImageData
+  sourceImageData?: ImageData,
 ): Result<HTMLCanvasElement, WarpFailedError | CanvasContextError> {
   // ⚡ Bolt: Profiling instrumentation for OpenCV warp operations
   const timings: Record<string, number> = {};
@@ -583,7 +583,7 @@ function warpWithOpenCV(
           new cv!.Size(srcWidth, srcHeight),
           0,
           0,
-          cv!.INTER_LINEAR
+          cv!.INTER_LINEAR,
         );
       } else {
         srcMat = cv!.matFromImageData(sourceImageData);
@@ -606,7 +606,7 @@ function warpWithOpenCV(
           new cv!.Size(srcWidth, srcHeight),
           0,
           0,
-          cv!.INTER_LINEAR
+          cv!.INTER_LINEAR,
         );
       } else {
         srcMat = cv!.matFromImageData(imageData);
@@ -651,7 +651,7 @@ function warpWithOpenCV(
       new cv!.Size(width, height),
       cv!.INTER_LANCZOS4, // ✨ 8x8 neighborhood interpolation for best quality
       cv!.BORDER_CONSTANT,
-      new cv!.Scalar(0, 0, 0, 255)
+      new cv!.Scalar(0, 0, 0, 255),
     );
     timings.warpPerspective = performance.now() - t0;
 
@@ -664,7 +664,7 @@ function warpWithOpenCV(
     const dstImageData = new ImageData(
       new Uint8ClampedArray(dstMat.data),
       width,
-      height
+      height,
     );
     dstCtx.putImageData(dstImageData, 0, 0);
     timings.imageDataConversion = performance.now() - t0;
@@ -684,8 +684,8 @@ function warpWithOpenCV(
   } catch (error) {
     return err(
       new WarpFailedError(
-        error instanceof Error ? error.message : "OpenCV warp failed"
-      )
+        error instanceof Error ? error.message : "OpenCV warp failed",
+      ),
     );
   } finally {
     // ⚡ Bolt: Memory safety - delete all cv.Mat objects to prevent leaks
@@ -702,7 +702,7 @@ function warpWithCanvas(
   srcImg: HTMLImageElement,
   orderedCorners: readonly Point[],
   width: number,
-  height: number
+  height: number,
 ): Result<HTMLCanvasElement, WarpFailedError | CanvasContextError> {
   const minX = Math.min(...orderedCorners.map((p) => p.x));
   const maxX = Math.max(...orderedCorners.map((p) => p.x));
@@ -729,7 +729,7 @@ function warpWithCanvas(
     0,
     0,
     width,
-    height
+    height,
   );
   return ok(dstCanvas);
 }
@@ -757,7 +757,7 @@ export class PipelineManager {
 
   async processImage(
     imageDataUrl: string,
-    options: ProcessingOptions = createDefaultProcessingOptions()
+    options: ProcessingOptions = createDefaultProcessingOptions(),
   ): Promise<PipelineResult> {
     this.stages = [];
     this.startTime = performance.now();
@@ -783,7 +783,7 @@ export class PipelineManager {
     }
 
     const loadResult = await this.runStage("load_image", async () =>
-      loadImage(imageDataUrl)
+      loadImage(imageDataUrl),
     );
     if (isErr(loadResult)) return this.createPipelineResult(loadResult);
     const img = loadResult.value;
@@ -857,14 +857,14 @@ export class PipelineManager {
     const { scaled: detection } = detectionResult.value;
 
     const overlayResult = await this.runStage("draw_overlay", async () =>
-      this.drawOverlay(img, detection)
+      this.drawOverlay(img, detection),
     );
     if (isErr(overlayResult)) return this.createPipelineResult(overlayResult);
 
     const cropResult = await this.runStage("crop_and_warp", async () =>
       // ✨ Use scaled detection (original-resolution corners) for high-quality output
       // The warp will read from the original full-res image for maximum sharpness
-      this.cropAndWarp(img, detection, options)
+      this.cropAndWarp(img, detection, options),
     );
     if (isErr(cropResult)) return this.createPipelineResult(cropResult);
     let cardCanvas = cropResult.value;
@@ -882,7 +882,7 @@ export class PipelineManager {
               0,
               0,
               cardCanvas.width,
-              cardCanvas.height
+              cardCanvas.height,
             );
 
             // Apply sharpening (returns new ImageData or null)
@@ -898,7 +898,7 @@ export class PipelineManager {
         }
         // Return both canvas and the latest imageData
         return ok({ canvas: cardCanvas, imageData });
-      }
+      },
     );
     if (isErr(enhancementResult))
       return this.createPipelineResult(enhancementResult);
@@ -923,7 +923,7 @@ export class PipelineManager {
             0,
             0,
             cardCanvas.width,
-            cardCanvas.height
+            cardCanvas.height,
           );
         }
 
@@ -933,7 +933,7 @@ export class PipelineManager {
         // Create result canvas
         const ocrCanvasResult = createCanvas(
           cardCanvas.width,
-          cardCanvas.height
+          cardCanvas.height,
         );
         if (!ocrCanvasResult.ok) return ocrCanvasResult;
         const { canvas: ocrCanvas, ctx: ocrCtx } = ocrCanvasResult.value;
@@ -946,7 +946,7 @@ export class PipelineManager {
         }
 
         return ok(canvasToDataUrl(ocrCanvas));
-      }
+      },
     );
     if (isErr(thresholdResult))
       return this.createPipelineResult(thresholdResult);
@@ -963,7 +963,7 @@ export class PipelineManager {
 
   private async runStage<T>(
     stageName: string,
-    operation: () => Promise<Result<T, DetectionError>>
+    operation: () => Promise<Result<T, DetectionError>>,
   ): Promise<Result<T, DetectionError>> {
     const stageStart = performance.now();
     try {
@@ -978,7 +978,7 @@ export class PipelineManager {
     } catch (error) {
       const detectionError = new ImageLoadError(
         "Unknown",
-        error instanceof Error ? error : new Error(String(error))
+        error instanceof Error ? error : new Error(String(error)),
       );
       this.stages.push({
         stage: stageName,
@@ -992,7 +992,7 @@ export class PipelineManager {
 
   private async drawOverlay(
     img: HTMLImageElement,
-    detection: ExtendedDetectionResult
+    detection: ExtendedDetectionResult,
   ): Promise<Result<string, DetectionError>> {
     // Determine preview dimensions (optimize by downscaling large images)
     const maxDim = OVERLAY.MAX_PREVIEW_WIDTH;
@@ -1036,7 +1036,7 @@ export class PipelineManager {
     img: HTMLImageElement,
     detection: ExtendedDetectionResult,
     options: ProcessingOptions,
-    imageData?: ImageData
+    imageData?: ImageData,
   ): Promise<Result<HTMLCanvasElement, DetectionError>> {
     const outputDimensions: ImageDimensions = {
       width: CARD_DIMENSIONS.OUTPUT_WIDTH,
@@ -1060,7 +1060,7 @@ export class PipelineManager {
           { x: 0, y: outputDimensions.height },
         ],
         outputDimensions,
-        imageData
+        imageData,
       );
 
       if (warpResult.ok) {
@@ -1072,14 +1072,14 @@ export class PipelineManager {
     const cropResult = simpleCrop(
       img,
       detection.boundingRect,
-      outputDimensions
+      outputDimensions,
     );
     if (!cropResult.ok) return cropResult;
     return ok(cropResult.value);
   }
 
   private createPipelineResult<T>(
-    result: Result<T, DetectionError>
+    result: Result<T, DetectionError>,
   ): PipelineResult {
     return {
       result: result as Result<ProcessedImage, DetectionError>,
@@ -1098,7 +1098,7 @@ export class PipelineManager {
     for (const stage of result.stages) {
       const status = stage.success ? "✓" : "✗";
       lines.push(
-        `  ${status} ${stage.stage}: ${stage.durationMs.toFixed(1)}ms`
+        `  ${status} ${stage.stage}: ${stage.durationMs.toFixed(1)}ms`,
       );
     }
 
@@ -1120,7 +1120,7 @@ export class PipelineManager {
 
 export async function processImage(
   imageDataUrl: string,
-  options?: ProcessingOptions
+  options?: ProcessingOptions,
 ): Promise<ProcessedImage> {
   const manager = new PipelineManager();
   const result = await manager.processImage(imageDataUrl, options);
@@ -1149,7 +1149,7 @@ export async function processImage(
 
 export async function processImageWithDiagnostics(
   imageDataUrl: string,
-  options?: ProcessingOptions
+  options?: ProcessingOptions,
 ): Promise<PipelineResult> {
   const manager = new PipelineManager();
   return manager.processImage(imageDataUrl, options);

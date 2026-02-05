@@ -217,7 +217,7 @@ function filterCardEdgeLines(lines: MergedLine[]): MergedLine[] {
 function houghLineToEndpoints(
   line: MergedLine,
   imageWidth: number,
-  imageHeight: number
+  imageHeight: number,
 ): LineEndpoints {
   const { rho, theta, category } = line;
   const cos = Math.cos(theta);
@@ -246,7 +246,7 @@ function findIntersection(
   maxX: number,
   maxY: number,
   lineIdx1: number,
-  lineIdx2: number
+  lineIdx2: number,
 ): IntersectionPoint | null {
   const { rho: rho1, theta: theta1 } = line1;
   const { rho: rho2, theta: theta2 } = line2;
@@ -287,7 +287,7 @@ function findIntersection(
  * Build an adjacency graph from intersections based on shared lines.
  */
 function buildIntersectionGraph(
-  intersections: IntersectionPoint[]
+  intersections: IntersectionPoint[],
 ): Set<number>[] {
   const graph: Set<number>[] = intersections.map(() => new Set());
   const minCornerDistance = CANNY_EDGE_DETECTION.MIN_CORNER_DISTANCE;
@@ -307,7 +307,7 @@ function buildIntersectionGraph(
 
       const dist = Math.sqrt(
         Math.pow(intersections[i].x - intersections[j].x, 2) +
-          Math.pow(intersections[i].y - intersections[j].y, 2)
+          Math.pow(intersections[i].y - intersections[j].y, 2),
       );
       if (dist < minCornerDistance) continue;
 
@@ -419,7 +419,7 @@ function findQuadrilateralsFromIntersections(
   intersections: IntersectionPoint[],
   numLines: number,
   imageWidth: number,
-  imageHeight: number
+  imageHeight: number,
 ): { quadrilaterals: QuadContour[]; bestQuadrilateral: QuadContour | null } {
   if (intersections.length < 4) {
     return { quadrilaterals: [], bestQuadrilateral: null };
@@ -487,7 +487,7 @@ function findQuadrilateralsFromIntersections(
  */
 export async function extractHoughDebugData(
   imageDataUrl: string,
-  threshold?: number
+  threshold?: number,
 ): Promise<HoughDebugResult | null> {
   if (!isOpenCVReady()) {
     console.error("OpenCV not ready for debug extraction");
@@ -513,7 +513,7 @@ export async function extractHoughDebugData(
         imageData,
         img.width,
         img.height,
-        threshold
+        threshold,
       );
       resolve(result);
     };
@@ -526,7 +526,7 @@ function runHoughExtraction(
   imageData: ImageData,
   originalWidth: number,
   originalHeight: number,
-  customThreshold?: number
+  customThreshold?: number,
 ): HoughDebugResult | null {
   const targetHeight = CANNY_EDGE_DETECTION.RESCALED_HEIGHT;
   const scale = targetHeight / originalHeight;
@@ -555,7 +555,7 @@ function runHoughExtraction(
       new cv!.Size(targetWidth, targetHeight),
       0,
       0,
-      cv!.INTER_AREA
+      cv!.INTER_AREA,
     );
 
     // Grayscale
@@ -571,7 +571,7 @@ function runHoughExtraction(
     const morphSizeH = CANNY_EDGE_DETECTION.MORPH_KERNEL_SIZE;
     kernelH = cv!.getStructuringElement(
       cv!.MORPH_RECT,
-      new cv!.Size(morphSizeH, morphSizeH)
+      new cv!.Size(morphSizeH, morphSizeH),
     );
     cv!.morphologyEx(blurredH, morphedH, cv!.MORPH_CLOSE, kernelH);
 
@@ -580,7 +580,7 @@ function runHoughExtraction(
       morphedH,
       edgesHorizontal,
       CANNY_EDGE_DETECTION.CANNY_THRESHOLD_LOW,
-      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH
+      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH,
     );
 
     // === VERTICAL PATH (light blur - preserves sharp card edges) ===
@@ -594,7 +594,7 @@ function runHoughExtraction(
       blurredV,
       edgesVertical,
       CANNY_EDGE_DETECTION.CANNY_THRESHOLD_LOW,
-      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH
+      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH,
     );
 
     // === COMPUTE ACCUMULATOR FROM COMBINED EDGES ===
@@ -602,7 +602,7 @@ function runHoughExtraction(
       edgesHorizontal,
       edgesVertical,
       targetWidth,
-      targetHeight
+      targetHeight,
     );
 
     // === HOUGH LINE DETECTION ===
@@ -624,7 +624,7 @@ function runHoughExtraction(
     // Helper function to run a single Hough pass
     const runHoughPass = (
       edges: CVMat,
-      thresholds: readonly number[] | number[]
+      thresholds: readonly number[] | number[],
     ): HoughLine[] => {
       const passLines: HoughLine[] = [];
       for (const threshold of thresholds) {
@@ -634,7 +634,7 @@ function runHoughExtraction(
           localLinesMat,
           CANNY_EDGE_DETECTION.HOUGH_RHO,
           CANNY_EDGE_DETECTION.HOUGH_THETA,
-          threshold
+          threshold,
         );
 
         if (localLinesMat.rows > 0 && localLinesMat.rows <= maxLines) {
@@ -663,14 +663,14 @@ function runHoughExtraction(
 
     // Filter pass 2 to only keep vertical lines
     const verticalPass2 = pass2Lines.filter(
-      (line) => classifyLine(line.theta) === "vertical"
+      (line) => classifyLine(line.theta) === "vertical",
     );
     rawLines.push(...verticalPass2);
 
     const rawLineCount = rawLines.length;
 
     console.log(
-      `🔍 Debug: Pass1(H)=${pass1Lines.length}, Pass2(V)=${verticalPass2.length}, Raw=${rawLineCount}, Threshold=${usedThreshold}`
+      `🔍 Debug: Pass1(H)=${pass1Lines.length}, Pass2(V)=${verticalPass2.length}, Raw=${rawLineCount}, Threshold=${usedThreshold}`,
     );
 
     // Merge nearby parallel lines
@@ -680,12 +680,12 @@ function runHoughExtraction(
     const cardEdgeLines = filterCardEdgeLines(merged);
 
     console.log(
-      `🔍 Debug: Merged=${merged.length}, CardEdges=${cardEdgeLines.length}`
+      `🔍 Debug: Merged=${merged.length}, CardEdges=${cardEdgeLines.length}`,
     );
 
     // Convert lines to endpoints
     const lineEndpoints = cardEdgeLines.map((line) =>
-      houghLineToEndpoints(line, targetWidth, targetHeight)
+      houghLineToEndpoints(line, targetWidth, targetHeight),
     );
 
     // Find intersections
@@ -698,7 +698,7 @@ function runHoughExtraction(
           targetWidth,
           targetHeight,
           i,
-          j
+          j,
         );
         if (intersection) {
           intersections.push(intersection);
@@ -708,22 +708,22 @@ function runHoughExtraction(
 
     // Count raw lines by category
     const rawVerticalCount = rawLines.filter(
-      (l) => classifyLine(l.theta) === "vertical"
+      (l) => classifyLine(l.theta) === "vertical",
     ).length;
     const rawHorizontalCount = rawLines.filter(
-      (l) => classifyLine(l.theta) === "horizontal"
+      (l) => classifyLine(l.theta) === "horizontal",
     ).length;
 
     // Count merged lines by category
     const mergedVerticalCount = cardEdgeLines.filter(
-      (l) => l.category === "vertical"
+      (l) => l.category === "vertical",
     ).length;
     const mergedHorizontalCount = cardEdgeLines.filter(
-      (l) => l.category === "horizontal"
+      (l) => l.category === "horizontal",
     ).length;
 
     console.log(
-      `🔍 Debug: Raw V=${rawVerticalCount} H=${rawHorizontalCount}, Merged V=${mergedVerticalCount} H=${mergedHorizontalCount}`
+      `🔍 Debug: Raw V=${rawVerticalCount} H=${rawHorizontalCount}, Merged V=${mergedVerticalCount} H=${mergedHorizontalCount}`,
     );
 
     // === QUADRILATERAL DETECTION ===
@@ -732,13 +732,13 @@ function runHoughExtraction(
         intersections,
         cardEdgeLines.length,
         targetWidth,
-        targetHeight
+        targetHeight,
       );
 
     console.log(
       `🔍 Debug: Found ${quadrilaterals.length} quadrilaterals, best: ${
         bestQuadrilateral ? "yes" : "none"
-      }`
+      }`,
     );
 
     return {
@@ -787,7 +787,7 @@ function computeAccumulator(
   edgesHorizontal: CVMat,
   edgesVertical: CVMat,
   width: number,
-  height: number
+  height: number,
 ): AccumulatorData {
   // Parameters for accumulator
   const thetaSteps = 180; // 1 degree resolution
@@ -871,7 +871,7 @@ export function drawHoughLines(
   ctx: CanvasRenderingContext2D,
   lineEndpoints: LineEndpoints[],
   defaultColor: string = "#FF0000",
-  lineWidth: number = 2
+  lineWidth: number = 2,
 ): void {
   ctx.lineWidth = lineWidth;
 
@@ -899,7 +899,7 @@ export function drawIntersections(
   ctx: CanvasRenderingContext2D,
   intersections: IntersectionPoint[],
   color: string = "#00FFFF",
-  radius: number = 5
+  radius: number = 5,
 ): void {
   ctx.fillStyle = color;
 
@@ -915,7 +915,7 @@ export function drawIntersections(
  */
 export function drawDebugOverlay(
   ctx: CanvasRenderingContext2D,
-  debugData: HoughDebugResult
+  debugData: HoughDebugResult,
 ): void {
   // Draw lines first (so intersections appear on top)
   drawHoughLines(ctx, debugData.lineEndpoints, "#FF0000", 2);

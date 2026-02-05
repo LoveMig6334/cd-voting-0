@@ -32,14 +32,14 @@ declare global {
       rows: number,
       cols: number,
       type: number,
-      data: number[]
+      data: number[],
     ): CVMat;
     Size: new (width: number, height: number) => CVSize;
     Scalar: new (
       v0?: number,
       v1?: number,
       v2?: number,
-      v3?: number
+      v3?: number,
     ) => CVScalar;
 
     // Image processing functions
@@ -49,7 +49,7 @@ declare global {
       dst: CVMat,
       ksize: CVSize,
       sigmaX: number,
-      sigmaY?: number
+      sigmaY?: number,
     ): void;
     morphologyEx(
       src: CVMat,
@@ -57,7 +57,7 @@ declare global {
       op: number,
       kernel: CVMat,
       anchor?: CVPoint,
-      iterations?: number
+      iterations?: number,
     ): void;
     getStructuringElement(shape: number, ksize: CVSize): CVMat;
     Canny(
@@ -66,14 +66,14 @@ declare global {
       threshold1: number,
       threshold2: number,
       apertureSize?: number,
-      L2gradient?: boolean
+      L2gradient?: boolean,
     ): void;
     HoughLines(
       image: CVMat,
       lines: CVMat,
       rho: number,
       theta: number,
-      threshold: number
+      threshold: number,
     ): void;
     resize(
       src: CVMat,
@@ -81,7 +81,7 @@ declare global {
       dsize: CVSize,
       fx?: number,
       fy?: number,
-      interpolation?: number
+      interpolation?: number,
     ): void;
 
     // Perspective warp functions
@@ -93,7 +93,7 @@ declare global {
       dsize: CVSize,
       flags?: number,
       borderMode?: number,
-      borderValue?: CVScalar
+      borderValue?: CVScalar,
     ): void;
 
     // Image blending functions
@@ -103,7 +103,7 @@ declare global {
       src2: CVMat,
       beta: number,
       gamma: number,
-      dst: CVMat
+      dst: CVMat,
     ): void;
 
     // Thresholding functions
@@ -112,7 +112,7 @@ declare global {
       dst: CVMat,
       thresh: number,
       maxval: number,
-      type: number
+      type: number,
     ): void;
     adaptiveThreshold(
       src: CVMat,
@@ -121,7 +121,7 @@ declare global {
       adaptiveMethod: number,
       thresholdType: number,
       blockSize: number,
-      C: number
+      C: number,
     ): void;
 
     // Constants
@@ -437,7 +437,7 @@ function filterCardEdgeLines(lines: MergedLine[]): MergedLine[] {
 export function detectCard(
   imageData: ImageData,
   width: number,
-  height: number
+  height: number,
 ): ExtendedDetectionResult {
   const timer = new PerformanceTimer();
   timer.start();
@@ -475,7 +475,7 @@ function runCannyDetection(
   src: CVMat,
   originalWidth: number,
   originalHeight: number,
-  timer: PerformanceTimer
+  timer: PerformanceTimer,
 ): ExtendedDetectionResult {
   const targetHeight = CANNY_EDGE_DETECTION.RESCALED_HEIGHT;
   const scale = targetHeight / originalHeight;
@@ -500,7 +500,7 @@ function runCannyDetection(
       new cv!.Size(targetWidth, targetHeight),
       0,
       0,
-      cv!.INTER_LINEAR // ⚡ Optimization: INTER_LINEAR is faster than INTER_AREA for this use case
+      cv!.INTER_LINEAR, // ⚡ Optimization: INTER_LINEAR is faster than INTER_AREA for this use case
     );
     timer.markStep("rescale");
 
@@ -519,7 +519,7 @@ function runCannyDetection(
       blurredV,
       edgesVertical,
       CANNY_EDGE_DETECTION.CANNY_THRESHOLD_LOW,
-      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH
+      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH,
     );
     timer.markStep("canny_vertical");
 
@@ -537,7 +537,7 @@ function runCannyDetection(
     const morphSizeH = CANNY_EDGE_DETECTION.MORPH_KERNEL_SIZE;
     kernelH = cv!.getStructuringElement(
       cv!.MORPH_RECT,
-      new cv!.Size(morphSizeH, morphSizeH)
+      new cv!.Size(morphSizeH, morphSizeH),
     );
     cv!.morphologyEx(blurredH, morphedH, cv!.MORPH_CLOSE, kernelH);
 
@@ -546,7 +546,7 @@ function runCannyDetection(
       morphedH,
       edgesHorizontal,
       CANNY_EDGE_DETECTION.CANNY_THRESHOLD_LOW,
-      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH
+      CANNY_EDGE_DETECTION.CANNY_THRESHOLD_HIGH,
     );
     timer.markStep("canny_horizontal");
 
@@ -563,14 +563,14 @@ function runCannyDetection(
     const intersections = findLineIntersections(
       houghLines,
       targetWidth,
-      targetHeight
+      targetHeight,
     );
     console.log(`🔍 Intersections found: ${intersections.length}`);
     timer.markStep("find_intersections");
 
     if (intersections.length < 4) {
       console.warn(
-        `🔍 Detection failed: Only ${intersections.length} intersections (need 4+)`
+        `🔍 Detection failed: Only ${intersections.length} intersections (need 4+)`,
       );
       timer.markStep("insufficient_intersections");
       return createCenteredFallback(originalWidth, originalHeight);
@@ -580,7 +580,7 @@ function runCannyDetection(
       intersections,
       houghLines.length,
       targetWidth,
-      targetHeight
+      targetHeight,
     );
     console.log(`🔍 Quadrilaterals found: ${contours.length}`);
     timer.markStep("find_quadrilaterals");
@@ -600,7 +600,7 @@ function runCannyDetection(
       return createCenteredFallback(originalWidth, originalHeight);
     }
     console.log(
-      `🔍 Best contour selected with score: ${bestContour.score.toFixed(2)}`
+      `🔍 Best contour selected with score: ${bestContour.score.toFixed(2)}`,
     );
     console.log(`🔍 Corners:`, bestContour.corners);
 
@@ -650,7 +650,7 @@ function runCannyDetection(
  */
 function runHoughPass(
   edges: CVMat,
-  thresholds: readonly number[]
+  thresholds: readonly number[],
 ): HoughLine[] {
   const maxLines = CANNY_EDGE_DETECTION.HOUGH_MAX_LINES;
   let lines: CVMat | null = null;
@@ -666,7 +666,7 @@ function runHoughPass(
       lines,
       CANNY_EDGE_DETECTION.HOUGH_RHO,
       CANNY_EDGE_DETECTION.HOUGH_THETA,
-      thresholds[0]
+      thresholds[0],
     );
 
     if (!lines || lines.rows === 0) return [];
@@ -697,23 +697,23 @@ function runHoughPass(
  */
 function findHoughLines(
   edgesHorizontal: CVMat,
-  edgesVertical: CVMat
+  edgesVertical: CVMat,
 ): MergedLine[] | null {
   // Pass 1: High threshold on horizontal edges (captures text/stripes)
   const pass1Lines = runHoughPass(
     edgesHorizontal,
-    CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS
+    CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS,
   );
 
   // Pass 2: Lower threshold on vertical edges (captures sharp card boundaries)
   const pass2Lines = runHoughPass(
     edgesVertical,
-    CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS_VERTICAL
+    CANNY_EDGE_DETECTION.HOUGH_THRESHOLDS_VERTICAL,
   );
 
   // Filter pass 2 to only keep vertical lines (theta ≈ 0 or π)
   const verticalPass2 = pass2Lines.filter(
-    (line) => classifyLine(line.theta) === "vertical"
+    (line) => classifyLine(line.theta) === "vertical",
   );
 
   // Combine all lines
@@ -722,7 +722,7 @@ function findHoughLines(
   if (allLines.length === 0) return null;
 
   console.log(
-    `🔍 Raw lines: Pass1(H)=${pass1Lines.length}, Pass2(V)=${verticalPass2.length}`
+    `🔍 Raw lines: Pass1(H)=${pass1Lines.length}, Pass2(V)=${verticalPass2.length}`,
   );
 
   // Merge nearby parallel lines
@@ -732,7 +732,7 @@ function findHoughLines(
   const cardEdges = filterCardEdgeLines(merged);
 
   console.log(
-    `🔍 After merge: ${merged.length} clusters, After filter: ${cardEdges.length} card edge lines`
+    `🔍 After merge: ${merged.length} clusters, After filter: ${cardEdges.length} card edge lines`,
   );
 
   // Log category breakdown for debugging
@@ -755,7 +755,7 @@ function lineIntersection(
   line1: HoughLine,
   line2: HoughLine,
   maxX: number,
-  maxY: number
+  maxY: number,
 ): Point | null {
   const { rho: rho1, theta: theta1 } = line1;
   const { rho: rho2, theta: theta2 } = line2;
@@ -785,7 +785,7 @@ function lineIntersection(
 function findLineIntersections(
   lines: HoughLine[],
   maxX: number,
-  maxY: number
+  maxY: number,
 ): LineIntersection[] {
   const intersections: LineIntersection[] = [];
   for (let i = 0; i < lines.length; i++) {
@@ -802,7 +802,7 @@ function findLineIntersections(
 // ============================================================================
 
 function buildIntersectionGraph(
-  intersections: LineIntersection[]
+  intersections: LineIntersection[],
 ): Set<number>[] {
   const graph: Set<number>[] = intersections.map(() => new Set());
   const minCornerDistance = CANNY_EDGE_DETECTION.MIN_CORNER_DISTANCE;
@@ -822,7 +822,7 @@ function buildIntersectionGraph(
 
       const dist = euclideanDistance(
         intersections[i].point,
-        intersections[j].point
+        intersections[j].point,
       );
       if (dist < minCornerDistance) continue;
 
@@ -877,7 +877,7 @@ function findQuadrilateralContours(
   intersections: LineIntersection[],
   numLines: number,
   imageWidth: number,
-  imageHeight: number
+  imageHeight: number,
 ): QuadContour[] {
   if (intersections.length < 4) return [];
 
@@ -907,10 +907,10 @@ function findQuadrilateralContours(
     ) {
       console.log(
         `🔍 Rejected quad: aspect ratio ${aspectRatio.toFixed(
-          2
+          2,
         )} outside valid range [${CARD_DIMENSIONS.MIN_ASPECT_RATIO}, ${
           CARD_DIMENSIONS.MAX_ASPECT_RATIO
-        }]`
+        }]`,
       );
       continue;
     }
@@ -919,7 +919,7 @@ function findQuadrilateralContours(
   }
 
   console.log(
-    `🔍 Quadrilateral filter: ${cycles.length} cycles → ${contours.length} valid candidates (aspect ratio 1.28-1.92)`
+    `🔍 Quadrilateral filter: ${cycles.length} cycles → ${contours.length} valid candidates (aspect ratio 1.28-1.92)`,
   );
 
   return contours;
@@ -1035,7 +1035,7 @@ function orderContour(contour: readonly Point[]): readonly Point[] {
 
 function createCenteredFallback(
   width: number,
-  height: number
+  height: number,
 ): ExtendedDetectionResult {
   const smallerDim = Math.min(width, height);
   const cropWidth = Math.floor(smallerDim * 0.7);
