@@ -608,12 +608,12 @@ export async function importStudents(
 
   revalidatePath("/admin/students");
 
-  // Log activity
+  // Log activity (non-blocking)
   if (result.imported > 0) {
-    await logAdminAction(
+    after(() => logAdminAction(
       "Import นักเรียน",
       `นำเข้า ${result.imported} คน, ข้าม ${result.skipped} คน`,
-    );
+    ));
   }
 
   return result;
