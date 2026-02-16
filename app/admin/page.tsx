@@ -96,6 +96,17 @@ function StatsCard({
   return <div className={cardClassName}>{cardContent}</div>;
 }
 
+// Helper to extract hex-ish color from iconBg class for the shadow
+function getGlowColor(bgClass: string) {
+  if (bgClass.includes("emerald")) return "rgba(16, 185, 129, 0.6)";
+  if (bgClass.includes("royal-blue")) return "rgba(15, 95, 194, 0.6)";
+  if (bgClass.includes("orange")) return "rgba(249, 115, 22, 0.6)";
+  if (bgClass.includes("violet")) return "rgba(139, 92, 246, 0.6)";
+  if (bgClass.includes("vivid-yellow") || bgClass.includes("yellow"))
+    return "rgba(234, 179, 8, 0.6)";
+  return "rgba(100, 116, 139, 0.6)";
+}
+
 // Activity Timeline Component
 function ActivityTimeline({
   activities,
@@ -112,17 +123,6 @@ function ActivityTimeline({
       </div>
     );
   }
-
-  // Helper to extract hex-ish color from iconBg class for the shadow
-  const getGlowColor = (bgClass: string) => {
-    if (bgClass.includes("emerald")) return "rgba(16, 185, 129, 0.6)";
-    if (bgClass.includes("royal-blue")) return "rgba(15, 95, 194, 0.6)";
-    if (bgClass.includes("orange")) return "rgba(249, 115, 22, 0.6)";
-    if (bgClass.includes("violet")) return "rgba(139, 92, 246, 0.6)";
-    if (bgClass.includes("vivid-yellow") || bgClass.includes("yellow"))
-      return "rgba(234, 179, 8, 0.6)";
-    return "rgba(100, 116, 139, 0.6)";
-  };
 
   return (
     <div className="space-y-3">

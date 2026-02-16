@@ -174,11 +174,11 @@ export function AdminManagementClient({
 
   const openEditModal = (admin: AdminData) => {
     setSelectedAdmin(admin);
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       displayName: admin.display_name || "",
       accessLevel: admin.access_level as AccessLevel,
-    });
+    }));
     setShowEditModal(true);
   };
 
@@ -478,7 +478,7 @@ export function AdminManagementClient({
                   <button
                     onClick={() => {
                       const pass = generatePassword();
-                      setFormData(prev => ({ ...prev, password: pass });
+                      setFormData(prev => ({ ...prev, password: pass }));
                     }}
                     className="px-3 py-2 bg-slate-100 text-dark-slate rounded-xl hover:bg-slate-200 transition-colors"
                     title="สุ่มรหัสผ่าน"
@@ -508,10 +508,10 @@ export function AdminManagementClient({
                 <select
                   value={formData.accessLevel}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
+                    setFormData(prev => ({
+                      ...prev,
                       accessLevel: Number(e.target.value) as AccessLevel,
-                    })
+                    }))
                   }
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
                 >
@@ -574,10 +574,10 @@ export function AdminManagementClient({
                 <select
                   value={formData.accessLevel}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
+                    setFormData(prev => ({
+                      ...prev,
                       accessLevel: Number(e.target.value) as AccessLevel,
-                    })
+                    }))
                   }
                   disabled={
                     selectedAdmin.id === currentAdminId ||
