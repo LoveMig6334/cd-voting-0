@@ -79,7 +79,7 @@ export function VotingClient({ election }: VotingClientProps) {
 
   const handleNext = () => {
     if (currentPositionIndex < enabledPositions.length - 1) {
-      setCurrentPositionIndex(currentPositionIndex + 1);
+      setCurrentPositionIndex(prev => prev + 1);
     } else {
       setShowConfirmModal(true);
     }
@@ -87,7 +87,7 @@ export function VotingClient({ election }: VotingClientProps) {
 
   const handlePrevious = () => {
     if (currentPositionIndex > 0) {
-      setCurrentPositionIndex(currentPositionIndex - 1);
+      setCurrentPositionIndex(prev => prev - 1);
     }
   };
 

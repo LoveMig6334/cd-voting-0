@@ -371,9 +371,9 @@ export default function ResultsClient({
           <h3 className="text-lg font-bold text-slate-900 mb-4">
             คะแนนต่อผู้สมัคร
           </h3>
-          {candidateVotes.length > 0 ? (
+          {sortedCandidateVotes.length > 0 ? (
             <CandidateBarChart
-              data={candidateVotes.map((c) => ({
+              data={sortedCandidateVotes.map((c) => ({
                 name: c.candidateName,
                 votes: c.votes,
               }))}

@@ -579,7 +579,7 @@ export default function ElectionsClient({
                   placeholder="เช่น คณะกรรมการนักเรียน 2568"
                   value={formData.title}
                   onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
+                    setFormData(prev => ({ ...prev, title: e.target.value }))
                   }
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
@@ -595,7 +595,7 @@ export default function ElectionsClient({
                   placeholder="อธิบายการเลือกตั้งนี้..."
                   value={formData.description}
                   onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
+                    setFormData(prev => ({ ...prev, description: e.target.value }))
                   }
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
                 />
@@ -636,7 +636,7 @@ export default function ElectionsClient({
                     type="datetime-local"
                     value={formData.startDate}
                     onChange={(e) =>
-                      setFormData({ ...formData, startDate: e.target.value })
+                      setFormData(prev => ({ ...prev, startDate: e.target.value }))
                     }
                     className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
@@ -649,7 +649,7 @@ export default function ElectionsClient({
                     type="datetime-local"
                     value={formData.endDate}
                     onChange={(e) =>
-                      setFormData({ ...formData, endDate: e.target.value })
+                      setFormData(prev => ({ ...prev, endDate: e.target.value }))
                     }
                     className="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />

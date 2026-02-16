@@ -116,7 +116,7 @@ export const AdminNavbar: React.FC = () => {
       }
       setHasUnread(false);
     }
-    setNotificationsOpen(prev => !prev);
+    setNotificationsOpen((prev) => !prev);
     setProfileMenuOpen(false);
   };
 
@@ -238,7 +238,7 @@ export const AdminNavbar: React.FC = () => {
                         )}
                       </div>
 
-                      <div className="p-2 max-h-[350px] overflow-y-auto no-scrollbar">
+                      <div className="p-2 max-h-87.5 overflow-y-auto no-scrollbar">
                         {activities.length === 0 ? (
                           <div className="py-8 text-center">
                             <span className="material-symbols-outlined text-3xl text-cool-gray/30 mb-1 block">

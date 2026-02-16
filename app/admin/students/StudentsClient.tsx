@@ -189,7 +189,7 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
                 value={formData.id}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, "");
-                  setFormData({ ...formData, id: value });
+                  setFormData(prev => ({ ...prev, id: value }));
                 }}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono"
                 placeholder="เช่น 6367"
@@ -206,7 +206,7 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
                 onChange={(e) => {
                   const value = e.target.value;
                   if (value === "" || parseInt(value) >= 1) {
-                    setFormData({ ...formData, no: value });
+                    setFormData(prev => ({ ...prev, no: value }));
                   }
                 }}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -222,7 +222,7 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
             <select
               value={formData.prefix}
               onChange={(e) =>
-                setFormData({ ...formData, prefix: e.target.value })
+                setFormData(prev => ({ ...prev, prefix: e.target.value }))
               }
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             >
@@ -243,7 +243,7 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
                 type="text"
                 value={formData.name}
                 onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
+                  setFormData(prev => ({ ...prev, name: e.target.value }))
                 }
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 placeholder="ชื่อ"
@@ -257,7 +257,7 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
                 type="text"
                 value={formData.surname}
                 onChange={(e) =>
-                  setFormData({ ...formData, surname: e.target.value })
+                  setFormData(prev => ({ ...prev, surname: e.target.value }))
                 }
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 placeholder="นามสกุล"
@@ -273,7 +273,7 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
               type="text"
               value={formData.classroom}
               onChange={(e) =>
-                setFormData({ ...formData, classroom: e.target.value })
+                setFormData(prev => ({ ...prev, classroom: e.target.value }))
               }
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               placeholder="เช่น 3/1 หรือ 6/2"
