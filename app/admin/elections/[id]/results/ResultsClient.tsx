@@ -146,8 +146,8 @@ export default function ResultsClient({
       candidateVotes.push(candidate);
     }
   }
-  // Sort by votes descending
-  candidateVotes.sort((a, b) => b.votes - a.votes);
+  // Sort by votes descending (immutable)
+  const sortedCandidateVotes = candidateVotes.toSorted((a, b) => b.votes - a.votes);
 
   return (
     <div className="space-y-6">
