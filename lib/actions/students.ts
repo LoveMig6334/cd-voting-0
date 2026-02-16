@@ -357,7 +357,7 @@ export async function revokeVotingRight(
     revalidatePath("/admin/students");
 
     // Log activity
-    await logAdminAction("ถอนสิทธิ์โหวต", `นักเรียน #${studentId}`);
+    after(() => logAdminAction("ถอนสิทธิ์โหวต", `นักเรียน #${studentId}`));
 
     return { success: true };
   } catch (error) {
@@ -393,10 +393,10 @@ export async function bulkApproveVotingRights(
 
     // Log activity
     if (result.affectedRows > 0) {
-      await logAdminAction(
+      after(() => logAdminAction(
         "อนุมัติสิทธิ์โหวตทั้งห้อง",
         `ห้อง ${classroom} (${result.affectedRows} คน)`,
-      );
+      ));
     }
 
     return { success: true, count: result.affectedRows };
@@ -432,10 +432,10 @@ export async function bulkRevokeVotingRights(
 
     // Log activity
     if (result.affectedRows > 0) {
-      await logAdminAction(
+      after(() => logAdminAction(
         "ถอนสิทธิ์โหวตทั้งห้อง",
         `ห้อง ${classroom} (${result.affectedRows} คน)`,
-      );
+      ));
     }
 
     return { success: true, count: result.affectedRows };
