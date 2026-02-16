@@ -16,6 +16,7 @@ import { sanitizeInput } from "@/lib/validation";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { logSystemCheck } from "./activities";
 
 // ==========================================
@@ -99,7 +100,7 @@ export async function adminLoginAction(
     });
 
     // Log activity
-    await logSystemCheck(`Admin "${admin.username}" เข้าสู่ระบบ`);
+    after(() => logSystemCheck(`Admin "${admin.username}" เข้าสู่ระบบ`));
 
     return {
       success: true,

@@ -153,13 +153,15 @@ export async function castVote(
     revalidatePath(`/elections/${electionId}`);
     revalidatePath("/admin/results");
 
-    // Log activity - get election title first
-    const elections = await query<ElectionRow>(
-      "SELECT title FROM elections WHERE id = ?",
-      [electionId],
-    );
-    const electionTitle = elections[0]?.title || "(ไม่ทราบชื่อ)";
-    await logVoteCast(studentId, electionTitle);
+    // Log activity (non-blocking) - get election title after response
+    after(async () => {
+      const elections = await query<ElectionRow>(
+        "SELECT title FROM elections WHERE id = ?",
+        [electionId],
+      );
+      const electionTitle = elections[0]?.title || "(ไม่ทราบชื่อ)";
+      await logVoteCast(studentId, electionTitle);
+    });
 
     return {
       success: true,
