@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import {
   ACCESS_LEVELS,
   AccessLevel,
@@ -147,8 +148,9 @@ export async function adminLogoutAction(): Promise<{ success: boolean }> {
 
 /**
  * Get current admin session
+ * Wrapped in React.cache() to deduplicate across a single request
  */
-export async function getCurrentAdmin(): Promise<AdminSessionData | null> {
+export const getCurrentAdmin = cache(async (): Promise<AdminSessionData | null> => {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("admin_session_id");
 
@@ -178,7 +180,7 @@ export async function getCurrentAdmin(): Promise<AdminSessionData | null> {
     console.error("Admin session check error:", error);
     return null;
   }
-}
+});
 
 /**
  * Create a new admin account
