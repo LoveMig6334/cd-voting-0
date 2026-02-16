@@ -14,7 +14,14 @@ import {
 import { StudentRow } from "@/lib/db";
 import { canApproveVotingRights, canManageStudents } from "@/lib/permissions";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { useRequireAdmin } from "../AdminLayoutClient";
 
 // ============================================
@@ -29,6 +36,105 @@ interface StudentsClientProps {
   students: StudentWithHistory[];
   stats: StudentStats;
   classrooms: string[];
+}
+
+// ============================================
+// Export Helpers
+// ============================================
+
+interface ExportStudent {
+  id: string;
+  national_id: string;
+  prefix: string | null;
+  name: string;
+  surname: string;
+  student_no: number | null;
+  class_room: string;
+  voting_approved: boolean;
+  voting_approved_at: Date | null;
+  created_at: Date;
+}
+
+function toExportData(students: StudentWithHistory[]): ExportStudent[] {
+  return students.map(
+    ({
+      id,
+      national_id,
+      prefix,
+      name,
+      surname,
+      student_no,
+      class_room,
+      voting_approved,
+      voting_approved_at,
+      created_at,
+    }) => ({
+      id,
+      national_id,
+      prefix,
+      name,
+      surname,
+      student_no,
+      class_room,
+      voting_approved,
+      voting_approved_at,
+      created_at,
+    }),
+  );
+}
+
+function triggerDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function getExportFilename(ext: string): string {
+  const date = new Date().toISOString().slice(0, 10);
+  return `students_export_${date}.${ext}`;
+}
+
+function exportStudentsJSON(students: StudentWithHistory[]) {
+  const data = toExportData(students);
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: "application/json;charset=utf-8" });
+  triggerDownload(blob, getExportFilename("json"));
+}
+
+function escapeCSVField(
+  field: string | number | boolean | Date | null | undefined,
+): string {
+  if (field === null || field === undefined) return "";
+  if (field instanceof Date) return field.toISOString();
+  const str = String(field);
+  if (/[",\n\r]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
+  return str;
+}
+
+function exportStudentsCSV(students: StudentWithHistory[]) {
+  const data = toExportData(students);
+  const BOM = "\uFEFF";
+  const headers = [
+    "id",
+    "national_id",
+    "prefix",
+    "name",
+    "surname",
+    "student_no",
+    "class_room",
+    "voting_approved",
+    "voting_approved_at",
+    "created_at",
+  ];
+  const rows = data.map((s) =>
+    headers.map((h) => escapeCSVField(s[h as keyof ExportStudent])).join(","),
+  );
+  const csv = BOM + [headers.join(","), ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  triggerDownload(blob, getExportFilename("csv"));
 }
 
 // ============================================
@@ -189,7 +295,7 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
                 value={formData.id}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, "");
-                  setFormData(prev => ({ ...prev, id: value }));
+                  setFormData((prev) => ({ ...prev, id: value }));
                 }}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono"
                 placeholder="เช่น 6367"
@@ -206,7 +312,7 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
                 onChange={(e) => {
                   const value = e.target.value;
                   if (value === "" || parseInt(value) >= 1) {
-                    setFormData(prev => ({ ...prev, no: value }));
+                    setFormData((prev) => ({ ...prev, no: value }));
                   }
                 }}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -222,7 +328,7 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
             <select
               value={formData.prefix}
               onChange={(e) =>
-                setFormData(prev => ({ ...prev, prefix: e.target.value }))
+                setFormData((prev) => ({ ...prev, prefix: e.target.value }))
               }
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             >
@@ -243,7 +349,7 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
                 type="text"
                 value={formData.name}
                 onChange={(e) =>
-                  setFormData(prev => ({ ...prev, name: e.target.value }))
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
                 }
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 placeholder="ชื่อ"
@@ -257,7 +363,7 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
                 type="text"
                 value={formData.surname}
                 onChange={(e) =>
-                  setFormData(prev => ({ ...prev, surname: e.target.value }))
+                  setFormData((prev) => ({ ...prev, surname: e.target.value }))
                 }
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 placeholder="นามสกุล"
@@ -273,7 +379,7 @@ function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
               type="text"
               value={formData.classroom}
               onChange={(e) =>
-                setFormData(prev => ({ ...prev, classroom: e.target.value }))
+                setFormData((prev) => ({ ...prev, classroom: e.target.value }))
               }
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               placeholder="เช่น 3/1 หรือ 6/2"
@@ -752,6 +858,8 @@ export default function StudentsClient({
     useState<StudentWithHistory | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
   const [filterClassroom, setFilterClassroom] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "approved" | "pending"
@@ -764,6 +872,24 @@ export default function StudentsClient({
     isOpen: boolean;
     student: StudentWithHistory | null;
   }>({ isOpen: false, student: null });
+
+  // Close export menu on click outside
+  const handleClickOutside = useCallback((e: MouseEvent) => {
+    if (
+      exportMenuRef.current &&
+      !exportMenuRef.current.contains(e.target as Node)
+    ) {
+      setShowExportMenu(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (showExportMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showExportMenu, handleClickOutside]);
 
   // Filtered students
   const filteredStudents = useMemo(() => {
@@ -879,6 +1005,50 @@ export default function StudentsClient({
           </p>
         </div>
         <div className="flex gap-3 self-start sm:self-auto">
+          {/* Export Dropdown - visible to all admin levels */}
+          <div className="relative" ref={exportMenuRef}>
+            <button
+              onClick={() => setShowExportMenu((v) => !v)}
+              className="bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-xl">
+                download
+              </span>
+              ส่งออก
+              <span className="material-symbols-outlined text-lg">
+                {showExportMenu ? "expand_less" : "expand_more"}
+              </span>
+            </button>
+            {showExportMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1">
+                <button
+                  onClick={() => {
+                    exportStudentsJSON(filteredStudents);
+                    setShowExportMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-lg text-slate-400">
+                    data_object
+                  </span>
+                  JSON (.json)
+                </button>
+                <button
+                  onClick={() => {
+                    exportStudentsCSV(filteredStudents);
+                    setShowExportMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-lg text-slate-400">
+                    table_rows
+                  </span>
+                  CSV (.csv)
+                </button>
+              </div>
+            )}
+          </div>
+
           {userCanManageStudents && (
             <>
               <button
@@ -1011,7 +1181,9 @@ export default function StudentsClient({
           {/* Classroom Filter */}
           <select
             value={filterClassroom}
-            onChange={(e) => startTransition(() => setFilterClassroom(e.target.value))}
+            onChange={(e) =>
+              startTransition(() => setFilterClassroom(e.target.value))
+            }
             className="px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">ทุกห้อง</option>
@@ -1026,7 +1198,11 @@ export default function StudentsClient({
           <select
             value={filterStatus}
             onChange={(e) =>
-              startTransition(() => setFilterStatus(e.target.value as "all" | "approved" | "pending"))
+              startTransition(() =>
+                setFilterStatus(
+                  e.target.value as "all" | "approved" | "pending",
+                ),
+              )
             }
             className="px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
