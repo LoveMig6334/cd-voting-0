@@ -21,6 +21,13 @@ type ElectionStatus = "PENDING" | "OPEN" | "CLOSED";
 type StatusFilterType = "all" | "PENDING" | "OPEN" | "CLOSED";
 type ViewMode = "active" | "archived";
 
+const STATUS_FILTER_LABELS: Record<StatusFilterType, string> = {
+  all: "ทั้งหมด",
+  PENDING: "ร่าง",
+  OPEN: "เปิด",
+  CLOSED: "ปิด",
+};
+
 export interface ElectionWithCandidates extends ElectionRow {
   candidateCount: number;
 }
@@ -352,12 +359,6 @@ export default function ElectionsClient({
           {viewMode === "active" && (
             <div className="flex gap-2 flex-wrap">
               {(["all", "PENDING", "OPEN", "CLOSED"] as const).map((status) => {
-                const labels: Record<StatusFilterType, string> = {
-                  all: "ทั้งหมด",
-                  PENDING: "ร่าง",
-                  OPEN: "เปิด",
-                  CLOSED: "ปิด",
-                };
                 return (
                   <button
                     key={status}

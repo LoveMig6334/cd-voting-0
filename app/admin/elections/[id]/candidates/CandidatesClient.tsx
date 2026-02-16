@@ -469,6 +469,17 @@ function AddCandidateModal({
 // Add Custom Position Modal
 // ============================================
 
+const POSITION_ICONS = [
+  { value: "star", label: "ดาว" },
+  { value: "workspace_premium", label: "เหรียญ" },
+  { value: "emoji_events", label: "ถ้วย" },
+  { value: "groups", label: "กลุ่ม" },
+  { value: "school", label: "โรงเรียน" },
+  { value: "palette", label: "ศิลปะ" },
+  { value: "science", label: "วิทยาศาสตร์" },
+  { value: "book", label: "หนังสือ" },
+] as const;
+
 function AddPositionModal({
   onClose,
   onAdd,
@@ -480,17 +491,6 @@ function AddPositionModal({
 }) {
   const [title, setTitle] = useState("");
   const [icon, setIcon] = useState("star");
-
-  const icons = [
-    { value: "star", label: "ดาว" },
-    { value: "workspace_premium", label: "เหรียญ" },
-    { value: "emoji_events", label: "ถ้วย" },
-    { value: "groups", label: "กลุ่ม" },
-    { value: "school", label: "โรงเรียน" },
-    { value: "palette", label: "ศิลปะ" },
-    { value: "science", label: "วิทยาศาสตร์" },
-    { value: "book", label: "หนังสือ" },
-  ];
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -518,7 +518,7 @@ function AddPositionModal({
               ไอคอน
             </label>
             <div className="grid grid-cols-4 gap-2">
-              {icons.map((item) => (
+              {POSITION_ICONS.map((item) => (
                 <button
                   key={item.value}
                   type="button"

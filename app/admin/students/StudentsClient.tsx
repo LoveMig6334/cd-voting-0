@@ -790,7 +790,7 @@ export default function StudentsClient({
 
         return matchesSearch && matchesClassroom && matchesStatus;
       })
-      .sort((a, b) => {
+      .toSorted((a, b) => {
         // Sort by classroom, then by no
         if (a.class_room !== b.class_room) {
           return a.class_room.localeCompare(b.class_room);
