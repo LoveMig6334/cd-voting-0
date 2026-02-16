@@ -139,7 +139,7 @@ export async function adminLogoutAction(): Promise<{ success: boolean }> {
     if (sessions.length > 0) {
       const admin = await getAdminById(sessions[0].admin_id);
       if (admin) {
-        await logSystemCheck(`Admin "${admin.username}" ออกจากระบบ`);
+        after(() => logSystemCheck(`Admin "${admin.username}" ออกจากระบบ`));
       }
     }
   }
@@ -237,9 +237,9 @@ export async function createAdmin(
     revalidatePath("/admin/admins");
 
     // Log activity
-    await logSystemCheck(
+    after(() => logSystemCheck(
       `สร้างผู้ดูแลระบบ "${cleanUsername}" (ระดับ: ${getAccessLevelLabel(accessLevel)})`,
-    );
+    ));
 
     return { success: true, adminId: result.insertId };
   } catch (error) {
@@ -289,9 +289,9 @@ export async function changeAdminPassword(
 
     // Log activity
     const admin = await getAdminById(adminId);
-    await logSystemCheck(
+    after(() => logSystemCheck(
       `Admin "${admin?.username || "(ไม่ทราบชื่อ)"}" เปลี่ยนรหัสผ่าน`,
-    );
+    ));
 
     return { success: true };
   } catch (error) {
@@ -400,7 +400,7 @@ export async function updateAdmin(
     revalidatePath("/admin/admins");
 
     // Log activity
-    await logSystemCheck(`แก้ไขข้อมูลผู้ดูแลระบบ "${targetAdmin.username}"`);
+    after(() => logSystemCheck(`แก้ไขข้อมูลผู้ดูแลระบบ "${targetAdmin.username}"`));
 
     return { success: true };
   } catch (error) {
@@ -454,7 +454,7 @@ export async function deleteAdmin(
     revalidatePath("/admin/admins");
 
     // Log activity
-    await logSystemCheck(`ลบผู้ดูแลระบบ ID: ${adminId}`);
+    after(() => logSystemCheck(`ลบผู้ดูแลระบบ ID: ${adminId}`));
 
     return { success: true };
   } catch (error) {
@@ -506,7 +506,7 @@ export async function resetAdminPassword(
     ]);
 
     // Log activity
-    await logSystemCheck(`รีเซ็ตรหัสผ่าน Admin "${targetAdmin.username}"`);
+    after(() => logSystemCheck(`รีเซ็ตรหัสผ่าน Admin "${targetAdmin.username}"`));
 
     return { success: true };
   } catch (error) {
