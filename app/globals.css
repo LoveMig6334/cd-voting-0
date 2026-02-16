@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+@theme inline {
+  /* Fonts referencing next/font CSS variables must use @theme inline
+     so var() resolves in the element's context, not :root */
+  --font-display: var(--font-mitr), "Mitr", sans-serif;
+  --font-mono: var(--font-space-mono), monospace;
+}
+
 @theme {
   /* === GLASSMORPHISM COLOR PALETTE === */
   --color-primary: #137fec;
@@ -18,10 +25,6 @@
   --color-glass-white: rgba(255, 255, 255, 0.75);
   --color-glass-border: rgba(255, 255, 255, 0.6);
   --color-glass-shadow: rgba(26, 86, 219, 0.08);
-
-  /* Fonts - Mitr for both Thai and English */
-  --font-display: var(--font-mitr), "Mitr", sans-serif;
-  --font-mono: var(--font-space-mono), monospace;
 
   --radius-xl: 0.75rem;
   --radius-2xl: 1rem;
