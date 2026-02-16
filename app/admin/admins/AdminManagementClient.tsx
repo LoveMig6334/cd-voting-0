@@ -441,7 +441,7 @@ export function AdminManagementClient({
                   type="text"
                   value={formData.username}
                   onChange={(e) =>
-                    setFormData({ ...formData, username: e.target.value })
+                    setFormData(prev => ({ ...prev, username: e.target.value }))
                   }
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="username"
@@ -455,7 +455,7 @@ export function AdminManagementClient({
                   type="text"
                   value={formData.displayName}
                   onChange={(e) =>
-                    setFormData({ ...formData, displayName: e.target.value })
+                    setFormData(prev => ({ ...prev, displayName: e.target.value }))
                   }
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="ชื่อที่แสดง (ไม่บังคับ)"
@@ -470,7 +470,7 @@ export function AdminManagementClient({
                     type="text"
                     value={formData.password}
                     onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
+                      setFormData(prev => ({ ...prev, password: e.target.value }))
                     }
                     className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary font-mono text-sm"
                     placeholder="อย่างน้อย 6 ตัวอักษร"
@@ -478,7 +478,7 @@ export function AdminManagementClient({
                   <button
                     onClick={() => {
                       const pass = generatePassword();
-                      setFormData({ ...formData, password: pass });
+                      setFormData(prev => ({ ...prev, password: pass });
                     }}
                     className="px-3 py-2 bg-slate-100 text-dark-slate rounded-xl hover:bg-slate-200 transition-colors"
                     title="สุ่มรหัสผ่าน"
@@ -561,7 +561,7 @@ export function AdminManagementClient({
                   type="text"
                   value={formData.displayName}
                   onChange={(e) =>
-                    setFormData({ ...formData, displayName: e.target.value })
+                    setFormData(prev => ({ ...prev, displayName: e.target.value }))
                   }
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
                 />
