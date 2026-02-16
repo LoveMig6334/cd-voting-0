@@ -8,6 +8,7 @@ import {
   query,
   transaction,
 } from "@/lib/db";
+import { getCurrentAdmin } from "@/lib/actions/admin-auth";
 
 // ============================================
 // Types
@@ -39,6 +40,9 @@ export interface PublicDisplaySettings {
 export async function getDisplaySettings(
   electionId: number,
 ): Promise<PublicDisplaySettings | null> {
+  const session = await getCurrentAdmin();
+  if (!session) return null;
+
   try {
     // Get main settings
     const settings = await query<PublicDisplaySettingsRow>(
@@ -84,6 +88,9 @@ export async function getOrCreateDisplaySettings(
   electionId: number,
   positionIds: string[],
 ): Promise<PublicDisplaySettings> {
+  const session = await getCurrentAdmin();
+  if (!session) throw new Error("Unauthorized");
+
   try {
     // Try to get existing settings
     const existing = await getDisplaySettings(electionId);
@@ -159,6 +166,9 @@ export async function updateDisplaySettings(
     globalShowWinnerOnly?: boolean;
   },
 ): Promise<PublicDisplaySettings | null> {
+  const session = await getCurrentAdmin();
+  if (!session) return null;
+
   try {
     const setParts: string[] = [];
     const params: unknown[] = [];
@@ -203,6 +213,9 @@ export async function updatePositionConfig(
     skip?: boolean;
   },
 ): Promise<PublicDisplaySettings | null> {
+  const session = await getCurrentAdmin();
+  if (!session) return null;
+
   try {
     const setParts: string[] = [];
     const params: unknown[] = [];
@@ -246,6 +259,9 @@ export async function updatePositionConfig(
 export async function publishResults(
   electionId: number,
 ): Promise<PublicDisplaySettings | null> {
+  const session = await getCurrentAdmin();
+  if (!session) return null;
+
   try {
     await execute(
       `UPDATE public_display_settings
@@ -267,6 +283,9 @@ export async function publishResults(
 export async function unpublishResults(
   electionId: number,
 ): Promise<PublicDisplaySettings | null> {
+  const session = await getCurrentAdmin();
+  if (!session) return null;
+
   try {
     await execute(
       `UPDATE public_display_settings
@@ -288,6 +307,9 @@ export async function unpublishResults(
 export async function deleteDisplaySettings(
   electionId: number,
 ): Promise<boolean> {
+  const session = await getCurrentAdmin();
+  if (!session) return false;
+
   try {
     // CASCADE delete will remove position configs automatically
     const result = await execute(

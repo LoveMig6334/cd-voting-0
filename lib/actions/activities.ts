@@ -7,6 +7,7 @@ import {
   execute,
   query,
 } from "@/lib/db";
+import { getCurrentAdmin } from "@/lib/actions/admin-auth";
 
 // ==========================================
 // Types
@@ -129,6 +130,9 @@ export async function logActivity(data: CreateActivityData): Promise<number> {
 export async function getRecentActivities(
   limit: number = 5,
 ): Promise<ActivityRow[]> {
+  const session = await getCurrentAdmin();
+  if (!session) return [];
+
   return query<ActivityRow>(
     `SELECT * FROM activities ORDER BY created_at DESC LIMIT ?`,
     [limit],
@@ -151,6 +155,9 @@ export async function getRecentActivitiesForDisplay(
 export async function getAllActivitiesForDisplay(): Promise<
   ActivityDisplayItem[]
 > {
+  const session = await getCurrentAdmin();
+  if (!session) return [];
+
   const activities = await query<ActivityRow>(
     `SELECT * FROM activities ORDER BY created_at DESC LIMIT 100`,
     [],
@@ -175,6 +182,9 @@ export async function getActivitiesByType(
   type: ActivityType,
   limit?: number,
 ): Promise<ActivityRow[]> {
+  const session = await getCurrentAdmin();
+  if (!session) return [];
+
   if (limit) {
     return query<ActivityRow>(
       `SELECT * FROM activities WHERE type = ? ORDER BY created_at DESC LIMIT ?`,

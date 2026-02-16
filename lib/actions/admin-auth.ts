@@ -181,22 +181,21 @@ export async function getCurrentAdmin(): Promise<AdminSessionData | null> {
 
 /**
  * Create a new admin account
- * @param accessLevel - Required access level (0-3)
- * @param creatorLevel - Access level of the creator (for permission check)
+ * Auth is derived from the current admin session.
  */
 export async function createAdmin(
   username: string,
   password: string,
   displayName?: string,
   accessLevel: AccessLevel = ACCESS_LEVELS.SYSTEM_ADMIN,
-  creatorLevel?: AccessLevel,
 ): Promise<{ success: boolean; message?: string; adminId?: number }> {
+  const session = await getCurrentAdmin();
+  if (!session) return { success: false, message: "Unauthorized" };
+
   try {
-    // Permission check (if creator level is provided)
-    if (
-      creatorLevel !== undefined &&
-      !canCreateAdmin(creatorLevel, accessLevel)
-    ) {
+    const creatorLevel = session.admin.access_level;
+    // Permission check
+    if (!canCreateAdmin(creatorLevel, accessLevel)) {
       return {
         success: false,
         message: "คุณไม่มีสิทธิ์สร้าง Admin ระดับนี้",
@@ -253,6 +252,9 @@ export async function changeAdminPassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<{ success: boolean; message?: string }> {
+  const session = await getCurrentAdmin();
+  if (!session) return { success: false, message: "Unauthorized" };
+
   try {
     // Get admin
     const admins = await query<AdminRow>("SELECT * FROM admins WHERE id = ?", [
@@ -304,6 +306,9 @@ export async function changeAdminPassword(
 export async function getAllAdmins(): Promise<
   Omit<AdminRow, "password_hash">[]
 > {
+  const session = await getCurrentAdmin();
+  if (!session) return [];
+
   const admins = await query<AdminRow>(
     "SELECT id, username, display_name, access_level, created_at FROM admins ORDER BY access_level ASC, id ASC",
   );
@@ -316,6 +321,9 @@ export async function getAllAdmins(): Promise<
 export async function getAdminById(
   id: number,
 ): Promise<Omit<AdminRow, "password_hash"> | null> {
+  const session = await getCurrentAdmin();
+  if (!session) return null;
+
   const admins = await query<AdminRow>(
     "SELECT id, username, display_name, access_level, created_at FROM admins WHERE id = ?",
     [id],
@@ -325,13 +333,17 @@ export async function getAdminById(
 
 /**
  * Update admin details (display name, access level)
- * Only ROOT (level 0) can update other admins
+ * Auth is derived from the current admin session.
  */
 export async function updateAdmin(
   adminId: number,
   data: { displayName?: string; accessLevel?: AccessLevel },
-  editorLevel: AccessLevel,
 ): Promise<{ success: boolean; message?: string }> {
+  const session = await getCurrentAdmin();
+  if (!session) return { success: false, message: "Unauthorized" };
+
+  const editorLevel = session.admin.access_level;
+
   try {
     // Get target admin to check their level
     const targetAdmin = await getAdminById(adminId);
@@ -395,14 +407,17 @@ export async function updateAdmin(
 
 /**
  * Delete an admin
- * - ROOT (level 0): Can delete any admin except themselves
- * - SYSTEM_ADMIN (level 1): Can delete level 2-3 only
+ * Auth is derived from the current admin session.
  */
 export async function deleteAdmin(
   adminId: number,
-  deleterId: number,
-  deleterLevel: AccessLevel,
 ): Promise<{ success: boolean; message?: string }> {
+  const session = await getCurrentAdmin();
+  if (!session) return { success: false, message: "Unauthorized" };
+
+  const deleterId = session.adminId;
+  const deleterLevel = session.admin.access_level;
+
   try {
     // Cannot delete yourself
     if (adminId === deleterId) {
@@ -446,14 +461,17 @@ export async function deleteAdmin(
 
 /**
  * Reset admin password
- * - ROOT (0): Can reset any admin's password
- * - SYSTEM_ADMIN (1): Can reset level 2-3 admin's password
+ * Auth is derived from the current admin session.
  */
 export async function resetAdminPassword(
   adminId: number,
   newPassword: string,
-  editorLevel: AccessLevel,
 ): Promise<{ success: boolean; message?: string }> {
+  const session = await getCurrentAdmin();
+  if (!session) return { success: false, message: "Unauthorized" };
+
+  const editorLevel = session.admin.access_level;
+
   try {
     // Get target admin to check their level
     const targetAdmin = await getAdminById(adminId);

@@ -196,6 +196,9 @@ function calculateStatus(
  * Get all elections (excludes archived)
  */
 export async function getAllElections(): Promise<ElectionRow[]> {
+  const session = await getCurrentAdmin();
+  if (!session) return [];
+
   return query<ElectionRow>(
     "SELECT * FROM elections WHERE is_active = TRUE AND is_archived = FALSE ORDER BY start_date DESC",
   );
@@ -230,15 +233,16 @@ export async function getElectionById(
 
   if (elections.length === 0) return null;
 
-  const positions = await query<PositionRow>(
-    "SELECT * FROM positions WHERE election_id = ? ORDER BY sort_order ASC",
-    [id],
-  );
-
-  const candidates = await query<CandidateRow>(
-    "SELECT * FROM candidates WHERE election_id = ? ORDER BY position_id, rank ASC",
-    [id],
-  );
+  const [positions, candidates] = await Promise.all([
+    query<PositionRow>(
+      "SELECT * FROM positions WHERE election_id = ? ORDER BY sort_order ASC",
+      [id],
+    ),
+    query<CandidateRow>(
+      "SELECT * FROM candidates WHERE election_id = ? ORDER BY position_id, rank ASC",
+      [id],
+    ),
+  ]);
 
   return {
     ...elections[0],
@@ -282,6 +286,9 @@ export async function getCandidatesByPosition(
 export async function createElection(
   data: CreateElectionData,
 ): Promise<{ success: boolean; electionId?: number; error?: string }> {
+  const session = await getCurrentAdmin();
+  if (!session) return { success: false, error: "Unauthorized" };
+
   try {
     const status = calculateStatus(data.startDate, data.endDate);
 
@@ -341,6 +348,9 @@ export async function updateElection(
   id: number,
   data: Partial<CreateElectionData>,
 ): Promise<{ success: boolean; error?: string }> {
+  const session = await getCurrentAdmin();
+  if (!session) return { success: false, error: "Unauthorized" };
+
   try {
     const setClauses: string[] = [];
     const values: unknown[] = [];
@@ -408,6 +418,9 @@ export async function updateElection(
 export async function deleteElection(
   id: number,
 ): Promise<{ success: boolean; error?: string }> {
+  const session = await getCurrentAdmin();
+  if (!session) return { success: false, error: "Unauthorized" };
+
   try {
     // Get election title before delete
     const election = await getElectionById(id);
@@ -449,6 +462,9 @@ async function canManageArchive(): Promise<boolean> {
  * Get all archived elections
  */
 export async function getArchivedElections(): Promise<ElectionRow[]> {
+  const session = await getCurrentAdmin();
+  if (!session) return [];
+
   return query<ElectionRow>(
     "SELECT * FROM elections WHERE is_active = TRUE AND is_archived = TRUE ORDER BY updated_at DESC",
   );
@@ -460,6 +476,9 @@ export async function getArchivedElections(): Promise<ElectionRow[]> {
 export async function getElectionByIdIncludeArchived(
   id: number,
 ): Promise<ElectionWithDetails | null> {
+  const session = await getCurrentAdmin();
+  if (!session) return null;
+
   const elections = await query<ElectionRow>(
     "SELECT * FROM elections WHERE id = ? AND is_active = TRUE",
     [id],
@@ -570,6 +589,9 @@ export async function updateElectionStatus(
   id: number,
   newStatus: "OPEN" | "CLOSED",
 ): Promise<{ success: boolean; error?: string }> {
+  const session = await getCurrentAdmin();
+  if (!session) return { success: false, error: "Unauthorized" };
+
   try {
     const election = await getElectionById(id);
     if (!election) return { success: false, error: "ไม่พบการเลือกตั้ง" };
@@ -625,6 +647,9 @@ export async function updateElectionStatus(
  * Check if election is locked (OPEN or CLOSED)
  */
 export async function isElectionLocked(electionId: number): Promise<boolean> {
+  const session = await getCurrentAdmin();
+  if (!session) return false;
+
   const election = await getElectionById(electionId);
   if (!election) return false;
 
@@ -639,6 +664,9 @@ export async function togglePosition(
   electionId: number,
   positionId: string,
 ): Promise<{ success: boolean; error?: string }> {
+  const session = await getCurrentAdmin();
+  if (!session) return { success: false, error: "Unauthorized" };
+
   try {
     if (await isElectionLocked(electionId)) {
       return {
@@ -668,6 +696,9 @@ export async function addCustomPosition(
   title: string,
   icon: string = "star",
 ): Promise<{ success: boolean; positionId?: string; error?: string }> {
+  const session = await getCurrentAdmin();
+  if (!session) return { success: false, error: "Unauthorized" };
+
   try {
     if (await isElectionLocked(electionId)) {
       return {
@@ -711,6 +742,9 @@ export async function addCandidate(
   electionId: number,
   data: CreateCandidateData,
 ): Promise<{ success: boolean; candidateId?: number; error?: string }> {
+  const session = await getCurrentAdmin();
+  if (!session) return { success: false, error: "Unauthorized" };
+
   try {
     if (await isElectionLocked(electionId)) {
       return {
@@ -763,6 +797,9 @@ export async function updateCandidate(
   candidateId: number,
   data: Partial<CreateCandidateData>,
 ): Promise<{ success: boolean; error?: string }> {
+  const session = await getCurrentAdmin();
+  if (!session) return { success: false, error: "Unauthorized" };
+
   try {
     if (await isElectionLocked(electionId)) {
       return {
@@ -823,6 +860,9 @@ export async function deleteCandidate(
   electionId: number,
   candidateId: number,
 ): Promise<{ success: boolean; error?: string }> {
+  const session = await getCurrentAdmin();
+  if (!session) return { success: false, error: "Unauthorized" };
+
   try {
     if (await isElectionLocked(electionId)) {
       return {
@@ -860,6 +900,9 @@ export async function getNextCandidateRank(
   electionId: number,
   positionId: string,
 ): Promise<number> {
+  const session = await getCurrentAdmin();
+  if (!session) return 1;
+
   const candidates = await query<CandidateRow>(
     "SELECT MAX(rank) as max_rank FROM candidates WHERE election_id = ? AND position_id = ?",
     [electionId, positionId],

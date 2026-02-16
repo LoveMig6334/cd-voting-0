@@ -13,6 +13,7 @@ import { generateVoteToken } from "@/lib/token";
 import { PoolConnection, RowDataPacket } from "mysql2/promise";
 import { revalidatePath } from "next/cache";
 import { logVoteCast } from "./activities";
+import { getCurrentAdmin } from "./admin-auth";
 import { getCurrentSession } from "./auth";
 
 // ==========================================
@@ -194,6 +195,9 @@ export async function hasStudentVoted(
   studentId: string,
   electionId: number,
 ): Promise<boolean> {
+  const session = await getCurrentAdmin();
+  if (!session) return false;
+
   const results = await query<VoteHistoryRow>(
     "SELECT 1 FROM vote_history WHERE student_id = ? AND election_id = ?",
     [studentId, electionId],
@@ -213,6 +217,9 @@ export async function getVoterTurnout(
   electionId: number,
   totalEligibleVoters: number,
 ): Promise<VoterTurnout> {
+  const session = await getCurrentAdmin();
+  if (!session) return { totalEligible: 0, totalVoted: 0, notVoted: 0, percentage: 0 };
+
   const results = await query<{ count: number } & VoteHistoryRow>(
     "SELECT COUNT(*) as count FROM vote_history WHERE election_id = ?",
     [electionId],
@@ -241,6 +248,9 @@ export async function getPositionResults(
   positionId: string,
   positionTitle: string,
 ): Promise<PositionResult> {
+  const session = await getCurrentAdmin();
+  if (!session) return { positionId, positionTitle, totalVotes: 0, candidates: [], abstainCount: 0, abstainPercentage: 0 };
+
   // Get all candidates for this position
   const candidates = await query<CandidateRow>(
     "SELECT * FROM candidates WHERE election_id = ? AND position_id = ? ORDER BY rank",
@@ -312,6 +322,9 @@ export async function getPositionWinner(
   positionId: string,
   positionTitle: string,
 ): Promise<PositionWinner> {
+  const session = await getCurrentAdmin();
+  if (!session) return { positionId, positionTitle, status: "no_votes", abstainCount: 0, totalVotes: 0 };
+
   const results = await getPositionResults(
     electionId,
     positionId,
@@ -390,6 +403,9 @@ export async function getElectionResults(electionId: number): Promise<{
   positions: PositionResult[];
   winners: PositionWinner[];
 }> {
+  const session = await getCurrentAdmin();
+  if (!session) return { turnout: { totalEligible: 0, totalVoted: 0, notVoted: 0, percentage: 0 }, positions: [], winners: [] };
+
   // Get positions
   const positions = await query<PositionRow>(
     "SELECT id, title, enabled FROM positions WHERE election_id = ? AND enabled = TRUE ORDER BY sort_order",
@@ -434,6 +450,9 @@ export async function getVotingLog(
   electionId: number,
   limit: number = 10,
 ): Promise<{ id: number; votedAt: Date }[]> {
+  const session = await getCurrentAdmin();
+  if (!session) return [];
+
   const results = await query<VoteHistoryRow>(
     "SELECT id, voted_at FROM vote_history WHERE election_id = ? ORDER BY voted_at DESC LIMIT ?",
     [electionId, limit],
@@ -449,6 +468,9 @@ export async function getVotingLog(
  * Get total vote count for an election
  */
 export async function getTotalVotes(electionId: number): Promise<number> {
+  const session = await getCurrentAdmin();
+  if (!session) return 0;
+
   interface CountResult extends RowDataPacket {
     count: number;
   }
@@ -465,6 +487,9 @@ export async function getTotalVotes(electionId: number): Promise<number> {
 export async function getParticipationByLevel(
   electionId: number,
 ): Promise<LevelParticipation[]> {
+  const session = await getCurrentAdmin();
+  if (!session) return [];
+
   interface LevelCount extends RowDataPacket {
     level: number;
     count: number;

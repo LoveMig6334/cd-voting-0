@@ -101,7 +101,6 @@ export function AdminManagementClient({
         formData.password,
         formData.displayName || undefined,
         formData.accessLevel,
-        currentAccessLevel,
       );
 
       if (result.success) {
@@ -124,7 +123,6 @@ export function AdminManagementClient({
           displayName: formData.displayName,
           accessLevel: formData.accessLevel,
         },
-        currentAccessLevel,
       );
 
       if (result.success) {
@@ -144,8 +142,6 @@ export function AdminManagementClient({
     startTransition(async () => {
       const result = await deleteAdmin(
         adminToDelete.id,
-        currentAdminId,
-        currentAccessLevel,
       );
 
       if (result.success) {
@@ -164,7 +160,6 @@ export function AdminManagementClient({
       const result = await resetAdminPassword(
         selectedAdmin.id,
         newPassword,
-        currentAccessLevel,
       );
 
       if (result.success) {

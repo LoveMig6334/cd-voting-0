@@ -48,6 +48,9 @@ export interface StudentStats {
  * Get all students
  */
 export async function getStudents(): Promise<StudentRow[]> {
+  const session = await getCurrentAdmin();
+  if (!session) return [];
+
   return query<StudentRow>(
     "SELECT * FROM students ORDER BY class_room, student_no",
   );
@@ -57,6 +60,9 @@ export async function getStudents(): Promise<StudentRow[]> {
  * Get student by ID
  */
 export async function getStudentById(id: string): Promise<StudentRow | null> {
+  const session = await getCurrentAdmin();
+  if (!session) return null;
+
   const students = await query<StudentRow>(
     "SELECT * FROM students WHERE id = ?",
     [id],
@@ -70,6 +76,9 @@ export async function getStudentById(id: string): Promise<StudentRow | null> {
 export async function getStudentsByClassroom(
   classroom: string,
 ): Promise<StudentRow[]> {
+  const session = await getCurrentAdmin();
+  if (!session) return [];
+
   return query<StudentRow>(
     "SELECT * FROM students WHERE class_room = ? ORDER BY student_no",
     [classroom],
@@ -80,6 +89,9 @@ export async function getStudentsByClassroom(
  * Get unique classrooms
  */
 export async function getUniqueClassrooms(): Promise<string[]> {
+  const session = await getCurrentAdmin();
+  if (!session) return [];
+
   const results = await query<{ class_room: string } & StudentRow>(
     "SELECT DISTINCT class_room FROM students ORDER BY class_room",
   );
@@ -90,6 +102,9 @@ export async function getUniqueClassrooms(): Promise<string[]> {
  * Get student statistics
  */
 export async function getStudentStats(): Promise<StudentStats> {
+  const session = await getCurrentAdmin();
+  if (!session) return { total: 0, approved: 0, pending: 0, byClassroom: {} };
+
   const students = await getStudents();
 
   const byClassroom: Record<string, { total: number; approved: number }> = {};
@@ -458,6 +473,9 @@ export interface ImportStudentData {
 export async function getStudentVoteHistory(
   studentId: string,
 ): Promise<number[]> {
+  const session = await getCurrentAdmin();
+  if (!session) return [];
+
   const results = await query<{ election_id: number } & StudentRow>(
     "SELECT election_id FROM vote_history WHERE student_id = ?",
     [studentId],
@@ -471,6 +489,9 @@ export async function getStudentVoteHistory(
 export async function getStudentsVoteHistory(): Promise<
   Record<string, number[]>
 > {
+  const session = await getCurrentAdmin();
+  if (!session) return {};
+
   const results = await query<
     { student_id: string; election_id: number } & StudentRow
   >("SELECT student_id, election_id FROM vote_history");
