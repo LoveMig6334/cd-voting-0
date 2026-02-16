@@ -91,8 +91,8 @@ export default function PositionSlide({ slide }: PositionSlideProps) {
     });
   }
 
-  // Sort by votes descending
-  chartData.sort((a, b) => b.votes - a.votes);
+  // Sort by votes descending (immutable)
+  const sortedChartData = chartData.toSorted((a, b) => b.votes - a.votes);
 
   return (
     <div className="flex flex-col h-full px-8 py-12">
@@ -182,12 +182,12 @@ export default function PositionSlide({ slide }: PositionSlideProps) {
         {/* Show all candidates if not showWinnerOnly */}
         {!config.showWinnerOnly &&
           config.showRawScore &&
-          chartData.length > 0 && (
+          sortedChartData.length > 0 && (
             <div className="w-full max-w-2xl mt-8">
               <h3 className="text-lg font-semibold text-slate-700 mb-4 text-center">
                 ผลคะแนนทั้งหมด
               </h3>
-              <SlideBarChart data={chartData} showPercentage={true} />
+              <SlideBarChart data={sortedChartData} showPercentage={true} />
             </div>
           )}
 
