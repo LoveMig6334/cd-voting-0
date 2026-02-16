@@ -28,6 +28,5 @@ export function isValidNationalId(id: string): boolean {
  */
 export function sanitizeInput(input: string): string {
   // Remove ASCII control characters (0x00–0x1F except common whitespace) and DEL (0x7F)
-  // eslint-disable-next-line no-control-regex
   return input.trim().replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
 }

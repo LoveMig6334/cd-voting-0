@@ -246,7 +246,6 @@ export default function PublicDisplayModal({
   electionId,
   electionTitle,
   positions,
-  candidates,
 }: PublicDisplayModalProps) {
   const [settings, setSettings] = useState<PublicDisplaySettings | null>(null);
   const [winners, setWinners] = useState<PositionWinner[]>([]);
