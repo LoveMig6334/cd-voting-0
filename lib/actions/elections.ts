@@ -333,8 +333,8 @@ export async function createElection(
 
     revalidatePath("/admin/elections");
 
-    // Log activity
-    await logElectionChange("สร้างการเลือกตั้งใหม่", data.title);
+    // Log activity (non-blocking)
+    after(() => logElectionChange("สร้างการเลือกตั้งใหม่", data.title));
 
     return { success: true, electionId };
   } catch (error) {
@@ -404,8 +404,8 @@ export async function updateElection(
     revalidatePath("/admin/elections");
     revalidatePath(`/admin/elections/${id}`);
 
-    // Log activity
-    await logElectionChange("แก้ไขการเลือกตั้ง", data.title || "(ไม่ระบุชื่อ)");
+    // Log activity (non-blocking)
+    after(() => logElectionChange("แก้ไขการเลือกตั้ง", data.title || "(ไม่ระบุชื่อ)"));
 
     return { success: true };
   } catch (error) {
@@ -430,9 +430,9 @@ export async function deleteElection(
     await execute("UPDATE elections SET is_active = FALSE WHERE id = ?", [id]);
     revalidatePath("/admin/elections");
 
-    // Log activity
+    // Log activity (non-blocking)
     if (election) {
-      await logElectionChange("ลบการเลือกตั้ง", election.title);
+      after(() => logElectionChange("ลบการเลือกตั้ง", election.title));
     }
 
     return { success: true };
@@ -534,8 +534,8 @@ export async function archiveElection(
 
     revalidatePath("/admin/elections");
 
-    // Log activity
-    await logElectionChange("เก็บถาวรการเลือกตั้ง", election.title);
+    // Log activity (non-blocking)
+    after(() => logElectionChange("เก็บถาวรการเลือกตั้ง", election.title));
 
     return { success: true };
   } catch (error) {
@@ -574,8 +574,8 @@ export async function unarchiveElection(
 
     revalidatePath("/admin/elections");
 
-    // Log activity
-    await logElectionChange("กู้คืนการเลือกตั้งจากถาวร", election.title);
+    // Log activity (non-blocking)
+    after(() => logElectionChange("กู้คืนการเลือกตั้งจากถาวร", election.title));
 
     return { success: true };
   } catch (error) {
@@ -629,11 +629,11 @@ export async function updateElectionStatus(
     revalidatePath("/admin/elections");
     revalidatePath(`/admin/elections/${id}`);
 
-    // Log activity
-    await logElectionChange(
+    // Log activity (non-blocking)
+    after(() => logElectionChange(
       `${newStatus === "OPEN" ? "เปิด" : "ปิด"}การเลือกตั้งด้วยตนเอง`,
       election.title,
-    );
+    ));
 
     return { success: true };
   } catch (error) {
@@ -782,8 +782,8 @@ export async function addCandidate(
     revalidatePath(`/admin/elections/${electionId}`);
     revalidatePath(`/admin/elections/${electionId}/candidates`);
 
-    // Log activity
-    await logAdminAction("เพิ่มผู้สมัคร", `${data.name} (เบอร์ ${data.rank})`);
+    // Log activity (non-blocking)
+    after(() => logAdminAction("เพิ่มผู้สมัคร", `${data.name} (เบอร์ ${data.rank})`));
 
     return { success: true, candidateId: result.insertId };
   } catch (error) {
@@ -846,7 +846,7 @@ export async function updateCandidate(
 
     // Log activity
     if (data.name) {
-      await logAdminAction("แก้ไขผู้สมัคร", data.name);
+      after(() => logAdminAction("แก้ไขผู้สมัคร", data.name));
     }
 
     return { success: true };
@@ -886,8 +886,8 @@ export async function deleteCandidate(
     revalidatePath(`/admin/elections/${electionId}`);
     revalidatePath(`/admin/elections/${electionId}/candidates`);
 
-    // Log activity
-    await logAdminAction("ลบผู้สมัคร", candidateName);
+    // Log activity (non-blocking)
+    after(() => logAdminAction("ลบผู้สมัคร", candidateName));
 
     return { success: true };
   } catch (error) {

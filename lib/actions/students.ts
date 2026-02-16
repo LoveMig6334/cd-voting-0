@@ -8,6 +8,7 @@ import {
   sanitizeInput,
 } from "@/lib/validation";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { logAdminAction } from "./activities";
 import { getCurrentAdmin } from "./admin-auth";
 
@@ -194,11 +195,11 @@ export async function createStudent(
 
     revalidatePath("/admin/students");
 
-    // Log activity
-    await logAdminAction(
+    // Log activity (non-blocking)
+    after(() => logAdminAction(
       "เพิ่มนักเรียนใหม่",
       `#${data.id} ${data.name} ${data.surname} (ห้อง ${data.classRoom})`,
-    );
+    ));
 
     return { success: true };
   } catch (error) {
@@ -283,7 +284,7 @@ export async function deleteStudent(
     revalidatePath("/admin/students");
 
     // Log activity
-    await logAdminAction("ลบนักเรียน", `#${id}`);
+    after(() => logAdminAction("ลบนักเรียน", `#${id}`));
 
     return { success: true };
   } catch (error) {
@@ -322,7 +323,7 @@ export async function approveVotingRight(
     revalidatePath("/admin/students");
 
     // Log activity
-    await logAdminAction("อนุมัติสิทธิ์โหวต", `นักเรียน #${studentId}`);
+    after(() => logAdminAction("อนุมัติสิทธิ์โหวต", `นักเรียน #${studentId}`));
 
     return { success: true };
   } catch (error) {
