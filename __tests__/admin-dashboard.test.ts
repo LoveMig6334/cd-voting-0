@@ -1,4 +1,5 @@
 import { updateElectionStatus } from "@/lib/actions/elections";
+import { getCurrentAdmin } from "@/lib/actions/admin-auth";
 import { execute, query } from "@/lib/db";
 
 // Mock the DB layer
@@ -12,14 +13,37 @@ jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),
 }));
 
+// Mock next/server (after() used for non-blocking logging)
+jest.mock("next/server", () => ({
+  after: jest.fn((fn: () => void) => fn()),
+}));
+
 // Mock Activities
 jest.mock("@/lib/actions/activities", () => ({
   logElectionChange: jest.fn(),
 }));
 
+// Mock admin auth
+jest.mock("@/lib/actions/admin-auth", () => ({
+  getCurrentAdmin: jest.fn(),
+}));
+
 describe("Admin Dashboard Server Actions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Mock authenticated admin session
+    (getCurrentAdmin as jest.Mock).mockResolvedValue({
+      adminId: 1,
+      admin: {
+        id: 1,
+        username: "testadmin",
+        display_name: "Test Admin",
+        access_level: 0,
+        password_hash: "hashed",
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
   });
 
   describe("updateElectionStatus", () => {

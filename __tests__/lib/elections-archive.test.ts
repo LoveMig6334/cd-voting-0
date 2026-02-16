@@ -25,6 +25,10 @@ jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),
 }));
 
+jest.mock("next/server", () => ({
+  after: jest.fn((fn: () => void) => fn()),
+}));
+
 import { getCurrentAdmin } from "@/lib/actions/admin-auth";
 import { logElectionChange } from "@/lib/actions/activities";
 import { execute, query } from "@/lib/db";

@@ -79,7 +79,7 @@ export function VotingClient({ election }: VotingClientProps) {
 
   const handleNext = () => {
     if (currentPositionIndex < enabledPositions.length - 1) {
-      setCurrentPositionIndex(prev => prev + 1);
+      setCurrentPositionIndex((prev) => prev + 1);
     } else {
       setShowConfirmModal(true);
     }
@@ -87,7 +87,7 @@ export function VotingClient({ election }: VotingClientProps) {
 
   const handlePrevious = () => {
     if (currentPositionIndex > 0) {
-      setCurrentPositionIndex(prev => prev - 1);
+      setCurrentPositionIndex((prev) => prev - 1);
     }
   };
 
@@ -268,7 +268,7 @@ export function VotingClient({ election }: VotingClientProps) {
 
             {/* Abstain Option */}
             <article
-              className={`relative flex flex-col rounded-xl bg-white p-5 gap-4 shadow-sm transition-all sm:col-span-2 sm:max-w-[280px] sm:justify-self-center ${
+              className={`relative flex flex-col rounded-xl bg-white p-5 gap-4 shadow-sm transition-all sm:col-span-2 sm:max-w-70 sm:justify-self-center ${
                 selectedCandidateId === null && hasVoted
                   ? "border-2 border-slate-500 ring-2 ring-slate-500/20"
                   : "border border-slate-200"
