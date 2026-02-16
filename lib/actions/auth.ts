@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { query, execute, SessionRow, StudentRow } from "@/lib/db";
 import {
@@ -142,8 +143,9 @@ export async function logoutAction(): Promise<{ success: boolean }> {
 /**
  * Get current session and student data
  * Returns null if no valid session
+ * Wrapped in React.cache() to deduplicate across a single request
  */
-export async function getCurrentSession(): Promise<SessionData | null> {
+export const getCurrentSession = cache(async (): Promise<SessionData | null> => {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("session_id");
 
@@ -174,7 +176,7 @@ export async function getCurrentSession(): Promise<SessionData | null> {
     console.error("Session check error:", error);
     return null;
   }
-}
+});
 
 /**
  * Lookup student by ID and national ID (for auto-fill)

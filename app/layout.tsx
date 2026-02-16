@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
-import { Space_Mono } from "next/font/google";
+import { Mitr, Space_Mono } from "next/font/google";
 import "./globals.css";
 import "./material-symbols.css";
+
+const mitr = Mitr({
+  weight: ["200", "300", "400", "500", "600", "700"],
+  variable: "--font-mitr",
+  subsets: ["thai", "latin"],
+  display: "swap",
+});
 
 const spaceMono = Space_Mono({
   weight: ["400", "700"],
@@ -24,7 +31,7 @@ export default function RootLayout({
     <html lang="th">
       <head />
       <body
-        className={`${spaceMono.variable} antialiased bg-background-light text-slate-900 font-display selection:bg-primary/30`}
+        className={`${mitr.variable} ${spaceMono.variable} antialiased bg-background-light text-slate-900 font-display selection:bg-primary/30`}
       >
         {children}
       </body>
