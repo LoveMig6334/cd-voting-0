@@ -342,6 +342,10 @@ export default function PublicDisplayModal({
 
   const enabledPositions = positions.filter((p) => p.enabled);
 
+  // Pre-build Maps for O(1) lookups in position rendering
+  const winnerMap = new Map(winners.map((w) => [w.positionId, w]));
+  const configMap = new Map(settings.positionConfigs.map((c) => [c.positionId, c]));
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
@@ -470,10 +474,7 @@ export default function PublicDisplayModal({
               ตั้งค่าแต่ละตำแหน่ง
             </h3>
             <div className="space-y-3">
-              {(() => {
-                const winnerMap = new Map(winners.map((w) => [w.positionId, w]));
-                const configMap = new Map(settings.positionConfigs.map((c) => [c.positionId, c]));
-                return enabledPositions.map((position) => {
+              {enabledPositions.map((position) => {
                 const winner = winnerMap.get(position.id);
                 const config = configMap.get(position.id);
 

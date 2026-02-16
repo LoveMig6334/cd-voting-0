@@ -362,7 +362,7 @@ export default function ElectionsClient({
                 return (
                   <button
                     key={status}
-                    onClick={() => setStatusFilter(status)}
+                    onClick={() => startTransition(() => setStatusFilter(status))}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       statusFilter === status
                         ? "bg-primary text-white"

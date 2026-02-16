@@ -1011,7 +1011,7 @@ export default function StudentsClient({
           {/* Classroom Filter */}
           <select
             value={filterClassroom}
-            onChange={(e) => setFilterClassroom(e.target.value)}
+            onChange={(e) => startTransition(() => setFilterClassroom(e.target.value))}
             className="px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">ทุกห้อง</option>
@@ -1026,7 +1026,7 @@ export default function StudentsClient({
           <select
             value={filterStatus}
             onChange={(e) =>
-              setFilterStatus(e.target.value as "all" | "approved" | "pending")
+              startTransition(() => setFilterStatus(e.target.value as "all" | "approved" | "pending"))
             }
             className="px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >

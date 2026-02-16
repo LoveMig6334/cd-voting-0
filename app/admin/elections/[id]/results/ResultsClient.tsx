@@ -149,6 +149,9 @@ export default function ResultsClient({
   // Sort by votes descending (immutable)
   const sortedCandidateVotes = candidateVotes.toSorted((a, b) => b.votes - a.votes);
 
+  // Pre-build Map for O(1) position icon lookups
+  const positionIconMap = new Map(election.positions.map((p) => [p.id, p.icon]));
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -403,9 +406,7 @@ export default function ResultsClient({
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <span className="material-symbols-outlined text-primary">
-                    {election.positions.find(
-                      (p) => p.id === position.positionId,
-                    )?.icon || "person"}
+                    {positionIconMap.get(position.positionId) || "person"}
                   </span>
                 </div>
                 <div>
