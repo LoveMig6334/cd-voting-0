@@ -369,7 +369,7 @@ export default function ElectionsClient({
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                   >
-                    {labels[status]}
+                    {STATUS_FILTER_LABELS[status]}
                   </button>
                 );
               })}

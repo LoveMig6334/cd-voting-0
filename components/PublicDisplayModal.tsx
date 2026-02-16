@@ -470,13 +470,12 @@ export default function PublicDisplayModal({
               ตั้งค่าแต่ละตำแหน่ง
             </h3>
             <div className="space-y-3">
-              {enabledPositions.map((position) => {
-                const winner = winners.find(
-                  (w) => w.positionId === position.id,
-                );
-                const config = settings.positionConfigs.find(
-                  (c) => c.positionId === position.id,
-                );
+              {(() => {
+                const winnerMap = new Map(winners.map((w) => [w.positionId, w]));
+                const configMap = new Map(settings.positionConfigs.map((c) => [c.positionId, c]));
+                return enabledPositions.map((position) => {
+                const winner = winnerMap.get(position.id);
+                const config = configMap.get(position.id);
 
                 if (!winner || !config) return null;
 

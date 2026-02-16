@@ -49,12 +49,15 @@ function buildSlides(
   // Position slides (filter by skip and valid status)
   const enabledPositions = positions.filter((p) => p.enabled);
 
+  // Pre-build Maps for O(1) lookups
+  const configMap = new Map(settings.positionConfigs.map((c) => [c.positionId, c]));
+  const winnerMap = new Map(winners.map((w) => [w.positionId, w]));
+  const resultMap = new Map(results.map((r) => [r.positionId, r]));
+
   for (const position of enabledPositions) {
-    const config = settings.positionConfigs.find(
-      (c) => c.positionId === position.id
-    );
-    const winner = winners.find((w) => w.positionId === position.id);
-    const result = results.find((r) => r.positionId === position.id);
+    const config = configMap.get(position.id);
+    const winner = winnerMap.get(position.id);
+    const result = resultMap.get(position.id);
 
     // Skip if configured to skip or if no valid data
     if (!config || !winner || !result) continue;
