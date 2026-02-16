@@ -15,15 +15,15 @@ export default async function VotingPage({ params }: VotingPageProps) {
     notFound();
   }
 
-  // Fetch election data
-  const election = await getElectionById(electionId);
+  // Fetch election data and check vote status in parallel
+  const [election, alreadyVoted] = await Promise.all([
+    getElectionById(electionId),
+    hasVoted(electionId),
+  ]);
 
   if (!election) {
     notFound();
   }
-
-  // Check if user already voted
-  const alreadyVoted = await hasVoted(electionId);
   if (alreadyVoted) {
     redirect("/vote-success?already=true");
   }

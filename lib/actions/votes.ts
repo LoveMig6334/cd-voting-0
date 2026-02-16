@@ -251,28 +251,24 @@ export async function getPositionResults(
   const session = await getCurrentAdmin();
   if (!session) return { positionId, positionTitle, totalVotes: 0, candidates: [], abstainCount: 0, abstainPercentage: 0 };
 
-  // Get all candidates for this position
-  const candidates = await query<CandidateRow>(
-    "SELECT * FROM candidates WHERE election_id = ? AND position_id = ? ORDER BY rank",
-    [electionId, positionId],
-  );
-
-  // Get vote counts for each candidate
-  const voteCounts = await query<
-    { candidate_id: number; count: number } & VoteRow
-  >(
-    `SELECT candidate_id, COUNT(*) as count FROM votes
-     WHERE election_id = ? AND position_id = ? AND candidate_id IS NOT NULL
-     GROUP BY candidate_id`,
-    [electionId, positionId],
-  );
-
-  // Get abstain count
-  const abstainResults = await query<{ count: number } & VoteRow>(
-    `SELECT COUNT(*) as count FROM votes
-     WHERE election_id = ? AND position_id = ? AND is_no_vote = TRUE`,
-    [electionId, positionId],
-  );
+  // Get all candidates, vote counts, and abstain count in parallel
+  const [candidates, voteCounts, abstainResults] = await Promise.all([
+    query<CandidateRow>(
+      "SELECT * FROM candidates WHERE election_id = ? AND position_id = ? ORDER BY rank",
+      [electionId, positionId],
+    ),
+    query<{ candidate_id: number; count: number } & VoteRow>(
+      `SELECT candidate_id, COUNT(*) as count FROM votes
+       WHERE election_id = ? AND position_id = ? AND candidate_id IS NOT NULL
+       GROUP BY candidate_id`,
+      [electionId, positionId],
+    ),
+    query<{ count: number } & VoteRow>(
+      `SELECT COUNT(*) as count FROM votes
+       WHERE election_id = ? AND position_id = ? AND is_no_vote = TRUE`,
+      [electionId, positionId],
+    ),
+  ]);
 
   const abstainCount = abstainResults[0]?.count || 0;
 
@@ -406,35 +402,33 @@ export async function getElectionResults(electionId: number): Promise<{
   const session = await getCurrentAdmin();
   if (!session) return { turnout: { totalEligible: 0, totalVoted: 0, notVoted: 0, percentage: 0 }, positions: [], winners: [] };
 
-  // Get positions
-  const positions = await query<PositionRow>(
-    "SELECT id, title, enabled FROM positions WHERE election_id = ? AND enabled = TRUE ORDER BY sort_order",
-    [electionId],
-  );
-
-  // Get total eligible voters (students with voting rights)
+  // Get positions and eligible count in parallel
   interface CountResult extends RowDataPacket {
     count: number;
   }
-  const eligibleResults = await query<CountResult>(
-    "SELECT COUNT(*) as count FROM students WHERE voting_approved = TRUE",
-  );
+  const [positions, eligibleResults] = await Promise.all([
+    query<PositionRow>(
+      "SELECT id, title, enabled FROM positions WHERE election_id = ? AND enabled = TRUE ORDER BY sort_order",
+      [electionId],
+    ),
+    query<CountResult>(
+      "SELECT COUNT(*) as count FROM students WHERE voting_approved = TRUE",
+    ),
+  ]);
   const totalEligible = eligibleResults[0]?.count || 0;
 
   // Get turnout
   const turnout = await getVoterTurnout(electionId, totalEligible);
 
-  // Get results for each position
-  const positionResults: PositionResult[] = [];
-  const winners: PositionWinner[] = [];
-
-  for (const pos of positions) {
-    const result = await getPositionResults(electionId, pos.id, pos.title);
-    positionResults.push(result);
-
-    const winner = await getPositionWinner(electionId, pos.id, pos.title);
-    winners.push(winner);
-  }
+  // Get results and winners for all positions in parallel
+  const [positionResults, winners] = await Promise.all([
+    Promise.all(
+      positions.map((pos) => getPositionResults(electionId, pos.id, pos.title)),
+    ),
+    Promise.all(
+      positions.map((pos) => getPositionWinner(electionId, pos.id, pos.title)),
+    ),
+  ]);
 
   return {
     turnout,
@@ -495,29 +489,29 @@ export async function getParticipationByLevel(
     count: number;
   }
 
-  // Get total students per level (extract first character from class_room, e.g., "3/1" -> 3)
-  const totalByLevel = await query<LevelCount>(
-    `SELECT
-       CAST(SUBSTRING(class_room, 1, 1) AS UNSIGNED) as level,
-       COUNT(*) as count
-     FROM students
-     WHERE class_room REGEXP '^[1-6]/'
-     GROUP BY level
-     ORDER BY level`,
-  );
-
-  // Get voted students per level
-  const votedByLevel = await query<LevelCount>(
-    `SELECT
-       CAST(SUBSTRING(s.class_room, 1, 1) AS UNSIGNED) as level,
-       COUNT(*) as count
-     FROM vote_history vh
-     JOIN students s ON vh.student_id = s.id
-     WHERE vh.election_id = ? AND s.class_room REGEXP '^[1-6]/'
-     GROUP BY level
-     ORDER BY level`,
-    [electionId],
-  );
+  // Get total and voted students per level in parallel
+  const [totalByLevel, votedByLevel] = await Promise.all([
+    query<LevelCount>(
+      `SELECT
+         CAST(SUBSTRING(class_room, 1, 1) AS UNSIGNED) as level,
+         COUNT(*) as count
+       FROM students
+       WHERE class_room REGEXP '^[1-6]/'
+       GROUP BY level
+       ORDER BY level`,
+    ),
+    query<LevelCount>(
+      `SELECT
+         CAST(SUBSTRING(s.class_room, 1, 1) AS UNSIGNED) as level,
+         COUNT(*) as count
+       FROM vote_history vh
+       JOIN students s ON vh.student_id = s.id
+       WHERE vh.election_id = ? AND s.class_room REGEXP '^[1-6]/'
+       GROUP BY level
+       ORDER BY level`,
+      [electionId],
+    ),
+  ]);
 
   // Build maps for quick lookup
   const totalMap = new Map<number, number>();

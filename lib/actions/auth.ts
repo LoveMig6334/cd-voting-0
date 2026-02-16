@@ -87,14 +87,14 @@ export async function loginAction(formData: FormData): Promise<LoginResult> {
     const sessionId = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 3600000); // 1 hour
 
-    await execute(
-      "INSERT INTO sessions (id, student_id, expires_at) VALUES (?, ?, ?)",
-      [sessionId, user.id, expiresAt]
-    );
-
-    // 5. Update last_active
-    await execute("UPDATE students SET last_active = NOW() WHERE id = ?", [
-      user.id,
+    await Promise.all([
+      execute(
+        "INSERT INTO sessions (id, student_id, expires_at) VALUES (?, ?, ?)",
+        [sessionId, user.id, expiresAt]
+      ),
+      execute("UPDATE students SET last_active = NOW() WHERE id = ?", [
+        user.id,
+      ]),
     ]);
 
     // 6. Set session cookie

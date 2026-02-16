@@ -11,11 +11,11 @@ function calculateStatus(startDate: Date, endDate: Date): "draft" | "open" | "cl
 }
 
 export default async function AdminResultsPage() {
-  // Get all elections
-  const elections = await getAllElections();
-
-  // Get stats for total eligible voters
-  const studentStats = await getStudentStats();
+  // Get all elections and stats in parallel
+  const [elections, studentStats] = await Promise.all([
+    getAllElections(),
+    getStudentStats(),
+  ]);
   const totalEligible =
     studentStats.approved > 0 ? studentStats.approved : studentStats.total;
 

@@ -165,20 +165,14 @@ export async function createStudent(
       };
     }
 
-    // Check for duplicate ID
-    const existingId = await query<StudentRow>(
-      "SELECT id FROM students WHERE id = ?",
-      [data.id],
-    );
+    // Check for duplicate ID and national ID in parallel
+    const [existingId, existingNationalId] = await Promise.all([
+      query<StudentRow>("SELECT id FROM students WHERE id = ?", [data.id]),
+      query<StudentRow>("SELECT id FROM students WHERE national_id = ?", [data.nationalId]),
+    ]);
     if (existingId.length > 0) {
       return { success: false, error: "รหัสนักเรียนนี้มีอยู่แล้วในระบบ" };
     }
-
-    // Check for duplicate national ID
-    const existingNationalId = await query<StudentRow>(
-      "SELECT id FROM students WHERE national_id = ?",
-      [data.nationalId],
-    );
     if (existingNationalId.length > 0) {
       return { success: false, error: "เลขประจำตัวประชาชนนี้มีอยู่แล้วในระบบ" };
     }

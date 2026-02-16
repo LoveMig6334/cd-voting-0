@@ -123,13 +123,14 @@ export async function adminLogoutAction(): Promise<{ success: boolean }> {
   const sessionId = cookieStore.get("admin_session_id");
 
   if (sessionId) {
-    // Get admin info before deleting session
-    const sessions = await query<AdminSessionRow>(
-      "SELECT admin_id FROM admin_sessions WHERE id = ?",
-      [sessionId.value],
-    );
-
-    await execute("DELETE FROM admin_sessions WHERE id = ?", [sessionId.value]);
+    // Get admin info and delete session in parallel
+    const [sessions] = await Promise.all([
+      query<AdminSessionRow>(
+        "SELECT admin_id FROM admin_sessions WHERE id = ?",
+        [sessionId.value],
+      ),
+      execute("DELETE FROM admin_sessions WHERE id = ?", [sessionId.value]),
+    ]);
     cookieStore.delete("admin_session_id");
 
     // Log activity

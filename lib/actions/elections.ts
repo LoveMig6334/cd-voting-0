@@ -308,25 +308,26 @@ export async function createElection(
 
     const electionId = result.insertId;
 
-    // Insert default positions
+    // Insert default positions in parallel
     if (data.type === "student-committee" || !data.type) {
-      for (let i = 0; i < DEFAULT_POSITIONS.length; i++) {
-        const pos = DEFAULT_POSITIONS[i];
-        const posId = `${electionId}-${pos.id}`;
-        await execute(
-          `INSERT INTO positions (id, election_id, title, icon, enabled, is_custom, sort_order)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            posId,
-            electionId,
-            pos.title,
-            pos.icon || null,
-            pos.enabled ?? true,
-            pos.isCustom ?? false,
-            i,
-          ],
-        );
-      }
+      await Promise.all(
+        DEFAULT_POSITIONS.map((pos, i) => {
+          const posId = `${electionId}-${pos.id}`;
+          return execute(
+            `INSERT INTO positions (id, election_id, title, icon, enabled, is_custom, sort_order)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [
+              posId,
+              electionId,
+              pos.title,
+              pos.icon || null,
+              pos.enabled ?? true,
+              pos.isCustom ?? false,
+              i,
+            ],
+          );
+        }),
+      );
     }
 
     revalidatePath("/admin/elections");
@@ -486,15 +487,16 @@ export async function getElectionByIdIncludeArchived(
 
   if (elections.length === 0) return null;
 
-  const positions = await query<PositionRow>(
-    "SELECT * FROM positions WHERE election_id = ? ORDER BY sort_order ASC",
-    [id],
-  );
-
-  const candidates = await query<CandidateRow>(
-    "SELECT * FROM candidates WHERE election_id = ? ORDER BY position_id, rank ASC",
-    [id],
-  );
+  const [positions, candidates] = await Promise.all([
+    query<PositionRow>(
+      "SELECT * FROM positions WHERE election_id = ? ORDER BY sort_order ASC",
+      [id],
+    ),
+    query<CandidateRow>(
+      "SELECT * FROM candidates WHERE election_id = ? ORDER BY position_id, rank ASC",
+      [id],
+    ),
+  ]);
 
   return {
     ...elections[0],

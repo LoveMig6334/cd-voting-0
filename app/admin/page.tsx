@@ -195,12 +195,11 @@ export default async function AdminDashboard() {
   const adminName =
     adminData?.admin.display_name || adminData?.admin.username || "ผู้ดูแลระบบ";
 
-  // Get total votes for all active elections
-  let totalVotes = 0;
-  for (const election of activeElectionsList) {
-    const votes = await getTotalVotes(election.id);
-    totalVotes += votes;
-  }
+  // Get total votes for all active elections in parallel
+  const voteCounts = await Promise.all(
+    activeElectionsList.map((election) => getTotalVotes(election.id)),
+  );
+  const totalVotes = voteCounts.reduce((sum, v) => sum + v, 0);
 
   // Calculate voter turnout percentage
   const voterTurnoutPercentage =

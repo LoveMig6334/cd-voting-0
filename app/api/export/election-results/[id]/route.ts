@@ -1,5 +1,5 @@
 import { logAdminAction } from "@/lib/actions/activities";
-import { getAdminById, getCurrentAdmin } from "@/lib/actions/admin-auth";
+import { getCurrentAdmin } from "@/lib/actions/admin-auth";
 import { getElectionById } from "@/lib/actions/elections";
 import { getElectionResults } from "@/lib/actions/votes";
 import { formatElectionResultsCSV } from "@/lib/csv-formatter";
@@ -24,14 +24,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return new NextResponse("Invalid Election ID", { status: 400 });
     }
 
-    // 2. Fetch Election Data
-    const election = await getElectionById(electionId);
+    // 2. Fetch Election Data and Results in parallel
+    const [election, results] = await Promise.all([
+      getElectionById(electionId),
+      getElectionResults(electionId),
+    ]);
     if (!election) {
       return new NextResponse("Election not found", { status: 404 });
     }
 
-    // 3. Fetch Results
-    const { turnout, positions } = await getElectionResults(electionId);
+    const { turnout, positions } = results;
 
     // 4. Calculate total eligible voters from turnout data
     // (turnout.totalEligible is already computed in getElectionResults)
@@ -44,20 +46,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       totalEligible: turnout.totalEligible,
     });
 
-    // 6. Log Activity (fire and forget)
-    // We need to fetch admin details for logging (optional but good practice)
-    // Note: session.admin already has the info we need if we updated the type,
-    // but let's just log the action safely.
-    // Ideally we should use logAdminAction but it's a server action,
-    // calling it from route might need await.
-    const admin = await getAdminById(session.adminId);
-    if (admin) {
-      // We can't easily call server action here without correct context sometimes,
-      // but since we are in a route handler, we can just let it be or try to call it.
-      // For simplicity, we skip complex logging here OR use the internal logAdminAction if compatible.
-      // Assuming logAdminAction works on server side (it does).
-      await logAdminAction("Export CSV", `Election: ${election.title}`);
-    }
+    // 6. Log Activity
+    await logAdminAction("Export CSV", `Election: ${election.title}`);
 
     // 7. Return Response
     // Filename: election-{id}-results.csv

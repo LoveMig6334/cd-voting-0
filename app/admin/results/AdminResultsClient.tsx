@@ -6,10 +6,12 @@ import {
   WinnerStatus,
 } from "@/lib/actions/votes";
 import { CandidateRow, ElectionRow, PositionRow } from "@/lib/db";
-import PublicDisplayModal from "@/components/PublicDisplayModal";
-import { SlidePreviewModal } from "@/components/SlidePreview";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useState } from "react";
+
+const PublicDisplayModal = dynamic(() => import("@/components/PublicDisplayModal"), { ssr: false });
+const SlidePreviewModal = dynamic(() => import("@/components/SlidePreview/SlidePreviewModal").then(m => m.SlidePreviewModal), { ssr: false });
 
 // ============================================
 // Types

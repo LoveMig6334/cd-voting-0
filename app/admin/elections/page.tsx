@@ -6,18 +6,14 @@ import { query, CandidateRow } from "@/lib/db";
 import ElectionsClient, { ElectionWithCandidates } from "./ElectionsClient";
 
 export default async function ElectionManagementPage() {
-  // Get all elections and archived elections in parallel
-  const [elections, archivedElectionsRaw] = await Promise.all([
+  // Get all elections, archived elections, and candidate counts in parallel
+  const [elections, archivedElectionsRaw, candidateCounts] = await Promise.all([
     getAllElections(),
     getArchivedElections(),
+    query<{ election_id: number; count: number } & CandidateRow>(
+      `SELECT election_id, COUNT(*) as count FROM candidates GROUP BY election_id`
+    ),
   ]);
-
-  // Get candidate counts for each election
-  const candidateCounts = await query<
-    { election_id: number; count: number } & CandidateRow
-  >(
-    `SELECT election_id, COUNT(*) as count FROM candidates GROUP BY election_id`
-  );
 
   // Build count map
   const countMap = new Map<number, number>();
