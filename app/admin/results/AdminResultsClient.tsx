@@ -11,7 +11,7 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 
 const PublicDisplayModal = dynamic(() => import("@/components/PublicDisplayModal"), { ssr: false });
-const SlidePreviewModal = dynamic(() => import("@/components/SlidePreview/SlidePreviewModal").then(m => m.SlidePreviewModal), { ssr: false });
+const SlidePreviewModal = dynamic(() => import("@/components/SlidePreview/SlidePreviewModal"), { ssr: false });
 
 // ============================================
 // Types

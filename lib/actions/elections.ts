@@ -846,7 +846,8 @@ export async function updateCandidate(
 
     // Log activity
     if (data.name) {
-      after(() => logAdminAction("แก้ไขผู้สมัคร", data.name));
+      const candidateName = data.name;
+      after(() => logAdminAction("แก้ไขผู้สมัคร", candidateName));
     }
 
     return { success: true };
