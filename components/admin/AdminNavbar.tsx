@@ -82,10 +82,14 @@ export const AdminNavbar: React.FC = () => {
 
         // Check unread status
         if (data.length > 0) {
-          const lastReadId = localStorage.getItem("lastCheckedActivityId");
-          const latestId = data[0].id.toString();
-          if (lastReadId !== latestId) {
-            setHasUnread(true);
+          try {
+            const lastReadId = localStorage.getItem("lastCheckedActivityId");
+            const latestId = data[0].id.toString();
+            if (lastReadId !== latestId) {
+              setHasUnread(true);
+            }
+          } catch {
+            // localStorage may be unavailable (private browsing, etc.)
           }
         }
       } catch (error) {
@@ -102,13 +106,17 @@ export const AdminNavbar: React.FC = () => {
   const toggleNotifications = () => {
     if (!notificationsOpen && activities.length > 0) {
       // Mark as read when opening
-      localStorage.setItem(
-        "lastCheckedActivityId",
-        activities[0].id.toString(),
-      );
+      try {
+        localStorage.setItem(
+          "lastCheckedActivityId",
+          activities[0].id.toString(),
+        );
+      } catch {
+        // localStorage may be unavailable
+      }
       setHasUnread(false);
     }
-    setNotificationsOpen(!notificationsOpen);
+    setNotificationsOpen(prev => !prev);
     setProfileMenuOpen(false);
   };
 
