@@ -24,7 +24,7 @@ export function useClickOutside<T extends HTMLElement>(
 
     // Use mousedown for immediate response (fires before click completes)
     document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside, { passive: true });
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);

@@ -3,6 +3,7 @@ import { getCurrentAdmin } from "@/lib/actions/admin-auth";
 import { getElectionById } from "@/lib/actions/elections";
 import { getElectionResults } from "@/lib/actions/votes";
 import { formatElectionResultsCSV } from "@/lib/csv-formatter";
+import { after } from "next/server";
 import { NextRequest, NextResponse } from "next/server";
 
 interface RouteParams {
@@ -46,8 +47,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       totalEligible: turnout.totalEligible,
     });
 
-    // 6. Log Activity
-    await logAdminAction("Export CSV", `Election: ${election.title}`);
+    // 6. Log Activity (non-blocking)
+    after(() => logAdminAction("Export CSV", `Election: ${election.title}`));
 
     // 7. Return Response
     // Filename: election-{id}-results.csv
