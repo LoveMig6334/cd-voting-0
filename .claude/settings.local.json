@@ -20,7 +20,8 @@
       "Bash(grep:*)",
       "Bash(npx tailwindcss --help:*)",
       "Bash(curl:*)",
-      "Bash(xxd:*)"
+      "Bash(xxd:*)",
+      "Bash(dir:*)"
     ]
   }
 }
